@@ -13,23 +13,23 @@ interface ExtensionState {
   labels: LinguaI18nLabels;
 }
 
-// 日本語母国語 ➔ 英語伴走ワークフロー [二 ⇄ two]
+// 默认配置：中文母语 ➔ 英文伴走工作流 [二 ⇄ two]
 const DEFAULT_LABELS: LinguaI18nLabels = {
-  slot1Label: "口語",
-  slot2Label: "文面",
-  vocabLabel: "単語",
+  slot1Label: "口语",
+  slot2Label: "写作",
+  vocabLabel: "重点",
   sourceLabel: "原文",
   hudTitle: "二 ⇄ two",
   statusOriginal: "⇄ [二 ⇄ two] 原文",
-  statusEnglish: "⇄ [二 ⇄ two] 英語",
-  statusOff: "⇄ [二 ⇄ two]: オフ",
-  spokenLabel: "口語",
-  writtenLabel: "文面",
+  statusEnglish: "⇄ [二 ⇄ two] 英文",
+  statusOff: "⇄ [二 ⇄ two]: 关",
+  spokenLabel: "口语",
+  writtenLabel: "写作",
 };
 
 const state: ExtensionState = {
   mode: "original",
-  sourceLang: "ja",
+  sourceLang: "zh",
   labels: { ...DEFAULT_LABELS },
 };
 
@@ -82,8 +82,13 @@ function renderHudWidget(
     ? `${written} ` + ctx.ui.theme.fg("dim", `(${writtenMeaning})`)
     : (written || "");
 
+  // 安全单行收敛与 Unicode/CJK 超长截断保护，避免多行排版爆炸和终端撕裂
+  const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
+  const chars = Array.from(cleanSource);
+  const displaySource = chars.length > 40 ? chars.slice(0, 37).join("") + "..." : cleanSource;
+
   const lines: string[] = [
-    ctx.ui.theme.fg("muted", "  · ") + ctx.ui.theme.fg("dim", `${sourceTag}   `) + sourceText,
+    ctx.ui.theme.fg("muted", "  · ") + ctx.ui.theme.fg("dim", `${sourceTag}   `) + displaySource,
   ];
 
   if (hasWritten && hasVocab) {
@@ -123,44 +128,44 @@ export default function (pi: ExtensionAPI) {
     if (state.mode === "original") {
       state.mode = "english";
       updateFooter(ctx);
-      ctx.ui.notify(`[${state.labels.hudTitle}] 【英語モード】に切り替えました：AIへの入力は純粋な技術英語に自動変換されます`, "info");
+      ctx.ui.notify(`[${state.labels.hudTitle}] 已切换至【英文模式】：发给 AI 的输入将自动转换为纯正技术英文`, "info");
     } else if (state.mode === "english") {
       state.mode = "off";
       updateFooter(ctx);
       ctx.ui.setWidget("lingua_hud", undefined);
-      ctx.ui.notify(`[${state.labels.hudTitle}] オフにしました`, "info");
+      ctx.ui.notify(`[${state.labels.hudTitle}] 已关闭伴学`, "info");
     } else {
       state.mode = "original";
       updateFooter(ctx);
-      ctx.ui.notify(`[${state.labels.hudTitle}] 【原文モード】に切り替えました：AIへの入力は原文のまま、上部カードで英語を表示`, "info");
+      ctx.ui.notify(`[${state.labels.hudTitle}] 已切换至【原文模式】：输入保持纯净母语，上方 HUD 浮现伴学视窗`, "info");
     }
   };
 
   pi.registerCommand("lingua", {
-    description: "モード切替 [二 ⇄ two]: [原文] ➔ [英語] ➔ [オフ]",
+    description: "切换伴学模式 [二 ⇄ two]: [原文] ➔ [英文] ➔ [关]",
     handler: cycleModeHandler,
   });
 
   pi.registerCommand("lingual", {
-    description: "モード切替 [二 ⇄ two] (エイリアス)",
+    description: "切换伴学模式 [二 ⇄ two] (别名)",
     handler: cycleModeHandler,
   });
 
   pi.registerCommand("translate", {
-    description: "モード切替 [二 ⇄ two] (エイリアス)",
+    description: "切换伴学模式 [二 ⇄ two] (别名)",
     handler: cycleModeHandler,
   });
 
   pi.registerCommand("2", {
-    description: "モード切替 [二 ⇄ two] (エイリアス)",
+    description: "切换伴学模式 [二 ⇄ two] (别名)",
     handler: cycleModeHandler,
   });
 
   pi.registerCommand("lingua-agent", {
-    description: "AI Coding Agent によるプラグインのカスタマイズ方法を確認",
+    description: "查看 AI Coding Agent 自主定制本插件的方法",
     handler: async (_args, ctx) => {
       ctx.ui.notify(
-        "💡 言語やスタイルを変更したいですか？Agent に「このプラグインをカスタマイズしたい」と伝えるだけで、母国語でインタビューが行われ自動再構築されます！⚠️ 注意: 変更後はターミナルを再起動して Node キャッシュを更新してください。",
+        "💡 想要更换语言或风格？对你的 Agent 说一句话（如“我想定制这个伴学插件”），Agent 将自主为你完成诊断问卷与重新构建！⚠️ 注意：完成后请重启终端生效。",
         "info"
       );
     },

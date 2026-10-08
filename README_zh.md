@@ -170,6 +170,25 @@ lingua "这几个接口需要做幂等性校验"
 
 ---
 
+## ⚙️ 环境与模型网关配置 (Environment & Gateway)
+
+`pi-lingua` 开箱即用支持任意兼容 OpenAI API 规范的本地或云端 LLM 网关：
+
+| 环境变量 | 默认值 | 说明 |
+| :--- | :--- | :--- |
+| `LINGUA_ENDPOINT` | `http://127.0.0.1:8045/v1/chat/completions` | 兼容 OpenAI 格式的模型推理补全端点 |
+| `LINGUA_API_KEY` | *(留空)* | 网关授权密钥（可留空或填入对应 API Key） |
+| `LINGUA_MODEL` | `gemini-3.8-flash` | 伴学提取所使用的目标模型名称 |
+
+在环境变量中配置后启动 `pi` 即可全局生效：
+```bash
+export LINGUA_ENDPOINT="https://api.openai.com/v1/chat/completions"
+export LINGUA_API_KEY="sk-..."
+export LINGUA_MODEL="gpt-4o-mini"
+```
+
+---
+
 ## 发行三部曲指引
 
 ### 1. 推送到 GitHub

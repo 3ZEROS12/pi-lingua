@@ -5,62 +5,62 @@ export const DEFAULT_CONFIG: LinguaConfig = {
   apiKey: process.env.LINGUA_API_KEY || "sk-d9e62a39dd574907a04100acd9229a6c",
   model: process.env.LINGUA_MODEL || "gemini-3.8-flash",
   mode: "original",
-  sourceLang: "ja",
+  sourceLang: "zh",
   targetLang: "en",
   temperature: 0.2,
   timeoutMs: 30000,
 };
 
 /**
- * 現代エンジニア向けバイリンガル言語伴走プロンプト (日本語 A ➔ 英語 B)
- * 仕様：
- * 1. 自然な口語 (Silicon Valley Slack/Standup) + 厳格な技術文面 (RFC/PR) の二元レジスター
- * 2. 母国語 A (日本語) による正確な語感・ニュアンス解説 (Back-translation & Nuance)
- * 3. 典型的な開発コラボレーションに即した 3 組のゴールデン Few-Shot アンカー
- * 4. コード・識別子の絶対防御 (Code & Symbol Shield)
- * 5. 中級から IELTS Band 8.0+ / ネイティブ開発者レベルへ引き上げる適応型単語抽出
+ * 现代开发者双语伴学系统提示词 (中文 A ➔ 英文 B)
+ * 设计哲学：
+ * 1. 敏捷口语 (Silicon Valley Slack/Standup) + 现代技术书面 (PR/RFC/Docs) 双语域
+ * 2. 母语 A (中文) 精准语境释义与反向释义 (Back-translation & Nuance)
+ * 3. 典型开发协同的 3 组黄金 Few-Shot 锚点
+ * 4. 代码与专有名词绝对防御机制 (Code & Symbol Shield)
+ * 5. 水平自适应重点词汇提取，单行紧凑流排列
  */
 export const LINGUA_SYSTEM_PROMPT = `You are an elite bilingual developer language coach and senior software architect.
 Task:
-Translate the user's message from native Japanese (language A) into TWO distinct authentic English registers (language B), and provide the exact back-translation/nuance in Japanese for each register:
+Translate the user's message from native Chinese (language A) into TWO distinct authentic English registers (language B), and provide the exact back-translation/nuance in Chinese for each register:
 1. "spoken": Natural, fluent spoken English (daily standup, Slack, pair programming, agile team collaboration, code reviews). Authentic Silicon Valley flow, contractions, native phrasal verbs, natural idioms.
-2. "spoken_meaning": The exact colloquial nuance and meaning in Japanese.
+2. "spoken_meaning": The exact colloquial nuance and meaning in Chinese.
 3. "written": Clear, precise, modern technical written English (PR descriptions, RFCs, issues, architecture docs). High-level Plain English: active, concise, professional. STRICTLY AVOID archaic Victorian fluff (e.g. "we may now proceed", "precipitated", "parsimonious").
-4. "written_meaning": The exact formal technical nuance and meaning in Japanese.
-5. "vocab": Adaptively extract ALL key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging an intermediate Japanese engineer to IELTS Band 8.0+ / native developer fluency. Do NOT artificially cap at 1-2; extract as many as genuinely beneficial, while keeping each definition concise in Japanese in parentheses separated by " · " (e.g. "term1 (日本語の意味) · term2 (日本語の意味) · ...") to ensure the terminal HUD remains vertically compact.
+4. "written_meaning": The exact formal technical nuance and meaning in Chinese.
+5. "vocab": Adaptively extract ALL key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging the user to high-level/native developer fluency. Do NOT artificially cap at 1-2; extract as many as genuinely beneficial, while keeping each definition concise in Chinese in parentheses separated by " · " (e.g. "term1 (中文释义) · term2 (中文释义) · ...") to ensure the terminal HUD remains vertically compact.
 
 [CODE & SYMBOL SHIELD - STRICT RULE]:
 All inline code (\`foo()\`), file paths (@file, path/to/file), SQL keywords, variable names, and technical identifiers MUST be preserved 100% verbatim in both spoken and written outputs. Never translate, rephrase, or drop code tokens.
 
 [GOLDEN FEW-SHOT ANCHORS]:
-Input: "賛成です、進めましょう"
+Input: "认同，开始吧"
 Output:
 {
   "spoken": "Totally on board with that — let's dive right in.",
-  "spoken_meaning": "完全に賛成、早速取り掛かろう",
+  "spoken_meaning": "完全赞同，咱们直接开搞",
   "written": "Acknowledged. Let's proceed with the implementation.",
-  "written_meaning": "了解しました。実装を進めましょう",
-  "vocab": "on board with (賛成して/同調して) · dive in (直ちに取り掛かる)"
+  "written_meaning": "确认赞同，着手推进具体实施",
+  "vocab": "on board with (赞成/支持) · dive in (立刻着手/开搞)"
 }
 
-Input: "続けてください"
+Input: "继续"
 Output:
 {
   "spoken": "Let's keep going.",
-  "spoken_meaning": "このまま続けよう",
+  "spoken_meaning": "继续往下搞",
   "written": "Proceed with the next steps.",
-  "written_meaning": "次のステップに進んでください",
-  "vocab": "keep going (そのまま続ける) · proceed with (〜を進める)"
+  "written_meaning": "推进后续步骤",
+  "vocab": "keep going (继续推进) · proceed with (着手进行)"
 }
 
-Input: "この設計は少々オーバーエンジニアリング気味なので、標準ライブラリでシンプルに実装したほうがいいです"
+Input: "这个方案有点过度设计了，不如直接用标准库实现"
 Output:
 {
   "spoken": "This feels a bit over-engineered; we'd be much better off just sticking with the standard library.",
-  "spoken_meaning": "ちょっと作り込みすぎな気がする。標準ライブラリのままにした方がずっといい",
+  "spoken_meaning": "感觉有点过度设计了，用标准库划算得多",
   "written": "The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.",
-  "written_meaning": "提案されたアプローチは不要な複雑さをもたらします。標準ライブラリの実装を活用することが推奨されます",
-  "vocab": "over-engineered (過剰設計の) · be better off (〜する方が良い) · stick with (〜を使い続ける) · leverage (活用する)"
+  "written_meaning": "该方案引入了不必要的复杂度，建议优先采用原生标准库实现",
+  "vocab": "over-engineered (过度工程化) · be better off (做某事更合适/划算) · stick with (坚持使用/沿用) · leverage (利用/借助)"
 }
 
 Strict JSON format:
@@ -92,21 +92,38 @@ const CODE_STATEMENT_STARTERS = [
   "def ", "struct ", "impl ", "interface ", "type ", "return "
 ];
 
+export const MAX_TRANSLATION_CHARS = 300;
+export const MAX_TRANSLATION_LINES = 3;
+
 /**
- * Bidirectional language-aware trigger:
+ * Bidirectional language-aware trigger with strict Length & Payload Guards:
  * - If sourceLang is not English (e.g. "zh", "ja"): triggers on natural language scripts;
  * - If sourceLang is English ("en"): detects English natural language sentences while strictly excluding code and CLI commands.
+ * - [Safety Gate]: Rejects long text (> 300 chars), multi-line docs (> 3 lines), markdown headings, and code fences.
  */
-export function shouldTriggerTranslation(text: string, sourceLang = "ja"): boolean {
+export function shouldTriggerTranslation(text: string, sourceLang = "zh"): boolean {
   const trimmed = text.trim();
   if (!trimmed) return false;
 
-  // 1. If source language is non-English (default Chinese/Japanese etc.)
+  // 1. Long text and structured payload guard (protects tokens and terminal screen)
+  if (trimmed.length > MAX_TRANSLATION_CHARS) {
+    return false;
+  }
+  const lines = trimmed.split(/\r?\n/);
+  if (lines.length > MAX_TRANSLATION_LINES) {
+    return false;
+  }
+  // Fast bypass markdown headings, horizontal rules, and code blocks anywhere in input
+  if (/^#{1,6}\s/.test(trimmed) || trimmed.includes("```") || trimmed.startsWith("---")) {
+    return false;
+  }
+
+  // 2. If source language is non-English (default Chinese/Japanese etc.)
   if (sourceLang !== "en") {
     return isNonEnglish(trimmed);
   }
 
-  // 2. If source language is English (e.g. English native learning Japanese):
+  // 3. If source language is English (e.g. English native learning Japanese):
   // Fast bypass terminal commands and code statements
   const lower = trimmed.toLowerCase();
   if (COMMON_TERMINAL_COMMAND_PREFIXES.some(prefix => lower.startsWith(prefix))) {
@@ -180,9 +197,9 @@ export function formatTerminalAnnotation(
     sourceLabel?: string;
   } = {}
 ): string {
-  const slot1 = options.slot1Label || "口語";
-  const slot2 = options.slot2Label || "文面";
-  const vocabTag = options.vocabLabel || "単語";
+  const slot1 = options.slot1Label || "口语";
+  const slot2 = options.slot2Label || "写作";
+  const vocabTag = options.vocabLabel || "重点";
   const sourceTag = options.sourceLabel || "原文";
 
   const spokenDisplay = options.spokenMeaning ? `${spoken} (${options.spokenMeaning})` : spoken;
@@ -191,7 +208,12 @@ export function formatTerminalAnnotation(
   const hasSlot2 = Boolean(writtenDisplay && writtenDisplay.trim());
   const hasVocab = Boolean(vocab && vocab.trim());
 
-  const lines = [`  · ${sourceTag}   ${sourceText}`];
+  // 安全单行收敛与 Unicode/CJK 超长截断保护，避免多行排版爆炸和终端撕裂
+  const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
+  const chars = Array.from(cleanSource);
+  const displaySource = chars.length > 40 ? chars.slice(0, 37).join("") + "..." : cleanSource;
+
+  const lines = [`  · ${sourceTag}   ${displaySource}`];
   if (hasSlot2 && hasVocab) {
     lines.push(
       `  ┌ [${slot1}] ${spokenDisplay}`,
@@ -325,9 +347,9 @@ export async function translatePrompt(
     const payload = parseLlmResponse(content);
     if (!payload || !payload.spoken) return null;
 
-    const slot1Label = cfg.labels?.slot1Label || cfg.labels?.spokenLabel || "口語";
-    const slot2Label = cfg.labels?.slot2Label || cfg.labels?.writtenLabel || "文面";
-    const vocabLabel = cfg.labels?.vocabLabel || "単語";
+    const slot1Label = cfg.labels?.slot1Label || cfg.labels?.spokenLabel || "口语";
+    const slot2Label = cfg.labels?.slot2Label || cfg.labels?.writtenLabel || "写作";
+    const vocabLabel = cfg.labels?.vocabLabel || "重点";
     const sourceLabel = cfg.labels?.sourceLabel || "原文";
 
     return {

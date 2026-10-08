@@ -170,6 +170,25 @@ lingua "这几个接口需要做幂等性校验"
 
 ---
 
+## ⚙️ Environment & LLM Gateway Configuration
+
+`pi-lingua` works out-of-the-box with any OpenAI-compatible local or cloud LLM proxy:
+
+| Environment Variable | Default | Description |
+| :--- | :--- | :--- |
+| `LINGUA_ENDPOINT` | `http://127.0.0.1:8045/v1/chat/completions` | OpenAI-compatible completions endpoint |
+| `LINGUA_API_KEY` | *(empty)* | Optional authorization bearer token |
+| `LINGUA_MODEL` | `gemini-3.8-flash` | Target model name used for translation |
+
+Set environment variables in your shell before launching `pi`:
+```bash
+export LINGUA_ENDPOINT="https://api.openai.com/v1/chat/completions"
+export LINGUA_API_KEY="sk-..."
+export LINGUA_MODEL="gpt-4o-mini"
+```
+
+---
+
 ## Release Workflow
 
 ### 1. Push to GitHub

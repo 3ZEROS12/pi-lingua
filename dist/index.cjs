@@ -22,6 +22,8 @@ var index_exports = {};
 __export(index_exports, {
   DEFAULT_CONFIG: () => DEFAULT_CONFIG,
   LINGUA_SYSTEM_PROMPT: () => LINGUA_SYSTEM_PROMPT,
+  MAX_TRANSLATION_CHARS: () => MAX_TRANSLATION_CHARS,
+  MAX_TRANSLATION_LINES: () => MAX_TRANSLATION_LINES,
   formatTerminalAnnotation: () => formatTerminalAnnotation,
   isNonEnglish: () => isNonEnglish,
   parseLlmResponse: () => parseLlmResponse,
@@ -37,52 +39,52 @@ var DEFAULT_CONFIG = {
   apiKey: process.env.LINGUA_API_KEY || "sk-d9e62a39dd574907a04100acd9229a6c",
   model: process.env.LINGUA_MODEL || "gemini-3.8-flash",
   mode: "original",
-  sourceLang: "ja",
+  sourceLang: "zh",
   targetLang: "en",
   temperature: 0.2,
   timeoutMs: 3e4
 };
 var LINGUA_SYSTEM_PROMPT = `You are an elite bilingual developer language coach and senior software architect.
 Task:
-Translate the user's message from native Japanese (language A) into TWO distinct authentic English registers (language B), and provide the exact back-translation/nuance in Japanese for each register:
+Translate the user's message from native Chinese (language A) into TWO distinct authentic English registers (language B), and provide the exact back-translation/nuance in Chinese for each register:
 1. "spoken": Natural, fluent spoken English (daily standup, Slack, pair programming, agile team collaboration, code reviews). Authentic Silicon Valley flow, contractions, native phrasal verbs, natural idioms.
-2. "spoken_meaning": The exact colloquial nuance and meaning in Japanese.
+2. "spoken_meaning": The exact colloquial nuance and meaning in Chinese.
 3. "written": Clear, precise, modern technical written English (PR descriptions, RFCs, issues, architecture docs). High-level Plain English: active, concise, professional. STRICTLY AVOID archaic Victorian fluff (e.g. "we may now proceed", "precipitated", "parsimonious").
-4. "written_meaning": The exact formal technical nuance and meaning in Japanese.
-5. "vocab": Adaptively extract ALL key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging an intermediate Japanese engineer to IELTS Band 8.0+ / native developer fluency. Do NOT artificially cap at 1-2; extract as many as genuinely beneficial, while keeping each definition concise in Japanese in parentheses separated by " \xB7 " (e.g. "term1 (\u65E5\u672C\u8A9E\u306E\u610F\u5473) \xB7 term2 (\u65E5\u672C\u8A9E\u306E\u610F\u5473) \xB7 ...") to ensure the terminal HUD remains vertically compact.
+4. "written_meaning": The exact formal technical nuance and meaning in Chinese.
+5. "vocab": Adaptively extract ALL key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging the user to high-level/native developer fluency. Do NOT artificially cap at 1-2; extract as many as genuinely beneficial, while keeping each definition concise in Chinese in parentheses separated by " \xB7 " (e.g. "term1 (\u4E2D\u6587\u91CA\u4E49) \xB7 term2 (\u4E2D\u6587\u91CA\u4E49) \xB7 ...") to ensure the terminal HUD remains vertically compact.
 
 [CODE & SYMBOL SHIELD - STRICT RULE]:
 All inline code (\`foo()\`), file paths (@file, path/to/file), SQL keywords, variable names, and technical identifiers MUST be preserved 100% verbatim in both spoken and written outputs. Never translate, rephrase, or drop code tokens.
 
 [GOLDEN FEW-SHOT ANCHORS]:
-Input: "\u8CDB\u6210\u3067\u3059\u3001\u9032\u3081\u307E\u3057\u3087\u3046"
+Input: "\u8BA4\u540C\uFF0C\u5F00\u59CB\u5427"
 Output:
 {
   "spoken": "Totally on board with that \u2014 let's dive right in.",
-  "spoken_meaning": "\u5B8C\u5168\u306B\u8CDB\u6210\u3001\u65E9\u901F\u53D6\u308A\u639B\u304B\u308D\u3046",
+  "spoken_meaning": "\u5B8C\u5168\u8D5E\u540C\uFF0C\u54B1\u4EEC\u76F4\u63A5\u5F00\u641E",
   "written": "Acknowledged. Let's proceed with the implementation.",
-  "written_meaning": "\u4E86\u89E3\u3057\u307E\u3057\u305F\u3002\u5B9F\u88C5\u3092\u9032\u3081\u307E\u3057\u3087\u3046",
-  "vocab": "on board with (\u8CDB\u6210\u3057\u3066/\u540C\u8ABF\u3057\u3066) \xB7 dive in (\u76F4\u3061\u306B\u53D6\u308A\u639B\u304B\u308B)"
+  "written_meaning": "\u786E\u8BA4\u8D5E\u540C\uFF0C\u7740\u624B\u63A8\u8FDB\u5177\u4F53\u5B9E\u65BD",
+  "vocab": "on board with (\u8D5E\u6210/\u652F\u6301) \xB7 dive in (\u7ACB\u523B\u7740\u624B/\u5F00\u641E)"
 }
 
-Input: "\u7D9A\u3051\u3066\u304F\u3060\u3055\u3044"
+Input: "\u7EE7\u7EED"
 Output:
 {
   "spoken": "Let's keep going.",
-  "spoken_meaning": "\u3053\u306E\u307E\u307E\u7D9A\u3051\u3088\u3046",
+  "spoken_meaning": "\u7EE7\u7EED\u5F80\u4E0B\u641E",
   "written": "Proceed with the next steps.",
-  "written_meaning": "\u6B21\u306E\u30B9\u30C6\u30C3\u30D7\u306B\u9032\u3093\u3067\u304F\u3060\u3055\u3044",
-  "vocab": "keep going (\u305D\u306E\u307E\u307E\u7D9A\u3051\u308B) \xB7 proceed with (\u301C\u3092\u9032\u3081\u308B)"
+  "written_meaning": "\u63A8\u8FDB\u540E\u7EED\u6B65\u9AA4",
+  "vocab": "keep going (\u7EE7\u7EED\u63A8\u8FDB) \xB7 proceed with (\u7740\u624B\u8FDB\u884C)"
 }
 
-Input: "\u3053\u306E\u8A2D\u8A08\u306F\u5C11\u3005\u30AA\u30FC\u30D0\u30FC\u30A8\u30F3\u30B8\u30CB\u30A2\u30EA\u30F3\u30B0\u6C17\u5473\u306A\u306E\u3067\u3001\u6A19\u6E96\u30E9\u30A4\u30D6\u30E9\u30EA\u3067\u30B7\u30F3\u30D7\u30EB\u306B\u5B9F\u88C5\u3057\u305F\u307B\u3046\u304C\u3044\u3044\u3067\u3059"
+Input: "\u8FD9\u4E2A\u65B9\u6848\u6709\u70B9\u8FC7\u5EA6\u8BBE\u8BA1\u4E86\uFF0C\u4E0D\u5982\u76F4\u63A5\u7528\u6807\u51C6\u5E93\u5B9E\u73B0"
 Output:
 {
   "spoken": "This feels a bit over-engineered; we'd be much better off just sticking with the standard library.",
-  "spoken_meaning": "\u3061\u3087\u3063\u3068\u4F5C\u308A\u8FBC\u307F\u3059\u304E\u306A\u6C17\u304C\u3059\u308B\u3002\u6A19\u6E96\u30E9\u30A4\u30D6\u30E9\u30EA\u306E\u307E\u307E\u306B\u3057\u305F\u65B9\u304C\u305A\u3063\u3068\u3044\u3044",
+  "spoken_meaning": "\u611F\u89C9\u6709\u70B9\u8FC7\u5EA6\u8BBE\u8BA1\u4E86\uFF0C\u7528\u6807\u51C6\u5E93\u5212\u7B97\u5F97\u591A",
   "written": "The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.",
-  "written_meaning": "\u63D0\u6848\u3055\u308C\u305F\u30A2\u30D7\u30ED\u30FC\u30C1\u306F\u4E0D\u8981\u306A\u8907\u96D1\u3055\u3092\u3082\u305F\u3089\u3057\u307E\u3059\u3002\u6A19\u6E96\u30E9\u30A4\u30D6\u30E9\u30EA\u306E\u5B9F\u88C5\u3092\u6D3B\u7528\u3059\u308B\u3053\u3068\u304C\u63A8\u5968\u3055\u308C\u307E\u3059",
-  "vocab": "over-engineered (\u904E\u5270\u8A2D\u8A08\u306E) \xB7 be better off (\u301C\u3059\u308B\u65B9\u304C\u826F\u3044) \xB7 stick with (\u301C\u3092\u4F7F\u3044\u7D9A\u3051\u308B) \xB7 leverage (\u6D3B\u7528\u3059\u308B)"
+  "written_meaning": "\u8BE5\u65B9\u6848\u5F15\u5165\u4E86\u4E0D\u5FC5\u8981\u7684\u590D\u6742\u5EA6\uFF0C\u5EFA\u8BAE\u4F18\u5148\u91C7\u7528\u539F\u751F\u6807\u51C6\u5E93\u5B9E\u73B0",
+  "vocab": "over-engineered (\u8FC7\u5EA6\u5DE5\u7A0B\u5316) \xB7 be better off (\u505A\u67D0\u4E8B\u66F4\u5408\u9002/\u5212\u7B97) \xB7 stick with (\u575A\u6301\u4F7F\u7528/\u6CBF\u7528) \xB7 leverage (\u5229\u7528/\u501F\u52A9)"
 }
 
 Strict JSON format:
@@ -132,9 +134,21 @@ var CODE_STATEMENT_STARTERS = [
   "type ",
   "return "
 ];
-function shouldTriggerTranslation(text, sourceLang = "ja") {
+var MAX_TRANSLATION_CHARS = 300;
+var MAX_TRANSLATION_LINES = 3;
+function shouldTriggerTranslation(text, sourceLang = "zh") {
   const trimmed = text.trim();
   if (!trimmed) return false;
+  if (trimmed.length > MAX_TRANSLATION_CHARS) {
+    return false;
+  }
+  const lines = trimmed.split(/\r?\n/);
+  if (lines.length > MAX_TRANSLATION_LINES) {
+    return false;
+  }
+  if (/^#{1,6}\s/.test(trimmed) || trimmed.includes("```") || trimmed.startsWith("---")) {
+    return false;
+  }
   if (sourceLang !== "en") {
     return isNonEnglish(trimmed);
   }
@@ -180,15 +194,18 @@ function parseLlmResponse(raw) {
   }
 }
 function formatTerminalAnnotation(sourceText, spoken, written, vocab, options = {}) {
-  const slot1 = options.slot1Label || "\u53E3\u8A9E";
-  const slot2 = options.slot2Label || "\u6587\u9762";
-  const vocabTag = options.vocabLabel || "\u5358\u8A9E";
+  const slot1 = options.slot1Label || "\u53E3\u8BED";
+  const slot2 = options.slot2Label || "\u5199\u4F5C";
+  const vocabTag = options.vocabLabel || "\u91CD\u70B9";
   const sourceTag = options.sourceLabel || "\u539F\u6587";
   const spokenDisplay = options.spokenMeaning ? `${spoken} (${options.spokenMeaning})` : spoken;
   const writtenDisplay = written && options.writtenMeaning ? `${written} (${options.writtenMeaning})` : written || "";
   const hasSlot2 = Boolean(writtenDisplay && writtenDisplay.trim());
   const hasVocab = Boolean(vocab && vocab.trim());
-  const lines = [`  \xB7 ${sourceTag}   ${sourceText}`];
+  const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
+  const chars = Array.from(cleanSource);
+  const displaySource = chars.length > 40 ? chars.slice(0, 37).join("") + "..." : cleanSource;
+  const lines = [`  \xB7 ${sourceTag}   ${displaySource}`];
   if (hasSlot2 && hasVocab) {
     lines.push(
       `  \u250C [${slot1}] ${spokenDisplay}`,
@@ -285,9 +302,9 @@ async function translatePrompt(text, userConfig = {}) {
     }
     const payload = parseLlmResponse(content);
     if (!payload || !payload.spoken) return null;
-    const slot1Label = cfg.labels?.slot1Label || cfg.labels?.spokenLabel || "\u53E3\u8A9E";
-    const slot2Label = cfg.labels?.slot2Label || cfg.labels?.writtenLabel || "\u6587\u9762";
-    const vocabLabel = cfg.labels?.vocabLabel || "\u5358\u8A9E";
+    const slot1Label = cfg.labels?.slot1Label || cfg.labels?.spokenLabel || "\u53E3\u8BED";
+    const slot2Label = cfg.labels?.slot2Label || cfg.labels?.writtenLabel || "\u5199\u4F5C";
+    const vocabLabel = cfg.labels?.vocabLabel || "\u91CD\u70B9";
     const sourceLabel = cfg.labels?.sourceLabel || "\u539F\u6587";
     return {
       spoken: payload.spoken,
@@ -321,6 +338,8 @@ async function translatePrompt(text, userConfig = {}) {
 0 && (module.exports = {
   DEFAULT_CONFIG,
   LINGUA_SYSTEM_PROMPT,
+  MAX_TRANSLATION_CHARS,
+  MAX_TRANSLATION_LINES,
   formatTerminalAnnotation,
   isNonEnglish,
   parseLlmResponse,
