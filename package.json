@@ -1,0 +1,71 @@
+{
+  "name": "@3zeros12/pi-lingua",
+  "version": "0.1.0",
+  "description": "Zero-friction developer translator & bilingual companion (Spoken vs Written) for AI coding agents",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "bin",
+    "assets",
+    "README.md",
+    "README_zh.md",
+    "OPTIMIZATION_ROADMAP.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "lingua": "bin/lingua.js",
+    "lingual": "bin/lingua.js",
+    "translate": "bin/lingua.js",
+    "lg": "bin/lingua.js",
+    "2": "bin/lingua.js"
+  },
+  "pi": {
+    "extensions": [
+      "dist/extension.js"
+    ]
+  },
+  "scripts": {
+    "build": "tsup src/index.ts src/extension.ts --format esm,cjs --dts --clean --no-splitting",
+    "typecheck": "tsc --noEmit",
+    "test": "npx tsx --test tests/**/*.test.ts",
+    "prepack": "npm run build"
+  },
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "translate",
+    "translator",
+    "translation",
+    "developer-translate",
+    "ai-translate",
+    "pi-translate",
+    "developer-english",
+    "spoken-english",
+    "technical-writing",
+    "coding-agent",
+    "developer-tools",
+    "bilingual",
+    "prompt-enhancement"
+  ],
+  "author": "Jason Song <jiaxinsong312@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/3ZEROS12/pi-lingua.git"
+  },
+  "bugs": {
+    "url": "https://github.com/3ZEROS12/pi-lingua/issues"
+  },
+  "homepage": "https://github.com/3ZEROS12/pi-lingua#readme",
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "latest",
+    "@types/node": "^26.6.2",
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5.8.2"
+  }
+}

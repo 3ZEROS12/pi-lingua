@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 500" width="880" height="500">
+  <defs>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2b3339" />
+      <stop offset="100%" stop-color="#232a2e" />
+    </linearGradient>
+  </defs>
+
+  <!-- Window Container with Shadow -->
+  <g filter="url(#shadow)">
+    <rect x="20" y="15" width="840" height="460" rx="12" fill="#1e2326" stroke="#343f44" stroke-width="1.2" />
+
+    <!-- Titlebar -->
+    <path d="M 20,27 A 12,12 0 0,1 32,15 L 848,15 A 12,12 0 0,1 860,27 L 860,52 L 20,52 Z" fill="url(#headerGrad)" stroke="#343f44" stroke-width="1" />
+    <line x1="20" y1="52" x2="860" y2="52" stroke="#2d353b" stroke-width="1" />
+
+    <!-- Window Controls (macOS Dots) -->
+    <circle cx="44" cy="33.5" r="5.5" fill="#e67e80" />
+    <circle cx="62" cy="33.5" r="5.5" fill="#dbbc7f" />
+    <circle cx="80" cy="33.5" r="5.5" fill="#a7c080" />
+
+    <!-- Window Title -->
+    <text x="440" y="38" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="500" fill="#859289" letter-spacing="0.3">
+      Jason@laptop ~ ⇄ pi-lingua (v0.1.0) · AI Developer Companion
+    </text>
+  </g>
+
+  <!-- Terminal Content -->
+  <g font-family="'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, Consolas, monospace" font-size="12.5" xml:space="preserve">
+    <!-- Prompt Command Line -->
+    <text x="45" y="84">
+      <tspan fill="#a7c080" font-weight="bold">~/Workspace/projects</tspan>
+      <tspan fill="#7fbbb3"> ❯ </tspan>
+      <tspan fill="#d3c6aa">pi</tspan>
+    </text>
+
+    <!-- Pi Session Greeting -->
+    <text x="45" y="112" fill="#859289">
+      <tspan fill="#7fbbb3">●</tspan>
+      <tspan fill="#859289"> pi-coding-agent · mode: interactive · model: antigravity/gemini-3.8-flash</tspan>
+    </text>
+
+    <!-- User Input -->
+    <text x="45" y="146">
+      <tspan fill="#7fbbb3" font-weight="bold">&gt; </tspan>
+      <tspan fill="#e5c07b" font-weight="bold">这个方案有点过度设计了，不如直接用标准库实现</tspan>
+    </text>
+
+    <!-- Trifecta Left-Rail Tree Branch (HUD Card) -->
+    <!-- Source Text Anchor -->
+    <text x="45" y="180">
+      <tspan fill="#7a8478">  · </tspan>
+      <tspan fill="#859289">原文   </tspan>
+      <tspan fill="#d3c6aa">这个方案有点过度设计了，不如直接用标准库实现</tspan>
+    </text>
+
+    <!-- Spoken Register -->
+    <text x="45" y="206">
+      <tspan fill="#7a8478">  ┌ </tspan>
+      <tspan fill="#a7c080" font-weight="bold">[口语] </tspan>
+      <tspan fill="#e5c07b">This feels a bit over-engineered; we'd be much better off just sticking with the standard library.</tspan>
+    </text>
+    <text x="45" y="226">
+      <tspan fill="#7a8478">  │      </tspan>
+      <tspan fill="#859289">(感觉有点过度设计了，用标准库划算得多)</tspan>
+    </text>
+
+    <!-- Written Register -->
+    <text x="45" y="254">
+      <tspan fill="#7a8478">  ├ </tspan>
+      <tspan fill="#7fbbb3" font-weight="bold">[写作] </tspan>
+      <tspan fill="#83a598">The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.</tspan>
+    </text>
+    <text x="45" y="274">
+      <tspan fill="#7a8478">  │      </tspan>
+      <tspan fill="#859289">(该方案引入了不必要的复杂度，建议优先采用原生标准库实现)</tspan>
+    </text>
+
+    <!-- Vocab Collocations Stream -->
+    <text x="45" y="302">
+      <tspan fill="#7a8478">  └ </tspan>
+      <tspan fill="#dbbc7f" font-weight="bold">[重点] </tspan>
+      <tspan fill="#d3c6aa">over-engineered </tspan><tspan fill="#7a8478">(过度工程化) </tspan>
+      <tspan fill="#859289">· </tspan>
+      <tspan fill="#d3c6aa">be better off </tspan><tspan fill="#7a8478">(做某事更合适/划算) </tspan>
+      <tspan fill="#859289">· </tspan>
+      <tspan fill="#d3c6aa">stick with </tspan><tspan fill="#7a8478">(坚持使用/沿用) </tspan>
+      <tspan fill="#859289">· </tspan>
+      <tspan fill="#d3c6aa">leverage </tspan><tspan fill="#7a8478">(利用/借助)</tspan>
+    </text>
+
+    <!-- AI Response Divider -->
+    <line x1="45" y1="324" x2="835" y2="324" stroke="#2d353b" stroke-width="1" stroke-dasharray="4,4" />
+
+    <!-- AI Assistant Response Stream -->
+    <text x="45" y="348">
+      <tspan fill="#7fbbb3" font-weight="bold">AI</tspan>
+      <tspan fill="#859289"> ❯ </tspan>
+      <tspan fill="#d3c6aa">赞同你的判断。在当前模块引入额外的三方依赖会增加维护负担，</tspan>
+    </text>
+    <text x="45" y="370" fill="#d3c6aa">
+      直接用标准库提供的内置并发机制即可实现同样的高效排队，代码体积减少 60%。
+    </text>
+
+    <!-- Status Bar / Footer (Trifecta Native Invariant) -->
+    <rect x="21" y="440" width="838" height="34" rx="0" fill="#181b1d" />
+    <line x1="20" y1="440" x2="860" y2="440" stroke="#2d353b" stroke-width="1" />
+
+    <text x="40" y="462" font-size="11.5">
+      <tspan fill="#859289">[antigravity/gemini-3.8-flash]  [thinking: max]  [context: 12.4k / 4.2%]</tspan>
+    </text>
+
+    <text x="840" y="462" text-anchor="end" font-size="11.5">
+      <tspan fill="#a7c080" font-weight="bold">⇄ [二 ⇄ two] 原文</tspan>
+      <tspan fill="#7a8478"> (按 /2 切换)</tspan>
+    </text>
+
+    <!-- Active Input Line -->
+    <text x="45" y="414">
+      <tspan fill="#7fbbb3" font-weight="bold">&gt; </tspan>
+      <tspan fill="#859289">好的，开始重构</tspan>
+      <rect x="156" y="401" width="7" height="15" fill="#a7c080" opacity="0.8">
+        <animate attributeName="opacity" values="0.8;0.1;0.8" dur="1.1s" repeatCount="indefinite" />
+      </rect>
+    </text>
+  </g>
+</svg>

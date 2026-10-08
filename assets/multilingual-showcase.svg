@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 720" width="920" height="720">
+  <defs>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.55" />
+    </filter>
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2b3339" />
+      <stop offset="100%" stop-color="#232a2e" />
+    </linearGradient>
+  </defs>
+
+  <!-- Window Container with Shadow -->
+  <g filter="url(#shadow)">
+    <rect x="20" y="15" width="880" height="680" rx="12" fill="#1e2326" stroke="#343f44" stroke-width="1.2" />
+
+    <!-- Titlebar -->
+    <path d="M 20,27 A 12,12 0 0,1 32,15 L 888,15 A 12,12 0 0,1 900,27 L 900,52 L 20,52 Z" fill="url(#headerGrad)" stroke="#343f44" stroke-width="1" />
+    <line x1="20" y1="52" x2="900" y2="52" stroke="#2d353b" stroke-width="1" />
+
+    <!-- Window Controls (macOS Dots) -->
+    <circle cx="44" cy="33.5" r="5.5" fill="#e67e80" />
+    <circle cx="62" cy="33.5" r="5.5" fill="#dbbc7f" />
+    <circle cx="80" cy="33.5" r="5.5" fill="#a7c080" />
+
+    <!-- Window Title -->
+    <text x="460" y="38" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="500" fill="#859289" letter-spacing="0.3">
+      pi-lingua · Authoritative Texts &amp; Global Symmetrical Language Matrix
+    </text>
+  </g>
+
+  <!-- Terminal Content -->
+  <g font-family="'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, Consolas, monospace" font-size="12" xml:space="preserve">
+
+    <!-- Card 1: zh ➔ en (中文和合本) -->
+    <g transform="translate(45, 80)">
+      <text x="0" y="0">
+        <tspan fill="#a7c080" font-weight="bold">#1 [zh ➔ en]</tspan>
+        <tspan fill="#859289"> · 中文 (和合本 CUV · 马太福音 6:31) ❯ </tspan>
+        <tspan fill="#e5c07b" font-weight="bold">吃什么？</tspan>
+      </text>
+      <text x="0" y="24">
+        <tspan fill="#7a8478">  · 原文   </tspan>
+        <tspan fill="#d3c6aa">吃什么？</tspan>
+      </text>
+      <text x="0" y="46">
+        <tspan fill="#7a8478">  ┌ </tspan>
+        <tspan fill="#a7c080" font-weight="bold">[口语] </tspan>
+        <tspan fill="#e5c07b">What are we thinking for lunch? </tspan>
+        <tspan fill="#859289">(晌午当吃甚么？大家有什么想法？——Slack 约饭高频俚语)</tspan>
+      </text>
+      <text x="0" y="68">
+        <tspan fill="#7a8478">  ├ </tspan>
+        <tspan fill="#7fbbb3" font-weight="bold">[写作] </tspan>
+        <tspan fill="#83a598">Please specify your catering preferences for the scheduled session. </tspan>
+        <tspan fill="#859289">(团队活动膳食偏好书面登记)</tspan>
+      </text>
+      <text x="0" y="90">
+        <tspan fill="#7a8478">  └ </tspan>
+        <tspan fill="#dbbc7f" font-weight="bold">[重点] </tspan>
+        <tspan fill="#d3c6aa">what are we thinking for... </tspan><tspan fill="#7a8478">(对…有何打算/偏好) </tspan>
+        <tspan fill="#859289">· </tspan>
+        <tspan fill="#d3c6aa">catering preferences </tspan><tspan fill="#7a8478">(膳食偏好/宴饮预订)</tspan>
+      </text>
+    </g>
+
+    <!-- Divider Line 1 -->
+    <line x1="45" y1="195" x2="875" y2="195" stroke="#2d353b" stroke-width="1" stroke-dasharray="3,3" />
+
+    <!-- Card 2: en ➔ zh (English KJV) -->
+    <g transform="translate(45, 222)">
+      <text x="0" y="0">
+        <tspan fill="#7fbbb3" font-weight="bold">#2 [en ➔ zh]</tspan>
+        <tspan fill="#859289"> · English (King James Version · Genesis 1:1, 1:3) ❯ </tspan>
+        <tspan fill="#e5c07b">In the beginning God created the heaven and the earth...</tspan>
+      </text>
+      <text x="0" y="24">
+        <tspan fill="#7a8478">  · Source </tspan>
+        <tspan fill="#d3c6aa">In the beginning God created the heaven and the earth. And God said, Let there be light: and there was light.</tspan>
+      </text>
+      <text x="0" y="46">
+        <tspan fill="#7a8478">  ┌ </tspan>
+        <tspan fill="#a7c080" font-weight="bold">[技术口语] </tspan>
+        <tspan fill="#e5c07b">最开始的时候，上帝创造了天地。上帝说了句“要有光”，立马就有了光。</tspan>
+      </text>
+      <text x="0" y="68">
+        <tspan fill="#7a8478">  ├ </tspan>
+        <tspan fill="#7fbbb3" font-weight="bold">[技术文档] </tspan>
+        <tspan fill="#83a598">起初，神创造天地。神说：“要有光”，就有了光。</tspan>
+      </text>
+      <text x="0" y="90">
+        <tspan fill="#7a8478">  └ </tspan>
+        <tspan fill="#dbbc7f" font-weight="bold">[核心术语] </tspan>
+        <tspan fill="#d3c6aa">起初 </tspan><tspan fill="#7a8478">(in the beginning) </tspan>
+        <tspan fill="#859289">· </tspan>
+        <tspan fill="#d3c6aa">创造 </tspan><tspan fill="#7a8478">(to create / frame forth) </tspan>
+        <tspan fill="#859289">· </tspan>
+        <tspan fill="#d3c6aa">天地 </tspan><tspan fill="#7a8478">(heaven and earth) </tspan>
+        <tspan fill="#859289">· </tspan>
+        <tspan fill="#d3c6aa">立马 </tspan><tspan fill="#7a8478">(straightway / anon)</tspan>
+      </text>
+    </g>
+
+    <!-- Divider Line 2 -->
+    <line x1="45" y1="337" x2="875" y2="337" stroke="#2d353b" stroke-width="1" stroke-dasharray="3,3" />
+
+    <!-- Card 3: en ➔ es (English NIV ➔ Español) -->
+    <g transform="translate(45, 364)">
+      <text x="0" y="0">
+        <tspan fill="#dbbc7f" font-weight="bold">#4 [en ➔ es]</tspan>
+        <tspan fill="#859289"> · English (NIV · Matthew 10:34) ❯ </tspan>
+        <tspan fill="#e5c07b">Do not suppose that I have come to bring peace to the earth...</tspan>
+      </text>
+      <text x="0" y="24">
+        <tspan fill="#7a8478">  · Source </tspan>
+        <tspan fill="#d3c6aa">Do not suppose that I have come to bring peace to the earth. I did not come to bring peace, but a sword.</tspan>
+      </text>
+      <text x="0" y="46">
+        <tspan fill="#7a8478">  ┌ </tspan>
+        <tspan fill="#a7c080" font-weight="bold">[Coloquial] </tspan>
+        <tspan fill="#e5c07b">Ni crean que vine a traer paz a la tierra. No vine a traer paz, sino espada.</tspan>
+      </text>
+      <text x="0" y="68">
+        <tspan fill="#7a8478">  ├ </tspan>
+        <tspan fill="#7fbbb3" font-weight="bold">[Escrito]   </tspan>
+        <tspan fill="#83a598">No se debe suponer que he venido a traer paz a la tierra. No he venido a instaurar la paz, sino una espada.</tspan>
+      </text>
+      <text x="0" y="90">
+        <tspan fill="#7a8478">  └ </tspan>
+        <tspan fill="#dbbc7f" font-weight="bold">[Vocabulario] </tspan>
+        <tspan fill="#d3c6aa">ni crean que </tspan><tspan fill="#7a8478">(don't think for a moment that) </tspan>
+        <tspan fill="#859289">· </tspan>
+        <tspan fill="#d3c6aa">sino </tspan><tspan fill="#7a8478">(but rather) </tspan>
+        <tspan fill="#859289">· </tspan>
+        <tspan fill="#d3c6aa">instaurar la paz </tspan><tspan fill="#7a8478">(to establish peace)</tspan>
+      </text>
+    </g>
+
+    <!-- Divider Line 3 -->
+    <line x1="45" y1="479" x2="875" y2="479" stroke="#2d353b" stroke-width="1" stroke-dasharray="3,3" />
+
+    <!-- Card 4: de ➔ en (Deutsch Lutherbibel ➔ English) -->
+    <g transform="translate(45, 506)">
+      <text x="0" y="0">
+        <tspan fill="#e67e80" font-weight="bold">#8 [de ➔ en]</tspan>
+        <tspan fill="#859289"> · Deutsch (Lutherbibel LUT 2017 · Prediger 1:2, 1:9) ❯ </tspan>
+        <tspan fill="#e5c07b">Es ist alles ganz eitel. Es geschieht nichts Neues unter der Sonne.</tspan>
+      </text>
+      <text x="0" y="24">
+        <tspan fill="#7a8478">  · Original </tspan>
+        <tspan fill="#d3c6aa">Es ist alles ganz eitel. Es geschieht nichts Neues unter der Sonne.</tspan>
+      </text>
+      <text x="0" y="46">
+        <tspan fill="#7a8478">  ┌ </tspan>
+        <tspan fill="#a7c080" font-weight="bold">[Spoken]  </tspan>
+        <tspan fill="#e5c07b">Honestly, it all feels like spinning our wheels. There's really nothing new under the sun. </tspan>
+      </text>
+      <text x="0" y="68">
+        <tspan fill="#7a8478">  ├ </tspan>
+        <tspan fill="#7fbbb3" font-weight="bold">[Written] </tspan>
+        <tspan fill="#83a598">This initiative yields negligible substantive value; it merely re-implements established paradigms.</tspan>
+      </text>
+      <text x="0" y="90">
+        <tspan fill="#7a8478">  └ </tspan>
+        <tspan fill="#dbbc7f" font-weight="bold">[Vocab]   </tspan>
+        <tspan fill="#d3c6aa">spin one's wheels </tspan><tspan fill="#7a8478">(auf der Stelle treten) </tspan>
+        <tspan fill="#859289">· </tspan>
+        <tspan fill="#d3c6aa">nothing new under the sun </tspan><tspan fill="#7a8478">(altbekannte Muster) </tspan>
+        <tspan fill="#859289">· </tspan>
+        <tspan fill="#d3c6aa">established paradigms </tspan><tspan fill="#7a8478">(bestehende Denkmuster)</tspan>
+      </text>
+    </g>
+
+    <!-- Status Bar / Footer -->
+    <rect x="21" y="635" width="878" height="34" rx="0" fill="#181b1d" />
+    <line x1="20" y1="635" x2="900" y2="635" stroke="#2d353b" stroke-width="1" />
+
+    <text x="40" y="657" font-size="11.5">
+      <tspan fill="#859289">[Global Matrix: zh ⇄ en · es ⇄ en · ja ⇄ en · fr ➔ en · de ➔ en]</tspan>
+    </text>
+
+    <text x="880" y="657" text-anchor="end" font-size="11.5">
+      <tspan fill="#a7c080" font-weight="bold">⇄ [two ⇄ 二] Multi-Lingua Ready</tspan>
+    </text>
+  </g>
+</svg>

@@ -1,0 +1,67 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import extensionFactory from "../dist/extension.js";
+
+test("extension input handler - original mode returns continue immediately and renders source anchor & Left-Rail tree branch asynchronously", async () => {
+  let registeredInputHandler: any = null;
+  let widgetLines: string[] | undefined = undefined;
+
+  const mockPi: any = {
+    on(event: string, handler: any) {
+      if (event === "input") registeredInputHandler = handler;
+    },
+    registerCommand() {},
+  };
+
+  const mockCtx: any = {
+    hasUI: true,
+    ui: {
+      setStatus() {},
+      setWidget(_key: string, content: string[] | undefined) {
+        widgetLines = content;
+      },
+      theme: {
+        fg(_color: string, text: string) {
+          return text;
+        },
+      },
+      notify() {},
+    },
+  };
+
+  extensionFactory(mockPi);
+  assert.ok(registeredInputHandler, "Input handler must be registered");
+
+  const inputEvent: any = {
+    type: "input",
+    text: "現在のすべてのプラグインを確認してください",
+    source: "interactive",
+  };
+
+  const startTime = Date.now();
+  const res = await registeredInputHandler(inputEvent, mockCtx);
+  const elapsed = Date.now() - startTime;
+
+  // 【核心断言 1】：原文モード下必须非阻塞 0ms 立即返回 continue，发给 AI 的输入保持纯净原文！
+  assert.ok(elapsed < 100, `Handler must return immediately without blocking (took ${elapsed}ms)`);
+  assert.equal(res.action, "continue", "Original mode must return action 'continue' to keep prompt clean");
+  assert.equal(res.text, undefined, "Original mode must never return transformed text");
+
+  // 【核心断言 2】：后台微任务完成后，双模伴学内容必须以极简左导轨树状形式渲染到 Widget 中
+  const maxWait = 25000;
+  const pollInterval = 100;
+  let waited = 0;
+  while (!widgetLines && waited < maxWait) {
+    await new Promise((resolve) => setTimeout(resolve, pollInterval));
+    waited += pollInterval;
+  }
+
+  assert.ok(widgetLines && Array.isArray(widgetLines), "Widget must be populated by the background task");
+  const lines = widgetLines as string[];
+
+  // 验证原文锚点与极简左导轨树状结构 (Trifecta Minimalist Left-Rail Tree Branch)
+  assert.ok(lines.some((l: string) => l.includes("·") && l.includes("原文")), "Widget must contain source text anchor");
+  assert.ok(lines.some((l: string) => l.includes("┌") && l.includes("[口語]")), "Widget must contain slot 1 branch with '┌'");
+  assert.ok(lines.some((l: string) => l.includes("├") && l.includes("[文面]")), "Widget must contain slot 2 branch with '├'");
+  assert.ok(lines.some((l: string) => l.includes("└") && l.includes("[単語]")), "Widget must contain vocab branch with '└'");
+});
