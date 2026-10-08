@@ -6,7 +6,7 @@
 [![npm version](https://img.shields.io/npm/v/pi-lingual?color=blue)](https://www.npmjs.com/package/pi-lingual)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Built for Pi](https://img.shields.io/badge/Built%20for-Pi%20Coding%20Agent-orange)](https://github.com/earendil-works/pi-coding-agent)
-[![Tests](https://img.shields.io/badge/Tests-27%2F27%20Pass-brightgreen)](tests/engine.test.ts)
+[![Tests](https://img.shields.io/badge/Tests-34%2F34%20Pass-brightgreen)](tests/engine.test.ts)
 
 **English** | [简体中文](./README_zh.md)
 
@@ -235,6 +235,8 @@ To respect terminal ergonomics and strictly avoid the host's 10-line truncation 
 
 | Core Feature | Mechanism & Impact | Operation |
 | :--- | :--- | :--- |
+| **🔍 Spotlight Highlighting** | Non-destructive ANSI underline highlighting targeting extracted collocations in spoken & written sentences; 0.1s syntactic acquisition | Automatic |
+| **💊 Compact Capsule Mode** | Collapses the 6-line tree HUD into an ultra-dense, strictly **1-line capsule flow** for 3–4 pane tiling developers | `/2-compact` or `/lingua-compact` |
 | **🛡️ Code & CLI Shield** | 0ms heuristic sniffing of pure shell commands (`git`, `npm`, `cargo`, etc.) and code blocks with **0 token waste**; technical questions (`git status 为什么报错？`) pass through safely | Automatic |
 | **⚡ Zero-Dependency LRU Cache** | High-frequency confirmation phrases ("继续", "认同", "开始吧", "可以") achieve **0ms instant HUD display** backed by a 50-entry in-memory cache | Automatic |
 | **🌐 Dynamic Language Switching** | Replaced fragile local source mutations with config-driven persistence in `settings.json`, surviving npm upgrades with **zero Chinese residue** | `/2-lang [zh\|ja\|en\|es\|fr\|de]` |

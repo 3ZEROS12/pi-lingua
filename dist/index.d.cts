@@ -19,14 +19,21 @@ interface LinguaI18nLabels {
     notifyModelSwitched?: string;
     notifyLangSwitched?: string;
     notifyLangInvalid?: string;
+    notifyCompactOn?: string;
+    notifyCompactOff?: string;
     cmdDescMode?: string;
     cmdDescStatus?: string;
     cmdDescModel?: string;
     cmdDescLang?: string;
+    cmdDescCompact?: string;
     cmdDescLast?: string;
     cmdDescAgent?: string;
     shortcutNextPage?: string;
     shortcutPrevPage?: string;
+    capsuleSlot1Prefix?: string;
+    capsuleSlot2Prefix?: string;
+    layoutCapsule?: string;
+    layoutTree?: string;
     statusReportTitle?: string;
     statusReportMode?: string;
     statusReportFlow?: string;
@@ -52,6 +59,7 @@ interface LinguaConfig {
     model: string;
     selectedModel?: string;
     mode?: LinguaMode;
+    compact?: boolean;
     sourceLang?: string;
     targetLang?: string;
     labels?: Partial<LinguaI18nLabels>;
@@ -94,6 +102,7 @@ declare function formatStatusReport(labels: LinguaI18nLabels, info: {
     sourceLang: string;
     targetLang?: string;
     activeModel: string;
+    layout?: "tree" | "capsule";
     cacheStats?: {
         hits: number;
         misses: number;
@@ -249,6 +258,17 @@ declare function formatTreeBranch(branchChar: string, contChar: string, tag: str
  */
 declare function formatSubRail(contChar: string, nuanceText: string, arrow?: string, contDecorator?: (c: string) => string, lineDecorator?: (l: string) => string, maxCols?: number, indentCols?: number): string[];
 /**
+ * 从 vocab 字符串中解析出纯净的目标短语列表 (由长到短排序)
+ * 例如: "on board with (赞成/支持) · dive in (立刻着手/开搞)"
+ * ➔ ["on board with", "dive in"]
+ */
+declare function extractVocabPhrases(vocab: string | undefined): string[];
+/**
+ * 对目标文本中的指定短语进行非破坏性 ANSI 下划线瞄准点亮 (Spotlight Highlighting)
+ * 大小写不敏感匹配，保留原始文本的大小写与排版
+ */
+declare function spotlightPhrases(text: string, phrases: string[]): string;
+/**
  * Format terminal output with Trifecta Tree Branch aesthetics (┌ ├ └)
  * Displays the original input anchor, dual registers with native language nuance, and vocab highlights.
  */
@@ -259,6 +279,16 @@ declare function formatTerminalAnnotation(sourceText: string, spoken: string, wr
     slot2Label?: string;
     vocabLabel?: string;
     sourceLabel?: string;
+    spotlight?: boolean;
+}): string;
+/**
+ * 格式化极端分屏下的单行高密度胶囊流 (Single-Line Capsule Layout)
+ * 严格限制在 1 行内，按终端列宽动态均衡截断，避免任何换行撕裂
+ */
+declare function formatCapsuleLine(hudTitle: string, spoken: string, written?: string, options?: {
+    slot1Short?: string;
+    slot2Short?: string;
+    maxCols?: number;
 }): string;
 /**
  * Strip annotations and recover purely clean text to prevent LLM prompt pollution
@@ -275,4 +305,4 @@ declare function stripLinguaAnnotation(annotatedText: string): {
  */
 declare function translatePrompt(text: string, userConfig?: Partial<LinguaConfig>): Promise<LinguaResult | null>;
 
-export { type CacheStats, DEFAULT_CONFIG, LANGUAGE_PRESETS, LINGUA_SYSTEM_PROMPT, type LinguaConfig, type LinguaI18nLabels, LinguaLruCache, type LinguaMode, type LinguaResult, MAX_TRANSLATION_CHARS, MAX_TRANSLATION_LINES, type TranslationPayload, buildSystemPrompt, formatModelSelectionMessage, formatStatusReport, formatSubRail, formatTerminalAnnotation, formatTreeBranch, getVisualWidth, globalLinguaCache, isNonEnglish, loadUserConfig, parseLlmResponse, resolveLabelsForLang, shouldShieldBypass, shouldTriggerTranslation, splitSemanticChunks, stripLinguaAnnotation, translatePrompt, truncateVisual, wrapVisualText };
+export { type CacheStats, DEFAULT_CONFIG, LANGUAGE_PRESETS, LINGUA_SYSTEM_PROMPT, type LinguaConfig, type LinguaI18nLabels, LinguaLruCache, type LinguaMode, type LinguaResult, MAX_TRANSLATION_CHARS, MAX_TRANSLATION_LINES, type TranslationPayload, buildSystemPrompt, extractVocabPhrases, formatCapsuleLine, formatModelSelectionMessage, formatStatusReport, formatSubRail, formatTerminalAnnotation, formatTreeBranch, getVisualWidth, globalLinguaCache, isNonEnglish, loadUserConfig, parseLlmResponse, resolveLabelsForLang, shouldShieldBypass, shouldTriggerTranslation, splitSemanticChunks, spotlightPhrases, stripLinguaAnnotation, translatePrompt, truncateVisual, wrapVisualText };

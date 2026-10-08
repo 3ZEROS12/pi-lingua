@@ -20,14 +20,21 @@ var LANGUAGE_PRESETS = {
     notifyModelSwitched: "\u4F34\u5B66\u6A21\u578B\u5DF2\u5207\u6362\u4E3A: {model}",
     notifyLangSwitched: "\u4F34\u5B66\u6BCD\u8BED\u5DF2\u5207\u6362\u4E3A: {lang}",
     notifyLangInvalid: "\u65E0\u6548\u7684\u8BED\u8A00\u4EE3\u7801\u3002\u652F\u6301\u7684\u8BED\u8A00\u4EE3\u7801: zh, ja, en, es, fr, de",
+    notifyCompactOn: "\u5DF2\u5F00\u542F\u5355\u884C\u80F6\u56CA\u6A21\u5F0F\uFF1A\u6781\u7B80\u5360\u4F4D\uFF0C\u4FDD\u62A4\u5206\u5C4F\u89C6\u91CE",
+    notifyCompactOff: "\u5DF2\u5207\u6362\u4E3A\u5DE6\u5BFC\u8F68\u6811\u72B6\u67B6\u6784\uFF1A\u5C55\u793A\u5B8C\u6574\u53CC\u6A21\u4E0E\u8BED\u611F",
     cmdDescMode: "\u5207\u6362\u4F34\u5B66\u6A21\u5F0F [\u4E8C \u21C4 two]: [\u539F\u6587] \u2794 [\u82F1\u6587] \u2794 [\u5173]",
     cmdDescStatus: "\u67E5\u770B\u4F34\u5B66\u63D2\u4EF6\u5F53\u524D\u72B6\u6001\u62A5\u544A\u4E0E\u6A21\u578B\u8BCA\u65AD: /lingua-status",
     cmdDescModel: "\u67E5\u770B\u6216\u5207\u6362\u4F34\u5B66\u6A21\u578B [\u4E8C \u21C4 two]: /lingua-model [model-id|auto]",
     cmdDescLang: "\u67E5\u770B\u6216\u5207\u6362\u4F34\u5B66\u6BCD\u8BED [\u4E8C \u21C4 two]: /lingua-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "\u5207\u6362\u5355\u884C\u80F6\u56CA\u6A21\u5F0F\u4E0E\u5B8C\u6574\u6811\u72B6\u56FE: /lingua-compact",
     cmdDescLast: "\u91CD\u65B0\u56DE\u770B\u6216\u91CD\u73B0\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247: /lingua-last",
     cmdDescAgent: "\u67E5\u770B AI Coding Agent \u81EA\u4E3B\u5B9A\u5236\u672C\u63D2\u4EF6\u7684\u65B9\u6CD5",
     shortcutNextPage: "\u5207\u6362\u81F3\u4E0B\u4E00\u6BB5\u4F34\u5B66\u5207\u7247",
     shortcutPrevPage: "\u5207\u6362\u81F3\u4E0A\u4E00\u6BB5\u4F34\u5B66\u5207\u7247",
+    capsuleSlot1Prefix: "\u53E3",
+    capsuleSlot2Prefix: "\u5199",
+    layoutCapsule: "\u5355\u884C\u80F6\u56CA\u6781\u7B80\u6D41 (1-Line Capsule)",
+    layoutTree: "Trifecta \u5F00\u653E\u5F0F\u5DE6\u5BFC\u8F68\u6811\u72B6\u67B6\u6784 (\xB7 \u250C \u251C \u2514)",
     statusReportTitle: "\u8FD0\u884C\u72B6\u6001\u62A5\u544A",
     statusReportMode: "\u5F53\u524D\u6A21\u5F0F",
     statusReportFlow: "\u8BED\u8A00\u6D41\u5411",
@@ -65,14 +72,21 @@ var LANGUAGE_PRESETS = {
     notifyModelSwitched: "\u30E2\u30C7\u30EB\u3092\u5207\u308A\u66FF\u3048\u307E\u3057\u305F: {model}",
     notifyLangSwitched: "\u6BCD\u8A9E\u3092\u5207\u308A\u66FF\u3048\u307E\u3057\u305F: {lang}",
     notifyLangInvalid: "\u7121\u52B9\u306A\u8A00\u8A9E\u30B3\u30FC\u30C9\u3067\u3059\u3002\u5BFE\u5FDC\u8A00\u8A9E: zh, ja, en, es, fr, de",
+    notifyCompactOn: "1\u884C\u30AB\u30D7\u30BB\u30EB\u30E2\u30FC\u30C9\u3092\u6709\u52B9\u306B\u3057\u307E\u3057\u305F\uFF1A\u753B\u9762\u9818\u57DF\u3092\u6700\u5927\u9650\u78BA\u4FDD",
+    notifyCompactOff: "\u30D5\u30EB\u30C4\u30EA\u30FC\u8868\u793A\u306B\u5207\u308A\u66FF\u3048\u307E\u3057\u305F\uFF1A\u8A73\u7D30\u306A\u30CB\u30E5\u30A2\u30F3\u30B9\u3092\u8868\u793A",
     cmdDescMode: "\u30E2\u30FC\u30C9\u5207\u66FF [\u4E8C \u21C4 two]: [\u539F\u6587] \u2794 [\u82F1\u8A9E] \u2794 [\u30AA\u30D5]",
     cmdDescStatus: "\u72B6\u614B\u30EC\u30DD\u30FC\u30C8\u3068\u30E2\u30C7\u30EB\u8A3A\u65AD\u3092\u8868\u793A: /lingua-status",
     cmdDescModel: "\u5B66\u7FD2\u30E2\u30C7\u30EB\u306E\u78BA\u8A8D\u30FB\u5207\u66FF: /lingua-model [model-id|auto]",
     cmdDescLang: "\u4F34\u8D70\u306E\u6BCD\u8A9E\u3092\u78BA\u8A8D\u30FB\u5909\u66F4: /lingua-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "1\u884C\u30AB\u30D7\u30BB\u30EB\u8868\u793A\u3068\u30D5\u30EB\u30C4\u30EA\u30FC\u306E\u5207\u66FF: /lingua-compact",
     cmdDescLast: "\u524D\u56DE\u306E\u4F34\u8D70\u30AB\u30FC\u30C9\u3092\u518D\u8868\u793A: /lingua-last",
     cmdDescAgent: "AI \u306B\u3088\u308B\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA\u65B9\u6CD5\u3092\u78BA\u8A8D",
     shortcutNextPage: "\u6B21\u306E\u30BB\u30B0\u30E1\u30F3\u30C8\u306B\u5207\u308A\u66FF\u3048",
     shortcutPrevPage: "\u524D\u306E\u30BB\u30B0\u30E1\u30F3\u30C8\u306B\u5207\u308A\u66FF\u3048",
+    capsuleSlot1Prefix: "\u53E3",
+    capsuleSlot2Prefix: "\u6587",
+    layoutCapsule: "1\u884C\u30AB\u30D7\u30BB\u30EB\u8868\u793A (1-Line Capsule)",
+    layoutTree: "Trifecta \u30AA\u30FC\u30D7\u30F3\u5DE6\u30EC\u30FC\u30EB\u30C4\u30EA\u30FC\u69CB\u9020 (\xB7 \u250C \u251C \u2514)",
     statusReportTitle: "\u30B9\u30C6\u30FC\u30BF\u30B9\u30EC\u30DD\u30FC\u30C8",
     statusReportMode: "\u73FE\u5728\u306E\u30E2\u30FC\u30C9",
     statusReportFlow: "\u8A00\u8A9E\u30D5\u30ED\u30FC",
@@ -110,14 +124,21 @@ var LANGUAGE_PRESETS = {
     notifyModelSwitched: "Companion model switched to: {model}",
     notifyLangSwitched: "Native language switched to: {lang}",
     notifyLangInvalid: "Invalid language code. Supported: zh, ja, en, es, fr, de",
+    notifyCompactOn: "[two \u21C4 \u4E8C] Single-line capsule mode enabled for compact split panes",
+    notifyCompactOff: "[two \u21C4 \u4E8C] Full tree layout restored",
     cmdDescMode: "Cycle companion mode [two \u21C4 \u4E8C]: [Original] \u2794 [English] \u2794 [Off]",
     cmdDescStatus: "Display companion status report and model diagnosis: /lingua-status",
     cmdDescModel: "Inspect or switch companion model: /lingua-model [model-id|auto]",
     cmdDescLang: "View or switch companion native language: /lingua-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "Toggle single-line capsule mode: /lingua-compact",
     cmdDescLast: "Replay previous companion card: /lingua-last",
     cmdDescAgent: "Learn how to customize this companion with your AI Agent",
     shortcutNextPage: "Switch to next companion segment",
     shortcutPrevPage: "Switch to previous companion segment",
+    capsuleSlot1Prefix: "Spk",
+    capsuleSlot2Prefix: "Wrt",
+    layoutCapsule: "Single-Line Capsule (1-Line)",
+    layoutTree: "Trifecta Minimalist Left-Rail Tree (\xB7 \u250C \u251C \u2514)",
     statusReportTitle: "Companion Status Report",
     statusReportMode: "Current mode",
     statusReportFlow: "Language flow",
@@ -155,14 +176,21 @@ var LANGUAGE_PRESETS = {
     notifyModelSwitched: "Modelo cambiado a: {model}",
     notifyLangSwitched: "Idioma nativo cambiado a: {lang}",
     notifyLangInvalid: "C\xF3digo de idioma no v\xE1lido. Admitidos: zh, ja, en, es, fr, de",
+    notifyCompactOn: "[dos \u21C4 two] Modo c\xE1psula de una l\xEDnea activado",
+    notifyCompactOff: "[dos \u21C4 two] Modo \xE1rbol completo restaurado",
     cmdDescMode: "Cambiar modo [dos \u21C4 two]: [Original] \u2794 [Ingl\xE9s] \u2794 [Apagado]",
     cmdDescStatus: "Mostrar diagn\xF3stico y estado del modelo: /lingua-status",
     cmdDescModel: "Consultar o cambiar modelo: /lingua-model [model-id|auto]",
     cmdDescLang: "Ver o cambiar idioma nativo: /lingua-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "Alternar modo c\xE1psula de una l\xEDnea: /lingua-compact",
     cmdDescLast: "Reaparecer tarjeta anterior: /lingua-last",
     cmdDescAgent: "C\xF3mo personalizar este complemento con su Agente de IA",
     shortcutNextPage: "Cambiar al siguiente segmento",
     shortcutPrevPage: "Cambiar al segmento anterior",
+    capsuleSlot1Prefix: "Col",
+    capsuleSlot2Prefix: "Esc",
+    layoutCapsule: "C\xE1psula de una l\xEDnea (1-Line Capsule)",
+    layoutTree: "Trifecta \xE1rbol de gu\xEDa izquierda (\xB7 \u250C \u251C \u2514)",
     statusReportTitle: "Informe de estado",
     statusReportMode: "Modo actual",
     statusReportFlow: "Flujo de idiomas",
@@ -200,14 +228,21 @@ var LANGUAGE_PRESETS = {
     notifyModelSwitched: "Mod\xE8le chang\xE9 pour : {model}",
     notifyLangSwitched: "Langue maternelle chang\xE9e en : {lang}",
     notifyLangInvalid: "Code de langue invalide. Pris en charge : zh, ja, en, es, fr, de",
+    notifyCompactOn: "[deux \u21C4 two] Mode capsule sur une seule ligne activ\xE9",
+    notifyCompactOff: "[deux \u21C4 two] Mode arborescence compl\xE8te restaur\xE9",
     cmdDescMode: "Changer de mode [deux \u21C4 two]: [Original] \u2794 [Anglais] \u2794 [D\xE9sactiv\xE9]",
     cmdDescStatus: "Afficher le rapport d'\xE9tat et le diagnostic: /lingua-status",
     cmdDescModel: "Consulter ou changer de mod\xE8le: /lingua-model [model-id|auto]",
     cmdDescLang: "Afficher ou changer la langue maternelle: /lingua-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "Basculer le mode capsule sur une ligne: /lingua-compact",
     cmdDescLast: "R\xE9afficher la carte pr\xE9c\xE9dente: /lingua-last",
     cmdDescAgent: "Personnaliser cette extension avec votre Agent IA",
     shortcutNextPage: "Passer au segment suivant",
     shortcutPrevPage: "Passer au segment pr\xE9c\xE9dent",
+    capsuleSlot1Prefix: "Oral",
+    capsuleSlot2Prefix: "\xC9crit",
+    layoutCapsule: "Capsule sur une ligne (1-Line Capsule)",
+    layoutTree: "Disposition HUD : Arbre guide gauche Trifecta (\xB7 \u250C \u251C \u2514)",
     statusReportTitle: "Rapport d'\xE9tat",
     statusReportMode: "Mode actuel",
     statusReportFlow: "Flux linguistique",
@@ -245,14 +280,21 @@ var LANGUAGE_PRESETS = {
     notifyModelSwitched: "Modell gewechselt zu: {model}",
     notifyLangSwitched: "Muttersprache ge\xE4ndert zu: {lang}",
     notifyLangInvalid: "Ung\xFCltiger Sprachcode. Unterst\xFCtzt: zh, ja, en, es, fr, de",
+    notifyCompactOn: "[zwei \u21C4 two] Einzeiliger Kapselmodus aktiviert",
+    notifyCompactOff: "[zwei \u21C4 two] Vollst\xE4ndige Baumansicht wiederhergestellt",
     cmdDescMode: "Modus umschalten [zwei \u21C4 two]: [Original] \u2794 [Englisch] \u2794 [Aus]",
     cmdDescStatus: "Statusbericht und Modell-Diagnose anzeigen: /lingua-status",
     cmdDescModel: "Modell pr\xFCfen oder wechseln: /lingua-model [model-id|auto]",
     cmdDescLang: "Muttersprache anzeigen oder wechseln: /lingua-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "Einzeiligen Kapselmodus umschalten: /lingua-compact",
     cmdDescLast: "Vorherige Karte erneut anzeigen: /lingua-last",
     cmdDescAgent: "Anleitung zur Anpassung mit KI-Agent",
     shortcutNextPage: "Zum n\xE4chsten Segment wechseln",
     shortcutPrevPage: "Zum vorherigen Segment wechseln",
+    capsuleSlot1Prefix: "Ges",
+    capsuleSlot2Prefix: "Sch",
+    layoutCapsule: "Einzeilige Kapsel (1-Line Capsule)",
+    layoutTree: "HUD-Layout: Trifecta Minimalistische Baumstruktur (\xB7 \u250C \u251C \u2514)",
     statusReportTitle: "Statusbericht",
     statusReportMode: "Aktueller Modus",
     statusReportFlow: "Sprachfluss",
@@ -285,6 +327,7 @@ function resolveLabelsForLang(lang, overrides) {
 }
 function formatStatusReport(labels, info) {
   const modeDesc = info.mode === "original" ? labels.modeDescOriginal || "Original pass-through" : info.mode === "english" ? labels.modeDescEnglish || "English deep reasoning" : labels.modeDescOff || "Off";
+  const layoutDesc = info.layout === "capsule" ? labels.layoutCapsule || "Single-Line Capsule (1-Line)" : labels.layoutTree || "Trifecta Minimalist Left-Rail Tree (\xB7 \u250C \u251C \u2514)";
   const lines = [
     `\u21C4 [${labels.hudTitle}] ${labels.statusReportTitle || "Status Report"}`,
     `\u2022 ${labels.statusReportMode || "Mode"}: [${info.mode}] (${modeDesc})`,
@@ -299,9 +342,9 @@ function formatStatusReport(labels, info) {
     );
   }
   lines.push(
-    `\u2022 ${labels.statusReportLayout || "Layout: Trifecta Minimalist Left-Rail Tree (\xB7 \u250C \u251C \u2514)"}`,
+    `\u2022 ${labels.statusReportLayout || "Layout"}: ${layoutDesc}`,
     `\u2022 ${labels.statusReportAuth || "Auth: Pi Native In-Process Auth"}`,
-    `\u2022 ${labels.statusReportShortcuts || "Shortcuts: /2 \xB7 /lingua-lang \xB7 /lingua-model \xB7 /lingua-agent"}`
+    `\u2022 ${labels.statusReportShortcuts || "Shortcuts: /2 \xB7 /lingua-lang \xB7 /lingua-compact \xB7 /lingua-model \xB7 /lingua-agent"}`
   );
   return lines.join("\n");
 }
@@ -1008,6 +1051,29 @@ function formatSubRail(contChar, nuanceText, arrow = "\u21B3", contDecorator = (
     return contDecorator(rawCont) + lineDecorator(line);
   });
 }
+function extractVocabPhrases(vocab) {
+  if (!vocab || !vocab.trim()) return [];
+  const items = vocab.split(/\s*(?:·|•|,)\s*/);
+  const phrases = [];
+  for (const raw of items) {
+    const clean = raw.replace(/\s*(?:\(.*?\)|（.*?）)\s*$/, "").trim();
+    if (clean.length >= 2 && !phrases.includes(clean)) {
+      phrases.push(clean);
+    }
+  }
+  return phrases.sort((a, b) => b.length - a.length);
+}
+function spotlightPhrases(text, phrases) {
+  if (!text || phrases.length === 0) return text;
+  let result = text;
+  for (const phrase of phrases) {
+    const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const wordBoundary = `(?<=\\b|^)${escaped}(?=\\b|$)`;
+    const regex = new RegExp(wordBoundary, "gi");
+    result = result.replace(regex, (matched) => `\x1B[4m${matched}\x1B[24m`);
+  }
+  return result;
+}
 function formatTerminalAnnotation(sourceText, spoken, written, vocab, options = {}) {
   const slot1 = options.slot1Label || "\u53E3\u8BED";
   const slot2 = options.slot2Label || "\u5199\u4F5C";
@@ -1015,19 +1081,23 @@ function formatTerminalAnnotation(sourceText, spoken, written, vocab, options = 
   const sourceTag = options.sourceLabel || "\u539F\u6587";
   const hasSlot2 = Boolean(written && written.trim());
   const hasVocab = Boolean(vocab && vocab.trim());
+  const spotlightEnabled = options.spotlight !== false;
+  const phrases = hasVocab && spotlightEnabled ? extractVocabPhrases(vocab) : [];
+  const displaySpoken = phrases.length > 0 ? spotlightPhrases(spoken, phrases) : spoken;
+  const displayWritten = written && phrases.length > 0 ? spotlightPhrases(written, phrases) : written;
   const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
   const displaySource = truncateVisual(cleanSource, 32);
   const lines = [`  \xB7 [${sourceTag}] ${displaySource}`];
   const branch1Char = hasSlot2 || hasVocab ? "\u250C" : "\u2514";
   const cont1Char = hasSlot2 || hasVocab ? "\u2502" : " ";
-  lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spoken));
+  lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, displaySpoken));
   if (options.spokenMeaning) {
     lines.push(...formatSubRail(cont1Char, options.spokenMeaning));
   }
   if (hasSlot2) {
     const branchChar = hasVocab ? "\u251C" : "\u2514";
     const contChar = hasVocab ? "\u2502" : " ";
-    lines.push(...formatTreeBranch(branchChar, contChar, slot2, written));
+    lines.push(...formatTreeBranch(branchChar, contChar, slot2, displayWritten));
     if (options.writtenMeaning) {
       lines.push(...formatSubRail(contChar, options.writtenMeaning));
     }
@@ -1036,6 +1106,29 @@ function formatTerminalAnnotation(sourceText, spoken, written, vocab, options = 
     lines.push(...formatTreeBranch("\u2514", " ", vocabTag, vocab));
   }
   return lines.join("\n");
+}
+function formatCapsuleLine(hudTitle, spoken, written, options = {}) {
+  const slot1 = options.slot1Short || "\u53E3";
+  const slot2 = options.slot2Short || "\u5199";
+  const maxCols = options.maxCols || (process.stdout?.columns ? Math.max(40, process.stdout.columns) : 80);
+  const safeCols = Math.max(36, maxCols - 4);
+  const cleanSpoken = spoken.replace(/\r?\n+/g, " ").trim();
+  const cleanWritten = (written || "").replace(/\r?\n+/g, " ").trim();
+  const prefix = `\u21C4 [${hudTitle}] `;
+  const prefixW = getVisualWidth(prefix);
+  const hasSlot2 = Boolean(cleanWritten);
+  const availW = Math.max(16, safeCols - prefixW);
+  let body = "";
+  if (hasSlot2) {
+    const slotW = Math.max(8, Math.floor((availW - 5) / 2));
+    const s1 = truncateVisual(cleanSpoken, slotW);
+    const s2 = truncateVisual(cleanWritten, slotW);
+    body = `${slot1}: ${s1} \xB7 ${slot2}: ${s2}`;
+  } else {
+    const s1 = truncateVisual(cleanSpoken, availW - 4);
+    body = `${slot1}: ${s1}`;
+  }
+  return prefix + body;
 }
 function stripLinguaAnnotation(annotatedText) {
   const lines = annotatedText.split("\n");
@@ -1056,7 +1149,7 @@ function stripLinguaAnnotation(annotatedText) {
     const slotMatch = trimmed.match(/^(?:[┌├└│]\s*|↳\s*)\[([^\]]+)\]\s*(.*)$/);
     if (slotMatch) {
       const tag = slotMatch[1].trim();
-      let text = slotMatch[2].trim();
+      let text = slotMatch[2].trim().replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "");
       const parenIdx = text.lastIndexOf(" (");
       if (parenIdx !== -1 && text.endsWith(")")) {
         text = text.slice(0, parenIdx).trim();
@@ -1177,6 +1270,8 @@ export {
   MAX_TRANSLATION_CHARS,
   MAX_TRANSLATION_LINES,
   buildSystemPrompt,
+  extractVocabPhrases,
+  formatCapsuleLine,
   formatModelSelectionMessage,
   formatStatusReport,
   formatSubRail,
@@ -1191,6 +1286,7 @@ export {
   shouldShieldBypass,
   shouldTriggerTranslation,
   splitSemanticChunks,
+  spotlightPhrases,
   stripLinguaAnnotation,
   translatePrompt,
   truncateVisual,

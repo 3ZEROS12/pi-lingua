@@ -370,6 +370,46 @@ export function formatSubRail(
 }
 
 /**
+ * 从 vocab 字符串中解析出纯净的目标短语列表 (由长到短排序)
+ * 例如: "on board with (赞成/支持) · dive in (立刻着手/开搞)"
+ * ➔ ["on board with", "dive in"]
+ */
+export function extractVocabPhrases(vocab: string | undefined): string[] {
+  if (!vocab || !vocab.trim()) return [];
+  const items = vocab.split(/\s*(?:·|•|,)\s*/);
+  const phrases: string[] = [];
+
+  for (const raw of items) {
+    // 剥离末尾的括号释义: (释义) 或 （释义）
+    const clean = raw.replace(/\s*(?:\(.*?\)|（.*?）)\s*$/, "").trim();
+    if (clean.length >= 2 && !phrases.includes(clean)) {
+      phrases.push(clean);
+    }
+  }
+
+  // 按长度降序排序，确保长短语优先匹配 (例如 "on board with" 优先于 "board")
+  return phrases.sort((a, b) => b.length - a.length);
+}
+
+/**
+ * 对目标文本中的指定短语进行非破坏性 ANSI 下划线瞄准点亮 (Spotlight Highlighting)
+ * 大小写不敏感匹配，保留原始文本的大小写与排版
+ */
+export function spotlightPhrases(text: string, phrases: string[]): string {
+  if (!text || phrases.length === 0) return text;
+
+  let result = text;
+  for (const phrase of phrases) {
+    const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    // 单词边界匹配 (若短语以英文字符起步/结尾)
+    const wordBoundary = `(?<=\\b|^)${escaped}(?=\\b|$)`;
+    const regex = new RegExp(wordBoundary, "gi");
+    result = result.replace(regex, (matched) => `\x1b[4m${matched}\x1b[24m`);
+  }
+  return result;
+}
+
+/**
  * Format terminal output with Trifecta Tree Branch aesthetics (┌ ├ └)
  * Displays the original input anchor, dual registers with native language nuance, and vocab highlights.
  */
@@ -385,6 +425,7 @@ export function formatTerminalAnnotation(
     slot2Label?: string;
     vocabLabel?: string;
     sourceLabel?: string;
+    spotlight?: boolean;
   } = {}
 ): string {
   const slot1 = options.slot1Label || "口语";
@@ -395,6 +436,12 @@ export function formatTerminalAnnotation(
   const hasSlot2 = Boolean(written && written.trim());
   const hasVocab = Boolean(vocab && vocab.trim());
 
+  // 方向三：重点短语反光瞄准镜 (Spotlight Highlighting · 默认随重点词汇自适应点亮)
+  const spotlightEnabled = options.spotlight !== false;
+  const phrases = (hasVocab && spotlightEnabled) ? extractVocabPhrases(vocab) : [];
+  const displaySpoken = phrases.length > 0 ? spotlightPhrases(spoken, phrases) : spoken;
+  const displayWritten = (written && phrases.length > 0) ? spotlightPhrases(written, phrases) : written;
+
   // 安全单行收敛与视觉列宽截断保护，避免多行排版爆炸和终端撕裂 (严格限制在 32 视觉列宽以内)
   const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
   const displaySource = truncateVisual(cleanSource, 32);
@@ -404,7 +451,7 @@ export function formatTerminalAnnotation(
   // 1. 口语槽位：若无后续槽位则作为末端分支 └ 呈现；否则作为起始分支 ┌
   const branch1Char = (hasSlot2 || hasVocab) ? "┌" : "└";
   const cont1Char = (hasSlot2 || hasVocab) ? "│" : " ";
-  lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spoken));
+  lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, displaySpoken));
   if (options.spokenMeaning) {
     lines.push(...formatSubRail(cont1Char, options.spokenMeaning));
   }
@@ -413,7 +460,7 @@ export function formatTerminalAnnotation(
   if (hasSlot2) {
     const branchChar = hasVocab ? "├" : "└";
     const contChar = hasVocab ? "│" : " ";
-    lines.push(...formatTreeBranch(branchChar, contChar, slot2, written!));
+    lines.push(...formatTreeBranch(branchChar, contChar, slot2, displayWritten!));
     if (options.writtenMeaning) {
       lines.push(...formatSubRail(contChar, options.writtenMeaning));
     }
@@ -425,6 +472,50 @@ export function formatTerminalAnnotation(
   }
 
   return lines.join("\n");
+}
+
+/**
+ * 格式化极端分屏下的单行高密度胶囊流 (Single-Line Capsule Layout)
+ * 严格限制在 1 行内，按终端列宽动态均衡截断，避免任何换行撕裂
+ */
+export function formatCapsuleLine(
+  hudTitle: string,
+  spoken: string,
+  written?: string,
+  options: {
+    slot1Short?: string;
+    slot2Short?: string;
+    maxCols?: number;
+  } = {}
+): string {
+  const slot1 = options.slot1Short || "口";
+  const slot2 = options.slot2Short || "写";
+  const maxCols = options.maxCols || (process.stdout?.columns ? Math.max(40, process.stdout.columns) : 80);
+  const safeCols = Math.max(36, maxCols - 4); // 预留 4 列安全边距
+
+  const cleanSpoken = spoken.replace(/\r?\n+/g, " ").trim();
+  const cleanWritten = (written || "").replace(/\r?\n+/g, " ").trim();
+
+  const prefix = `⇄ [${hudTitle}] `;
+  const prefixW = getVisualWidth(prefix);
+  const hasSlot2 = Boolean(cleanWritten);
+
+  // 可分配给槽位的剩余列宽
+  const availW = Math.max(16, safeCols - prefixW);
+
+  let body = "";
+  if (hasSlot2) {
+    // 两个槽位各分配一半可用宽度 (扣除间隔 " · ")
+    const slotW = Math.max(8, Math.floor((availW - 5) / 2));
+    const s1 = truncateVisual(cleanSpoken, slotW);
+    const s2 = truncateVisual(cleanWritten, slotW);
+    body = `${slot1}: ${s1} · ${slot2}: ${s2}`;
+  } else {
+    const s1 = truncateVisual(cleanSpoken, availW - 4);
+    body = `${slot1}: ${s1}`;
+  }
+
+  return prefix + body;
 }
 
 /**
@@ -462,7 +553,7 @@ export function stripLinguaAnnotation(annotatedText: string): {
     const slotMatch = trimmed.match(/^(?:[┌├└│]\s*|↳\s*)\[([^\]]+)\]\s*(.*)$/);
     if (slotMatch) {
       const tag = slotMatch[1].trim();
-      let text = slotMatch[2].trim();
+      let text = slotMatch[2].trim().replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "");
 
       // If the text contains parenthetical nuance like "... (释义)", isolate the expression
       const parenIdx = text.lastIndexOf(" (");

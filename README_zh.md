@@ -6,7 +6,7 @@
 [![npm version](https://img.shields.io/npm/v/pi-lingual?color=blue)](https://www.npmjs.com/package/pi-lingual)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Built for Pi](https://img.shields.io/badge/Built%20for-Pi%20Coding%20Agent-orange)](https://github.com/earendil-works/pi-coding-agent)
-[![Tests](https://img.shields.io/badge/Tests-27%2F27%20Pass-brightgreen)](tests/engine.test.ts)
+[![Tests](https://img.shields.io/badge/Tests-34%2F34%20Pass-brightgreen)](tests/engine.test.ts)
 
 [English](./README.md) | **简体中文**
 
@@ -235,6 +235,8 @@ lingua "这几个接口需要做幂等性校验"
 
 | 核心特性 | 运作机制与物理收益 | 触发操作 |
 | :--- | :--- | :--- |
+| **🔍 重点短语反光瞄准镜** | 自动提取重点词组并在主干句子中施加 **ANSI 下划线视觉瞄准**，眼动 0.1s 锁定搭配骨架 | 自动生效 (无感) |
+| **💊 极端分屏单行胶囊** | 为 3~4 多分屏极客打造，将 6 行树状卡片折叠为 **严格 1 行的高密度流**，保护垂直视野 | `/2-compact` 或 `/lingua-compact` |
 | **🛡️ 纯代码与 CLI 防御盾** | 0ms 智能特征嗅探纯 Shell 指令（`git`、`npm`、`cargo` 等）与代码块，自动放行，**0 Token 损耗**；包含“为什么/报错/？”等技术提问时智能穿透放行 | 自动生效 (无感) |
 | **⚡ 0 依赖内存 LRU 缓存** | 针对“继续”、“认同”、“开始吧”、“可以”等高频确认指令，基于 50 容量内存链表实现 **0ms 极速直出**，零外部模型请求 | 自动生效 (无感) |
 | **🌐 多语言秒切与免魔改** | 彻底废除在用户本地修改源码的脆弱做法，输入指令即刻切换母语 A，自动写入 `settings.json`，**跨 npm 升级无损继承** | `/2-lang [zh\|ja\|en\|es\|fr\|de]` |

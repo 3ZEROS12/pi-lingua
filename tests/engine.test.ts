@@ -104,12 +104,13 @@ test("formatTerminalAnnotation - formats with source text anchor, native nuance,
       sourceLabel: "原文",
     }
   );
-  assert.ok(full.includes("· [原文] 賛成です、進めましょう"), "Must include source text anchor");
-  assert.ok(full.includes("┌ [口語] Totally on board with that — let's dive right in."), "Main branch must contain target language B");
-  assert.ok(full.includes("↳ (完全に賛成、早速取り掛かろう)"), "Sub-rail must contain native language A nuance");
-  assert.ok(full.includes("├ [文面] Acknowledged. Let's proceed with the implementation."), "Main branch must contain target language B");
-  assert.ok(full.includes("↳ (了解しました。実装を進めましょう)"), "Sub-rail must contain native language A nuance");
-  assert.ok(full.includes("└ [単語] on board with · dive in"), "Vocab branch must be cleanly presented");
+  const cleanFull = full.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "");
+  assert.ok(cleanFull.includes("· [原文] 賛成です、進めましょう"), "Must include source text anchor");
+  assert.ok(cleanFull.includes("┌ [口語] Totally on board with that — let's dive right in."), "Main branch must contain target language B");
+  assert.ok(cleanFull.includes("↳ (完全に賛成、早速取り掛かろう)"), "Sub-rail must contain native language A nuance");
+  assert.ok(cleanFull.includes("├ [文面] Acknowledged. Let's proceed with the implementation."), "Main branch must contain target language B");
+  assert.ok(cleanFull.includes("↳ (了解しました。実装を進めましょう)"), "Sub-rail must contain native language A nuance");
+  assert.ok(cleanFull.includes("└ [単語] on board with · dive in"), "Vocab branch must be cleanly presented");
 
   // 2. Dual slots without vocab
   const noVocab = formatTerminalAnnotation(

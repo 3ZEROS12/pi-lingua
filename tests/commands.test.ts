@@ -20,7 +20,43 @@ test("extension command matrix - registers lingua-lang, lingual-lang, and 2-lang
   assert.ok(registeredCommands["lingua-lang"], "Must register /lingua-lang");
   assert.ok(registeredCommands["lingual-lang"], "Must register /lingual-lang");
   assert.ok(registeredCommands["2-lang"], "Must register /2-lang");
+  assert.ok(registeredCommands["lingua-compact"], "Must register /lingua-compact");
+  assert.ok(registeredCommands["lingual-compact"], "Must register /lingual-compact");
+  assert.ok(registeredCommands["2-compact"], "Must register /2-compact");
   assert.ok(registeredCommands["lingua-status"], "Must register /lingua-status");
+});
+
+test("extension /lingua-compact - toggles capsule and tree layout with notification", async () => {
+  const registeredCommands: Record<string, any> = {};
+  const mockPi: any = {
+    on() {},
+    registerCommand(name: string, def: any) {
+      registeredCommands[name] = def;
+    },
+    registerShortcut() {},
+  };
+
+  extensionFactory(mockPi);
+
+  const notifications: string[] = [];
+  const mockCtx: any = {
+    ui: {
+      notify(msg: string) {
+        notifications.push(msg);
+      },
+      setStatus() {},
+    },
+  };
+
+  // Toggle on
+  await registeredCommands["lingua-compact"].handler("", mockCtx);
+  assert.ok(notifications.length > 0);
+  assert.ok(notifications[notifications.length - 1].includes("胶囊") || notifications[notifications.length - 1].includes("Capsule"));
+
+  // Toggle off
+  await registeredCommands["2-compact"].handler("", mockCtx);
+  assert.ok(notifications.length > 1);
+  assert.ok(notifications[notifications.length - 1].includes("树状") || notifications[notifications.length - 1].includes("tree"));
 });
 
 test("extension /lingua-lang - switches native language and notifies in target language", async () => {

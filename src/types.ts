@@ -22,16 +22,25 @@ export interface LinguaI18nLabels {
   notifyModelSwitched?: string; // template containing {model} or format string
   notifyLangSwitched?: string;  // template containing {lang}
   notifyLangInvalid?: string;
+  notifyCompactOn?: string;
+  notifyCompactOff?: string;
 
   // Localized command descriptions
   cmdDescMode?: string;
   cmdDescStatus?: string;
   cmdDescModel?: string;
   cmdDescLang?: string;
+  cmdDescCompact?: string;
   cmdDescLast?: string;
   cmdDescAgent?: string;
   shortcutNextPage?: string;
   shortcutPrevPage?: string;
+
+  // Localized capsule prefixes
+  capsuleSlot1Prefix?: string; // e.g. "口" | "Spk" | "Col"
+  capsuleSlot2Prefix?: string; // e.g. "写" | "Wrt" | "Esc"
+  layoutCapsule?: string;      // e.g. "单行胶囊模式" | "Single-Line Capsule"
+  layoutTree?: string;         // e.g. "左导轨树状架构" | "Left-Rail Tree"
 
   // Localized status report & model diagnostics
   statusReportTitle?: string;
@@ -64,6 +73,7 @@ export interface LinguaConfig {
   model: string;
   selectedModel?: string;   // e.g. "auto" (default) | "gemini-3.8-flash" | "claude-sonnet-5-5"
   mode?: LinguaMode;
+  compact?: boolean;        // e.g. false (default) | true (1-line capsule)
   sourceLang?: string;      // e.g. "zh" (default) | "en" | "ja"
   targetLang?: string;      // e.g. "en" (default) | "ja" | "zh"
   labels?: Partial<LinguaI18nLabels>;

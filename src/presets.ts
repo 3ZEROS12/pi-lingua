@@ -26,15 +26,23 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     notifyModelSwitched: "伴学模型已切换为: {model}",
     notifyLangSwitched: "伴学母语已切换为: {lang}",
     notifyLangInvalid: "无效的语言代码。支持的语言代码: zh, ja, en, es, fr, de",
+    notifyCompactOn: "已开启单行胶囊模式：极简占位，保护分屏视野",
+    notifyCompactOff: "已切换为左导轨树状架构：展示完整双模与语感",
 
     cmdDescMode: "切换伴学模式 [二 ⇄ two]: [原文] ➔ [英文] ➔ [关]",
     cmdDescStatus: "查看伴学插件当前状态报告与模型诊断: /lingua-status",
     cmdDescModel: "查看或切换伴学模型 [二 ⇄ two]: /lingua-model [model-id|auto]",
     cmdDescLang: "查看或切换伴学母语 [二 ⇄ two]: /lingua-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "切换单行胶囊模式与完整树状图: /lingua-compact",
     cmdDescLast: "重新回看或重现上一条伴学卡片: /lingua-last",
     cmdDescAgent: "查看 AI Coding Agent 自主定制本插件的方法",
     shortcutNextPage: "切换至下一段伴学切片",
     shortcutPrevPage: "切换至上一段伴学切片",
+
+    capsuleSlot1Prefix: "口",
+    capsuleSlot2Prefix: "写",
+    layoutCapsule: "单行胶囊极简流 (1-Line Capsule)",
+    layoutTree: "Trifecta 开放式左导轨树状架构 (· ┌ ├ └)",
 
     statusReportTitle: "运行状态报告",
     statusReportMode: "当前模式",
@@ -75,15 +83,23 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     notifyModelSwitched: "モデルを切り替えました: {model}",
     notifyLangSwitched: "母語を切り替えました: {lang}",
     notifyLangInvalid: "無効な言語コードです。対応言語: zh, ja, en, es, fr, de",
+    notifyCompactOn: "1行カプセルモードを有効にしました：画面領域を最大限確保",
+    notifyCompactOff: "フルツリー表示に切り替えました：詳細なニュアンスを表示",
 
     cmdDescMode: "モード切替 [二 ⇄ two]: [原文] ➔ [英語] ➔ [オフ]",
     cmdDescStatus: "状態レポートとモデル診断を表示: /lingua-status",
     cmdDescModel: "学習モデルの確認・切替: /lingua-model [model-id|auto]",
     cmdDescLang: "伴走の母語を確認・変更: /lingua-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "1行カプセル表示とフルツリーの切替: /lingua-compact",
     cmdDescLast: "前回の伴走カードを再表示: /lingua-last",
     cmdDescAgent: "AI によるカスタマイズ方法を確認",
     shortcutNextPage: "次のセグメントに切り替え",
     shortcutPrevPage: "前のセグメントに切り替え",
+
+    capsuleSlot1Prefix: "口",
+    capsuleSlot2Prefix: "文",
+    layoutCapsule: "1行カプセル表示 (1-Line Capsule)",
+    layoutTree: "Trifecta オープン左レールツリー構造 (· ┌ ├ └)",
 
     statusReportTitle: "ステータスレポート",
     statusReportMode: "現在のモード",
@@ -124,15 +140,23 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     notifyModelSwitched: "Companion model switched to: {model}",
     notifyLangSwitched: "Native language switched to: {lang}",
     notifyLangInvalid: "Invalid language code. Supported: zh, ja, en, es, fr, de",
+    notifyCompactOn: "[two ⇄ 二] Single-line capsule mode enabled for compact split panes",
+    notifyCompactOff: "[two ⇄ 二] Full tree layout restored",
 
     cmdDescMode: "Cycle companion mode [two ⇄ 二]: [Original] ➔ [English] ➔ [Off]",
     cmdDescStatus: "Display companion status report and model diagnosis: /lingua-status",
     cmdDescModel: "Inspect or switch companion model: /lingua-model [model-id|auto]",
     cmdDescLang: "View or switch companion native language: /lingua-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "Toggle single-line capsule mode: /lingua-compact",
     cmdDescLast: "Replay previous companion card: /lingua-last",
     cmdDescAgent: "Learn how to customize this companion with your AI Agent",
     shortcutNextPage: "Switch to next companion segment",
     shortcutPrevPage: "Switch to previous companion segment",
+
+    capsuleSlot1Prefix: "Spk",
+    capsuleSlot2Prefix: "Wrt",
+    layoutCapsule: "Single-Line Capsule (1-Line)",
+    layoutTree: "Trifecta Minimalist Left-Rail Tree (· ┌ ├ └)",
 
     statusReportTitle: "Companion Status Report",
     statusReportMode: "Current mode",
@@ -173,15 +197,23 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     notifyModelSwitched: "Modelo cambiado a: {model}",
     notifyLangSwitched: "Idioma nativo cambiado a: {lang}",
     notifyLangInvalid: "Código de idioma no válido. Admitidos: zh, ja, en, es, fr, de",
+    notifyCompactOn: "[dos ⇄ two] Modo cápsula de una línea activado",
+    notifyCompactOff: "[dos ⇄ two] Modo árbol completo restaurado",
 
     cmdDescMode: "Cambiar modo [dos ⇄ two]: [Original] ➔ [Inglés] ➔ [Apagado]",
     cmdDescStatus: "Mostrar diagnóstico y estado del modelo: /lingua-status",
     cmdDescModel: "Consultar o cambiar modelo: /lingua-model [model-id|auto]",
     cmdDescLang: "Ver o cambiar idioma nativo: /lingua-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "Alternar modo cápsula de una línea: /lingua-compact",
     cmdDescLast: "Reaparecer tarjeta anterior: /lingua-last",
     cmdDescAgent: "Cómo personalizar este complemento con su Agente de IA",
     shortcutNextPage: "Cambiar al siguiente segmento",
     shortcutPrevPage: "Cambiar al segmento anterior",
+
+    capsuleSlot1Prefix: "Col",
+    capsuleSlot2Prefix: "Esc",
+    layoutCapsule: "Cápsula de una línea (1-Line Capsule)",
+    layoutTree: "Trifecta árbol de guía izquierda (· ┌ ├ └)",
 
     statusReportTitle: "Informe de estado",
     statusReportMode: "Modo actual",
@@ -222,15 +254,23 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     notifyModelSwitched: "Modèle changé pour : {model}",
     notifyLangSwitched: "Langue maternelle changée en : {lang}",
     notifyLangInvalid: "Code de langue invalide. Pris en charge : zh, ja, en, es, fr, de",
+    notifyCompactOn: "[deux ⇄ two] Mode capsule sur une seule ligne activé",
+    notifyCompactOff: "[deux ⇄ two] Mode arborescence complète restauré",
 
     cmdDescMode: "Changer de mode [deux ⇄ two]: [Original] ➔ [Anglais] ➔ [Désactivé]",
     cmdDescStatus: "Afficher le rapport d'état et le diagnostic: /lingua-status",
     cmdDescModel: "Consulter ou changer de modèle: /lingua-model [model-id|auto]",
     cmdDescLang: "Afficher ou changer la langue maternelle: /lingua-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "Basculer le mode capsule sur une ligne: /lingua-compact",
     cmdDescLast: "Réafficher la carte précédente: /lingua-last",
     cmdDescAgent: "Personnaliser cette extension avec votre Agent IA",
     shortcutNextPage: "Passer au segment suivant",
     shortcutPrevPage: "Passer au segment précédent",
+
+    capsuleSlot1Prefix: "Oral",
+    capsuleSlot2Prefix: "Écrit",
+    layoutCapsule: "Capsule sur une ligne (1-Line Capsule)",
+    layoutTree: "Disposition HUD : Arbre guide gauche Trifecta (· ┌ ├ └)",
 
     statusReportTitle: "Rapport d'état",
     statusReportMode: "Mode actuel",
@@ -271,15 +311,23 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     notifyModelSwitched: "Modell gewechselt zu: {model}",
     notifyLangSwitched: "Muttersprache geändert zu: {lang}",
     notifyLangInvalid: "Ungültiger Sprachcode. Unterstützt: zh, ja, en, es, fr, de",
+    notifyCompactOn: "[zwei ⇄ two] Einzeiliger Kapselmodus aktiviert",
+    notifyCompactOff: "[zwei ⇄ two] Vollständige Baumansicht wiederhergestellt",
 
     cmdDescMode: "Modus umschalten [zwei ⇄ two]: [Original] ➔ [Englisch] ➔ [Aus]",
     cmdDescStatus: "Statusbericht und Modell-Diagnose anzeigen: /lingua-status",
     cmdDescModel: "Modell prüfen oder wechseln: /lingua-model [model-id|auto]",
     cmdDescLang: "Muttersprache anzeigen oder wechseln: /lingua-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "Einzeiligen Kapselmodus umschalten: /lingua-compact",
     cmdDescLast: "Vorherige Karte erneut anzeigen: /lingua-last",
     cmdDescAgent: "Anleitung zur Anpassung mit KI-Agent",
     shortcutNextPage: "Zum nächsten Segment wechseln",
     shortcutPrevPage: "Zum vorherigen Segment wechseln",
+
+    capsuleSlot1Prefix: "Ges",
+    capsuleSlot2Prefix: "Sch",
+    layoutCapsule: "Einzeilige Kapsel (1-Line Capsule)",
+    layoutTree: "HUD-Layout: Trifecta Minimalistische Baumstruktur (· ┌ ├ └)",
 
     statusReportTitle: "Statusbericht",
     statusReportMode: "Aktueller Modus",
@@ -328,6 +376,7 @@ export function formatStatusReport(
     sourceLang: string;
     targetLang?: string;
     activeModel: string;
+    layout?: "tree" | "capsule";
     cacheStats?: {
       hits: number;
       misses: number;
@@ -342,6 +391,11 @@ export function formatStatusReport(
       : info.mode === "english"
       ? (labels.modeDescEnglish || "English deep reasoning")
       : (labels.modeDescOff || "Off");
+
+  const layoutDesc =
+    info.layout === "capsule"
+      ? (labels.layoutCapsule || "Single-Line Capsule (1-Line)")
+      : (labels.layoutTree || "Trifecta Minimalist Left-Rail Tree (· ┌ ├ └)");
 
   const lines = [
     `⇄ [${labels.hudTitle}] ${labels.statusReportTitle || "Status Report"}`,
@@ -359,9 +413,9 @@ export function formatStatusReport(
   }
 
   lines.push(
-    `• ${labels.statusReportLayout || "Layout: Trifecta Minimalist Left-Rail Tree (· ┌ ├ └)"}`,
+    `• ${labels.statusReportLayout || "Layout"}: ${layoutDesc}`,
     `• ${labels.statusReportAuth || "Auth: Pi Native In-Process Auth"}`,
-    `• ${labels.statusReportShortcuts || "Shortcuts: /2 · /lingua-lang · /lingua-model · /lingua-agent"}`
+    `• ${labels.statusReportShortcuts || "Shortcuts: /2 · /lingua-lang · /lingua-compact · /lingua-model · /lingua-agent"}`
   );
   return lines.join("\n");
 }

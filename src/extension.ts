@@ -15,6 +15,9 @@ import {
   formatTreeBranch,
   formatSubRail,
   truncateVisual,
+  formatCapsuleLine,
+  extractVocabPhrases,
+  spotlightPhrases,
 } from "./engine.js";
 import {
   resolveLabelsForLang,
@@ -27,6 +30,7 @@ import { globalLinguaCache } from "./cache.js";
 
 interface ExtensionState {
   mode: LinguaMode;
+  compact: boolean;
   sourceLang: string;
   selectedModel: string;
   labels: LinguaI18nLabels;
@@ -52,6 +56,7 @@ const initialLabels = resolveLabelsForLang(initialSourceLang, initialDiskConfig.
 
 const state: ExtensionState = {
   mode: initialDiskConfig.mode || "original",
+  compact: Boolean(initialDiskConfig.compact),
   sourceLang: initialSourceLang,
   selectedModel: initialDiskConfig.selectedModel || "auto",
   labels: initialLabels,
@@ -165,17 +170,40 @@ function renderHudWidget(
   const vocabTag = state.labels.vocabLabel || "重点";
   const sourceTag = state.labels.sourceLabel || "原文";
 
+  // 极简美学原则：平时绝不显示任何繁杂的翻页长文，唯有触发长句切分多页时，才在角标微弱提示 [1/2 ⌥.]
+  const pageTag = pagination && pagination.totalPages > 1
+    ? ctx.ui.theme.fg("muted", ` [${pagination.pageIndex + 1}/${pagination.totalPages} ⌥.]`)
+    : "";
+
+  // 方向四：极端分屏单行胶囊模式 (Compact Capsule Mode)
+  // 当显式开启 compact 或终端高度不足 (process.stdout.rows < 22) 时，渲染严格为 1 行的高密度胶囊流
+  const isCompact = state.compact || (process.stdout?.rows ? process.stdout.rows < 22 : false);
+  if (isCompact) {
+    const capsuleText = formatCapsuleLine(
+      state.labels.hudTitle,
+      spoken,
+      written,
+      {
+        slot1Short: state.labels.capsuleSlot1Prefix || "口",
+        slot2Short: state.labels.capsuleSlot2Prefix || "写",
+        maxCols: process.stdout?.columns || 80,
+      }
+    );
+    ctx.ui.setWidget("lingua_hud", [capsuleText + pageTag], { placement: "aboveEditor" });
+    return;
+  }
+
+  // 方向三：重点短语反光瞄准镜 (Spotlight Highlighting)
+  const spotlightPhrasesList = hasVocab ? extractVocabPhrases(vocab) : [];
+  const displaySpoken = spotlightPhrasesList.length > 0 ? spotlightPhrases(spoken, spotlightPhrasesList) : spoken;
+  const displayWritten = (written && spotlightPhrasesList.length > 0) ? spotlightPhrases(written, spotlightPhrasesList) : written;
+
   // 安全单行收敛与视觉列宽截断保护 (严格限制在 32 视觉列宽以内)
   const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
   const displaySource = truncateVisual(cleanSource, 32);
 
   // 预留 8 列安全边距，彻底杜绝单字溢出终端物理边界（解决末尾孤单汉字被强制折到第 0 列的缺陷）
   const maxCols = Math.max(30, (process.stdout.columns || 80) - 8);
-
-  // 极简美学原则：平时绝不显示任何繁杂的翻页长文，唯有触发长句切分多页时，才在角标微弱提示 [1/2 ⌥.]
-  const pageTag = pagination && pagination.totalPages > 1
-    ? ctx.ui.theme.fg("muted", ` [${pagination.pageIndex + 1}/${pagination.totalPages} ⌥.]`)
-    : "";
 
   // 原文标签与树枝标签严格保持一致形制 [原文]，起始位置严格对齐第 11 视觉列
   let lines: string[] = [
@@ -189,7 +217,7 @@ function renderHudWidget(
   // 1. 口语主分支 (目标语言 B)：若无后续分支则作为 └ 闭合
   const branch1Char = (hasWritten || hasVocab) ? "┌" : "└";
   const cont1Char = (hasWritten || hasVocab) ? "│" : " ";
-  lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spoken, pMuted, pAccent, pMuted, s => s, maxCols));
+  lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, displaySpoken, pMuted, pAccent, pMuted, s => s, maxCols));
   // 1.1 口语子导轨 (母语 A 细微语感)：换行挂载在标签正下方，保持左侧顺序线 │ 不中断
   if (spokenMeaning) {
     lines.push(...formatSubRail(cont1Char, spokenMeaning, "↳", pMuted, pDim, maxCols));
@@ -199,7 +227,7 @@ function renderHudWidget(
   if (hasWritten) {
     const branchChar = hasVocab ? "├" : "└";
     const contChar = hasVocab ? "│" : " ";
-    lines.push(...formatTreeBranch(branchChar, contChar, slot2, written!, pMuted, pAccent, pMuted, s => s, maxCols));
+    lines.push(...formatTreeBranch(branchChar, contChar, slot2, displayWritten!, pMuted, pAccent, pMuted, s => s, maxCols));
     // 2.1 写作子导轨 (母语 A 严谨书面语感)
     if (writtenMeaning) {
       lines.push(...formatSubRail(contChar, writtenMeaning, "↳", pMuted, pDim, maxCols));
@@ -390,6 +418,45 @@ export default function (pi: ExtensionAPI) {
     handler: switchLangHandler,
   });
 
+  const toggleCompactHandler = async (_args: string, ctx: ExtensionContext) => {
+    state.compact = !state.compact;
+    saveUserLinguaConfig({ compact: state.compact });
+    const msg = state.compact
+      ? (state.labels.notifyCompactOn || `[${state.labels.hudTitle}] 已开启单行胶囊模式`)
+      : (state.labels.notifyCompactOff || `[${state.labels.hudTitle}] 已切换为左导轨树状架构`);
+    ctx.ui.notify(msg, "info");
+
+    // 若当前有活动卡片，立即就地刷新重绘
+    if (pagedResults.length > 0) {
+      renderActiveCard(ctx);
+    } else if (lastResult) {
+      renderHudWidget(
+        ctx,
+        lastResult.sourceText,
+        lastResult.spoken,
+        lastResult.written,
+        lastResult.vocab,
+        lastResult.spokenMeaning,
+        lastResult.writtenMeaning
+      );
+    }
+  };
+
+  pi.registerCommand("lingua-compact", {
+    description: state.labels.cmdDescCompact || "切换单行胶囊模式与完整树状图: /lingua-compact",
+    handler: toggleCompactHandler,
+  });
+
+  pi.registerCommand("lingual-compact", {
+    description: state.labels.cmdDescCompact || "切换单行胶囊模式 (别名)",
+    handler: toggleCompactHandler,
+  });
+
+  pi.registerCommand("2-compact", {
+    description: state.labels.cmdDescCompact || "极速切换单行胶囊模式 (别名): /2-compact",
+    handler: toggleCompactHandler,
+  });
+
   const showStatusHandler = async (_args: string, ctx: ExtensionContext) => {
     const followDesc = state.labels.modelFollowSession || "跟随会话";
     const activeModel = state.selectedModel === "auto"
@@ -401,6 +468,7 @@ export default function (pi: ExtensionAPI) {
       sourceLang: state.sourceLang,
       targetLang: "en",
       activeModel,
+      layout: state.compact ? "capsule" : "tree",
       cacheStats: globalLinguaCache.getStats(),
     });
 

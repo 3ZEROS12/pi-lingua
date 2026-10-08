@@ -107,7 +107,8 @@ test("Visual Consistency - Source line tag matches [Original] format and aligns 
   const lines = annotated.split("\n");
   // Line 0 must be formatted as:   · [原文] ...
   assert.ok(lines[0].includes("  · [原文] 认同，开始吧"));
-  assert.ok(lines[1].includes("  ┌ [口语] Totally on board with that."));
+  const cleanLine1 = lines[1].replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "");
+  assert.ok(cleanLine1.includes("  ┌ [口语] Totally on board with that."));
 
   // Recovery via stripLinguaAnnotation works with bracketed source tag
   const recovered = stripLinguaAnnotation(annotated);
