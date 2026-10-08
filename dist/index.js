@@ -5,6 +5,7 @@ import os from "os";
 function loadUserConfig() {
   const configPaths = [
     path.join(os.homedir(), ".pi", "agent", "lingua.json"),
+    path.join(os.homedir(), ".pi", "agent", "settings.json"),
     path.join(os.homedir(), ".pi", "agent", "translate.json")
   ];
   for (const p of configPaths) {
@@ -12,18 +13,20 @@ function loadUserConfig() {
       if (fs.existsSync(p)) {
         const raw = fs.readFileSync(p, "utf8");
         const parsed = JSON.parse(raw);
-        const endpoint = parsed.endpoint || parsed.antigravity?.endpoint;
-        const apiKey = parsed.apiKey || parsed.antigravity?.apiKey;
-        const model = parsed.model || parsed.antigravity?.model;
-        const selectedModel = parsed.selectedModel || parsed.model;
+        const target = p.endsWith("settings.json") ? parsed["pi-lingual"] || parsed["lingua"] : parsed;
+        if (!target) continue;
+        const endpoint = target.endpoint || target.antigravity?.endpoint;
+        const apiKey = target.apiKey || target.antigravity?.apiKey;
+        const model = target.model || target.antigravity?.model;
+        const selectedModel = target.selectedModel || target.model;
         return {
           ...endpoint ? { endpoint } : {},
           ...apiKey ? { apiKey } : {},
           ...model ? { model } : {},
           ...selectedModel ? { selectedModel } : {},
-          ...parsed.mode ? { mode: parsed.mode } : {},
-          ...parsed.sourceLang ? { sourceLang: parsed.sourceLang } : {},
-          ...parsed.targetLang ? { targetLang: parsed.targetLang } : {}
+          ...target.mode ? { mode: target.mode } : {},
+          ...target.sourceLang ? { sourceLang: target.sourceLang } : {},
+          ...target.targetLang ? { targetLang: target.targetLang } : {}
         };
       }
     } catch {

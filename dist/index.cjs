@@ -51,6 +51,7 @@ var import_node_os = __toESM(require("os"), 1);
 function loadUserConfig() {
   const configPaths = [
     import_node_path.default.join(import_node_os.default.homedir(), ".pi", "agent", "lingua.json"),
+    import_node_path.default.join(import_node_os.default.homedir(), ".pi", "agent", "settings.json"),
     import_node_path.default.join(import_node_os.default.homedir(), ".pi", "agent", "translate.json")
   ];
   for (const p of configPaths) {
@@ -58,18 +59,20 @@ function loadUserConfig() {
       if (import_node_fs.default.existsSync(p)) {
         const raw = import_node_fs.default.readFileSync(p, "utf8");
         const parsed = JSON.parse(raw);
-        const endpoint = parsed.endpoint || parsed.antigravity?.endpoint;
-        const apiKey = parsed.apiKey || parsed.antigravity?.apiKey;
-        const model = parsed.model || parsed.antigravity?.model;
-        const selectedModel = parsed.selectedModel || parsed.model;
+        const target = p.endsWith("settings.json") ? parsed["pi-lingual"] || parsed["lingua"] : parsed;
+        if (!target) continue;
+        const endpoint = target.endpoint || target.antigravity?.endpoint;
+        const apiKey = target.apiKey || target.antigravity?.apiKey;
+        const model = target.model || target.antigravity?.model;
+        const selectedModel = target.selectedModel || target.model;
         return {
           ...endpoint ? { endpoint } : {},
           ...apiKey ? { apiKey } : {},
           ...model ? { model } : {},
           ...selectedModel ? { selectedModel } : {},
-          ...parsed.mode ? { mode: parsed.mode } : {},
-          ...parsed.sourceLang ? { sourceLang: parsed.sourceLang } : {},
-          ...parsed.targetLang ? { targetLang: parsed.targetLang } : {}
+          ...target.mode ? { mode: target.mode } : {},
+          ...target.sourceLang ? { sourceLang: target.sourceLang } : {},
+          ...target.targetLang ? { targetLang: target.targetLang } : {}
         };
       }
     } catch {

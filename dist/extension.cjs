@@ -44,6 +44,7 @@ var import_node_os = __toESM(require("os"), 1);
 function loadUserConfig() {
   const configPaths = [
     import_node_path.default.join(import_node_os.default.homedir(), ".pi", "agent", "lingua.json"),
+    import_node_path.default.join(import_node_os.default.homedir(), ".pi", "agent", "settings.json"),
     import_node_path.default.join(import_node_os.default.homedir(), ".pi", "agent", "translate.json")
   ];
   for (const p of configPaths) {
@@ -51,18 +52,20 @@ function loadUserConfig() {
       if (import_node_fs.default.existsSync(p)) {
         const raw = import_node_fs.default.readFileSync(p, "utf8");
         const parsed = JSON.parse(raw);
-        const endpoint = parsed.endpoint || parsed.antigravity?.endpoint;
-        const apiKey = parsed.apiKey || parsed.antigravity?.apiKey;
-        const model = parsed.model || parsed.antigravity?.model;
-        const selectedModel = parsed.selectedModel || parsed.model;
+        const target = p.endsWith("settings.json") ? parsed["pi-lingual"] || parsed["lingua"] : parsed;
+        if (!target) continue;
+        const endpoint = target.endpoint || target.antigravity?.endpoint;
+        const apiKey = target.apiKey || target.antigravity?.apiKey;
+        const model = target.model || target.antigravity?.model;
+        const selectedModel = target.selectedModel || target.model;
         return {
           ...endpoint ? { endpoint } : {},
           ...apiKey ? { apiKey } : {},
           ...model ? { model } : {},
           ...selectedModel ? { selectedModel } : {},
-          ...parsed.mode ? { mode: parsed.mode } : {},
-          ...parsed.sourceLang ? { sourceLang: parsed.sourceLang } : {},
-          ...parsed.targetLang ? { targetLang: parsed.targetLang } : {}
+          ...target.mode ? { mode: target.mode } : {},
+          ...target.sourceLang ? { sourceLang: target.sourceLang } : {},
+          ...target.targetLang ? { targetLang: target.targetLang } : {}
         };
       }
     } catch {
@@ -366,10 +369,32 @@ var state = {
 };
 function saveUserLinguaConfig(patch) {
   try {
-    const configDir = import_node_path2.default.join(import_node_os2.default.homedir(), ".pi", "agent");
-    const configFile = import_node_path2.default.join(configDir, "lingua.json");
-    if (!import_node_fs2.default.existsSync(configDir)) {
-      import_node_fs2.default.mkdirSync(configDir, { recursive: true });
+    const agentDir = import_node_path2.default.join(import_node_os2.default.homedir(), ".pi", "agent");
+    const settingsFile = import_node_path2.default.join(agentDir, "settings.json");
+    const configFile = import_node_path2.default.join(agentDir, "lingua.json");
+    if (import_node_fs2.default.existsSync(settingsFile)) {
+      try {
+        const raw = import_node_fs2.default.readFileSync(settingsFile, "utf8");
+        const settings = JSON.parse(raw);
+        const currentBlock = settings["pi-lingual"] || {};
+        for (const [k, v] of Object.entries(patch)) {
+          if (v === void 0 || v === "auto" || v === "original") {
+            delete currentBlock[k];
+          } else {
+            currentBlock[k] = v;
+          }
+        }
+        if (Object.keys(currentBlock).length === 0) {
+          delete settings["pi-lingual"];
+        } else {
+          settings["pi-lingual"] = currentBlock;
+        }
+        import_node_fs2.default.writeFileSync(settingsFile, JSON.stringify(settings, null, 2), "utf8");
+      } catch {
+      }
+    }
+    if (!import_node_fs2.default.existsSync(agentDir)) {
+      import_node_fs2.default.mkdirSync(agentDir, { recursive: true });
     }
     let existing = {};
     if (import_node_fs2.default.existsSync(configFile)) {
@@ -507,6 +532,27 @@ ${list}
       saveUserLinguaConfig({ selectedModel: trimmed });
       ctx.ui.notify(`[${state.labels.hudTitle}] \u4F34\u5B66\u6A21\u578B\u5DF2\u5207\u6362\u4E3A: ${trimmed}`, "info");
     }
+  });
+  const showStatusHandler = async (_args, ctx) => {
+    const activeModel = state.selectedModel === "auto" ? ctx.model ? `auto (\u8DDF\u968F\u4F1A\u8BDD: ${ctx.model.provider}/${ctx.model.id})` : "auto (\u672A\u68C0\u6D4B\u5230\u4F1A\u8BDD\u6A21\u578B)" : state.selectedModel;
+    const statusMsg = [
+      `\u21C4 [${state.labels.hudTitle}] \u8FD0\u884C\u72B6\u6001\u62A5\u544A`,
+      `\u2022 \u5F53\u524D\u6A21\u5F0F: [${state.mode}] (${state.mode === "original" ? "\u539F\u6587\u76F4\u901A \xB7 0ms\u975E\u963B\u585E" : state.mode === "english" ? "\u82F1\u6587\u6A21\u5F0F \xB7 \u6DF1\u5EA6\u4EE3\u7801\u63A8\u7406" : "\u5DF2\u5173\u95ED"})`,
+      `\u2022 \u8BED\u8A00\u6D41\u5411: [${state.sourceLang} \u2794 \u76EE\u6807\u8BED]`,
+      `\u2022 \u4F34\u5B66\u6A21\u578B: ${activeModel}`,
+      `\u2022 HUD\u5E03\u5C40: Trifecta \u5F00\u653E\u5F0F\u5DE6\u5BFC\u8F68\u6811\u72B6\u67B6\u6784 (\xB7 \u250C \u251C \u2514)`,
+      `\u2022 \u51ED\u636E\u6A21\u5F0F: Pi \u539F\u751F\u8FDB\u7A0B\u5185\u8BA4\u8BC1 (Zero Config \xB7 \u96F6Token\u6CC4\u9732)`,
+      `\u2022 \u5FEB\u6377\u64CD\u4F5C: /2 (\u5207\u6362\u6A21\u5F0F) \xB7 /lingua-model (\u5207\u6A21\u578B) \xB7 /lingua-agent (\u5B9A\u5236\u8BED\u8A00)`
+    ].join("\n");
+    ctx.ui.notify(statusMsg, "info");
+  };
+  pi.registerCommand("lingua-status", {
+    description: "\u67E5\u770B\u4F34\u5B66\u63D2\u4EF6\u5F53\u524D\u72B6\u6001\u62A5\u544A\u4E0E\u6A21\u578B\u8BCA\u65AD: /lingua-status",
+    handler: showStatusHandler
+  });
+  pi.registerCommand("2-status", {
+    description: "\u67E5\u770B\u4F34\u5B66\u63D2\u4EF6\u5F53\u524D\u72B6\u6001 (\u522B\u540D)",
+    handler: showStatusHandler
   });
   const createModelCompleter = (ctx) => {
     return async (text, systemPrompt) => {

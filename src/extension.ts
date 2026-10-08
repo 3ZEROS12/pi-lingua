@@ -46,10 +46,38 @@ const state: ExtensionState = {
 
 function saveUserLinguaConfig(patch: Record<string, any>) {
   try {
-    const configDir = path.join(os.homedir(), ".pi", "agent");
-    const configFile = path.join(configDir, "lingua.json");
-    if (!fs.existsSync(configDir)) {
-      fs.mkdirSync(configDir, { recursive: true });
+    const agentDir = path.join(os.homedir(), ".pi", "agent");
+    const settingsFile = path.join(agentDir, "settings.json");
+    const configFile = path.join(agentDir, "lingua.json");
+
+    // 1. 优先尝试持久化到 Pi 全局 settings.json 下的 "pi-lingual" 配置块 (对齐 ADR-0003 与 Trifecta 铁律 1)
+    if (fs.existsSync(settingsFile)) {
+      try {
+        const raw = fs.readFileSync(settingsFile, "utf8");
+        const settings = JSON.parse(raw);
+        const currentBlock = settings["pi-lingual"] || {};
+
+        for (const [k, v] of Object.entries(patch)) {
+          if (v === undefined || v === "auto" || v === "original") {
+            delete currentBlock[k]; // 恢复默认值时物理移除键，零残留回滚
+          } else {
+            currentBlock[k] = v;
+          }
+        }
+
+        if (Object.keys(currentBlock).length === 0) {
+          delete settings["pi-lingual"];
+        } else {
+          settings["pi-lingual"] = currentBlock;
+        }
+
+        fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2), "utf8");
+      } catch {}
+    }
+
+    // 2. 同时更新 ~/.pi/agent/lingua.json 作为独立备用配置
+    if (!fs.existsSync(agentDir)) {
+      fs.mkdirSync(agentDir, { recursive: true });
     }
     let existing: Record<string, any> = {};
     if (fs.existsSync(configFile)) {
@@ -225,6 +253,34 @@ export default function (pi: ExtensionAPI) {
       saveUserLinguaConfig({ selectedModel: trimmed });
       ctx.ui.notify(`[${state.labels.hudTitle}] 伴学模型已切换为: ${trimmed}`, "info");
     },
+  });
+
+  const showStatusHandler = async (_args: string, ctx: ExtensionContext) => {
+    const activeModel = state.selectedModel === "auto"
+      ? (ctx.model ? `auto (跟随会话: ${ctx.model.provider}/${ctx.model.id})` : "auto (未检测到会话模型)")
+      : state.selectedModel;
+
+    const statusMsg = [
+      `⇄ [${state.labels.hudTitle}] 运行状态报告`,
+      `• 当前模式: [${state.mode}] (${state.mode === "original" ? "原文直通 · 0ms非阻塞" : state.mode === "english" ? "英文模式 · 深度代码推理" : "已关闭"})`,
+      `• 语言流向: [${state.sourceLang} ➔ 目标语]`,
+      `• 伴学模型: ${activeModel}`,
+      `• HUD布局: Trifecta 开放式左导轨树状架构 (· ┌ ├ └)`,
+      `• 凭据模式: Pi 原生进程内认证 (Zero Config · 零Token泄露)`,
+      `• 快捷操作: /2 (切换模式) · /lingua-model (切模型) · /lingua-agent (定制语言)`,
+    ].join("\n");
+
+    ctx.ui.notify(statusMsg, "info");
+  };
+
+  pi.registerCommand("lingua-status", {
+    description: "查看伴学插件当前状态报告与模型诊断: /lingua-status",
+    handler: showStatusHandler,
+  });
+
+  pi.registerCommand("2-status", {
+    description: "查看伴学插件当前状态 (别名)",
+    handler: showStatusHandler,
   });
 
   // 创建 Pi 宿主原生模型驱动器：0 配置开箱即用，优先复用 Pi 已授权的会话凭据，拒绝泄露本地私有 Token

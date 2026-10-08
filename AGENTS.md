@@ -10,7 +10,7 @@ When a user opens this project with an AI Coding Agent (such as Pi, Cursor, Clau
 
 ---
 
-## 📋 The 4 Diagnostic Interview Questions
+## 📋 The 5 Diagnostic Interview Questions
 The Agent should proactively ask the user the following structured questions (in the user's language):
 
 1. **Language Pair (语言对 A ➔ B)**:
@@ -24,6 +24,10 @@ The Agent should proactively ask the user the following structured questions (in
    - What is your primary technical domain? (e.g. Full-stack Web, Systems/Kernel Rust/C++, Quant/Finance, AI/ML, Agile Slack team)
 4. **Tone & Style (语域与风格偏好)**:
    - Do you prefer Silicon Valley colloquial flow, or formal corporate/whitepaper Plain English, or a balanced split?
+5. **Translation Model Engine (伴学模型与算力偏好)**:
+   - Do you want zero-config automatic inheritance from your active Pi session model (Recommended, 0 configuration, 0 keys needed)?
+   - Or designate a fast/cost-effective dedicated model (e.g. `gemini-3.8-flash`, `gpt-4o-mini`) so deep reasoning and instant companion translations run decoupled?
+   - Or custom BYOK endpoint (OpenAI-compatible / local Ollama)?
 
 ---
 

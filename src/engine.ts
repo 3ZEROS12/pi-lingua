@@ -4,12 +4,16 @@ import os from "node:os";
 import type { LinguaConfig, LinguaResult, TranslationPayload } from "./types.js";
 
 /**
- * Load user configuration from ~/.pi/agent/lingua.json (or ~/.pi/agent/translate.json fallback)
+ * Load user configuration from:
+ * 1. ~/.pi/agent/settings.json (under "pi-lingual" block)
+ * 2. ~/.pi/agent/lingua.json (flat or nested)
+ * 3. ~/.pi/agent/translate.json (compatibility fallback)
  * Never hardcodes private credentials in source code.
  */
 export function loadUserConfig(): Partial<LinguaConfig> {
   const configPaths = [
     path.join(os.homedir(), ".pi", "agent", "lingua.json"),
+    path.join(os.homedir(), ".pi", "agent", "settings.json"),
     path.join(os.homedir(), ".pi", "agent", "translate.json"),
   ];
 
@@ -18,19 +22,22 @@ export function loadUserConfig(): Partial<LinguaConfig> {
       if (fs.existsSync(p)) {
         const raw = fs.readFileSync(p, "utf8");
         const parsed = JSON.parse(raw);
-        // Supports both flat lingua.json and nested translate.json schemas
-        const endpoint = parsed.endpoint || parsed.antigravity?.endpoint;
-        const apiKey = parsed.apiKey || parsed.antigravity?.apiKey;
-        const model = parsed.model || parsed.antigravity?.model;
-        const selectedModel = parsed.selectedModel || parsed.model;
+        // If settings.json, read the "pi-lingual" block
+        const target = p.endsWith("settings.json") ? (parsed["pi-lingual"] || parsed["lingua"]) : parsed;
+        if (!target) continue;
+
+        const endpoint = target.endpoint || target.antigravity?.endpoint;
+        const apiKey = target.apiKey || target.antigravity?.apiKey;
+        const model = target.model || target.antigravity?.model;
+        const selectedModel = target.selectedModel || target.model;
         return {
           ...(endpoint ? { endpoint } : {}),
           ...(apiKey ? { apiKey } : {}),
           ...(model ? { model } : {}),
           ...(selectedModel ? { selectedModel } : {}),
-          ...(parsed.mode ? { mode: parsed.mode } : {}),
-          ...(parsed.sourceLang ? { sourceLang: parsed.sourceLang } : {}),
-          ...(parsed.targetLang ? { targetLang: parsed.targetLang } : {}),
+          ...(target.mode ? { mode: target.mode } : {}),
+          ...(target.sourceLang ? { sourceLang: target.sourceLang } : {}),
+          ...(target.targetLang ? { targetLang: target.targetLang } : {}),
         };
       }
     } catch {

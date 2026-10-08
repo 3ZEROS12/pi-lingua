@@ -177,17 +177,25 @@ lingua "这几个接口需要做幂等性校验"
 
 ---
 
-## ⚙️ Environment & LLM Gateway Configuration
+## 🤖 Zero-Config Model Engine & Model Sovereignty
 
-`pi-lingua` works out-of-the-box with any OpenAI-compatible local or cloud LLM proxy:
+`pi-lingual` dispenses with brittle third-party proxy configurations by operating directly within the **Pi In-Process Model Architecture**:
 
-| Environment Variable | Default | Description |
-| :--- | :--- | :--- |
-| `LINGUA_ENDPOINT` | `http://127.0.0.1:8045/v1/chat/completions` | OpenAI-compatible completions endpoint |
-| `LINGUA_API_KEY` | *(empty)* | Optional authorization bearer token |
-| `LINGUA_MODEL` | `gemini-3.8-flash` | Target model name used for translation |
+### 1. Zero-Config by Default
+* When running inside Pi, `pi-lingual` **automatically inherits the active session's model and credentials** (whether Claude, GPT-4o, Gemini, DeepSeek, or local Ollama).
+* **No external API key setup, no manual endpoint configuration, and zero risk of secret leaks. Install and press Enter!**
 
-Set environment variables in your shell before launching `pi`:
+### 2. Model Decoupling & Dedicated Commands (`/lingua-model` & `/lingua-status`)
+If you prefer not to spend heavy reasoning tokens on prompt translations:
+* Run `/lingua-model`: View the currently active translation model and list all available model candidates configured in Pi.
+* Run `/lingua-model <model-id>` (e.g. `/lingua-model gemini-3.8-flash` or `/lingua-model auto`):
+  * Delegate translation tasks to a fast, cost-effective model while keeping your primary model focused on complex software architecture.
+  * Preferences persist across sessions cleanly in Pi's `settings.json`.
+* Run `/lingua-status`: Inspect a complete live diagnostic report covering active mode, language direction, model allocation, and HUD status.
+
+### 3. Custom Gateway Compatibility (BYOK / Standalone CLI)
+For standalone CLI usage outside Pi or private OpenAI-compatible proxies:
+Configure `~/.pi/agent/lingua.json` or set environment variables:
 ```bash
 export LINGUA_ENDPOINT="https://api.openai.com/v1/chat/completions"
 export LINGUA_API_KEY="sk-..."

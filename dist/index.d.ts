@@ -42,7 +42,10 @@ interface TranslationPayload {
 }
 
 /**
- * Load user configuration from ~/.pi/agent/lingua.json (or ~/.pi/agent/translate.json fallback)
+ * Load user configuration from:
+ * 1. ~/.pi/agent/settings.json (under "pi-lingual" block)
+ * 2. ~/.pi/agent/lingua.json (flat or nested)
+ * 3. ~/.pi/agent/translate.json (compatibility fallback)
  * Never hardcodes private credentials in source code.
  */
 declare function loadUserConfig(): Partial<LinguaConfig>;

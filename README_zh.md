@@ -177,17 +177,25 @@ lingua "这几个接口需要做幂等性校验"
 
 ---
 
-## ⚙️ 环境与模型网关配置 (Environment & Gateway)
+## 🤖 零配置模型驱动与模型自主选择 (Zero-Config & Model Sovereignty)
 
-`pi-lingua` 开箱即用支持任意兼容 OpenAI API 规范的本地或云端 LLM 网关：
+`pi-lingual` 彻底告别了传统插件繁琐脆弱的外部 API 配置，全面采用 **Pi 宿主原生进程内模型调度 (In-Process Model Engine)**：
 
-| 环境变量 | 默认值 | 说明 |
-| :--- | :--- | :--- |
-| `LINGUA_ENDPOINT` | `http://127.0.0.1:8045/v1/chat/completions` | 兼容 OpenAI 格式的模型推理补全端点 |
-| `LINGUA_API_KEY` | *(留空)* | 网关授权密钥（可留空或填入对应 API Key） |
-| `LINGUA_MODEL` | `gemini-3.8-flash` | 伴学提取所使用的目标模型名称 |
+### 1. 零配置安装即用 (Zero-Config by Default)
+* 插件运行在 Pi 会话内时，**直接自动复用当前会话正在使用的模型与已认证凭据**（无论是 Claude、GPT-4o、Gemini、DeepSeek 还是本地 Ollama）；
+* **无需配置任何 API Key，无需配置任何外部网关，0 密钥泄露风险，安装后敲回车立即生效！**
 
-在环境变量中配置后启动 `pi` 即可全局生效：
+### 2. 模型自由解耦与专属命令 (`/lingua-model` & `/lingua-status`)
+如果你不想用昂贵的主模型来做简单的伴学，可以自由解耦：
+* 运行 `/lingua-model`：查看当前伴学正在调用的模型，并列出 Pi 中所有可用的候选模型；
+* 运行 `/lingua-model <model-id>`（例如 `/lingua-model gemini-3.8-flash` 或 `/lingua-model auto`）：
+  * 将伴学任务指派给极速、经济的轻量级模型，主模型依然负责重度代码逻辑编写；
+  * 设置将自动持久化保存至 `~/.pi/agent/settings.json`（对齐 Pi 规范），重启依然生效！
+* 运行 `/lingua-status`：一键调出完整的当前模式、语言流向、模型分配与 HUD 状态自检报告。
+
+### 3. 独立外部网关兼容 (BYOK / 外部 CLI)
+如果你希望在外部终端运行独立 CLI，或者使用独立自建的 OpenAI 兼容网关：
+可直接在 `~/.pi/agent/lingua.json` 或环境变量中声明：
 ```bash
 export LINGUA_ENDPOINT="https://api.openai.com/v1/chat/completions"
 export LINGUA_API_KEY="sk-..."
