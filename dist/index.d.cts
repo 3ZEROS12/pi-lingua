@@ -15,12 +15,14 @@ interface LinguaConfig {
     endpoint: string;
     apiKey: string;
     model: string;
+    selectedModel?: string;
     mode?: LinguaMode;
     sourceLang?: string;
     targetLang?: string;
     labels?: Partial<LinguaI18nLabels>;
     temperature?: number;
     timeoutMs?: number;
+    complete?: (text: string, systemPrompt: string) => Promise<string | null>;
 }
 interface LinguaResult {
     spoken: string;
@@ -39,6 +41,11 @@ interface TranslationPayload {
     vocab?: string;
 }
 
+/**
+ * Load user configuration from ~/.pi/agent/lingua.json (or ~/.pi/agent/translate.json fallback)
+ * Never hardcodes private credentials in source code.
+ */
+declare function loadUserConfig(): Partial<LinguaConfig>;
 declare const DEFAULT_CONFIG: LinguaConfig;
 /**
  * 现代开发者双语伴学系统提示词 (中文 A ➔ 英文 B)
@@ -96,4 +103,4 @@ declare function stripLinguaAnnotation(annotatedText: string): {
  */
 declare function translatePrompt(text: string, userConfig?: Partial<LinguaConfig>): Promise<LinguaResult | null>;
 
-export { DEFAULT_CONFIG, LINGUA_SYSTEM_PROMPT, type LinguaConfig, type LinguaI18nLabels, type LinguaMode, type LinguaResult, MAX_TRANSLATION_CHARS, MAX_TRANSLATION_LINES, type TranslationPayload, formatTerminalAnnotation, isNonEnglish, parseLlmResponse, shouldTriggerTranslation, stripLinguaAnnotation, translatePrompt };
+export { DEFAULT_CONFIG, LINGUA_SYSTEM_PROMPT, type LinguaConfig, type LinguaI18nLabels, type LinguaMode, type LinguaResult, MAX_TRANSLATION_CHARS, MAX_TRANSLATION_LINES, type TranslationPayload, formatTerminalAnnotation, isNonEnglish, loadUserConfig, parseLlmResponse, shouldTriggerTranslation, stripLinguaAnnotation, translatePrompt };

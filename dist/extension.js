@@ -1,8 +1,46 @@
+// src/extension.ts
+import fs2 from "fs";
+import path2 from "path";
+import os2 from "os";
+
 // src/engine.ts
+import fs from "fs";
+import path from "path";
+import os from "os";
+function loadUserConfig() {
+  const configPaths = [
+    path.join(os.homedir(), ".pi", "agent", "lingua.json"),
+    path.join(os.homedir(), ".pi", "agent", "translate.json")
+  ];
+  for (const p of configPaths) {
+    try {
+      if (fs.existsSync(p)) {
+        const raw = fs.readFileSync(p, "utf8");
+        const parsed = JSON.parse(raw);
+        const endpoint = parsed.endpoint || parsed.antigravity?.endpoint;
+        const apiKey = parsed.apiKey || parsed.antigravity?.apiKey;
+        const model = parsed.model || parsed.antigravity?.model;
+        const selectedModel = parsed.selectedModel || parsed.model;
+        return {
+          ...endpoint ? { endpoint } : {},
+          ...apiKey ? { apiKey } : {},
+          ...model ? { model } : {},
+          ...selectedModel ? { selectedModel } : {},
+          ...parsed.mode ? { mode: parsed.mode } : {},
+          ...parsed.sourceLang ? { sourceLang: parsed.sourceLang } : {},
+          ...parsed.targetLang ? { targetLang: parsed.targetLang } : {}
+        };
+      }
+    } catch {
+    }
+  }
+  return {};
+}
 var DEFAULT_CONFIG = {
-  endpoint: process.env.LINGUA_ENDPOINT || "http://127.0.0.1:8045/v1/chat/completions",
-  apiKey: process.env.LINGUA_API_KEY || "sk-d9e62a39dd574907a04100acd9229a6c",
-  model: process.env.LINGUA_MODEL || "gemini-3.8-flash",
+  endpoint: process.env.LINGUA_ENDPOINT || "",
+  apiKey: process.env.LINGUA_API_KEY || "",
+  model: process.env.LINGUA_MODEL || "",
+  selectedModel: "auto",
   mode: "original",
   sourceLang: "zh",
   targetLang: "en",
@@ -195,34 +233,45 @@ function formatTerminalAnnotation(sourceText, spoken, written, vocab, options = 
 async function translatePrompt(text, userConfig = {}) {
   const trimmed = text.trim();
   if (!trimmed) return null;
-  const cfg = { ...DEFAULT_CONFIG, ...userConfig };
+  const diskConfig = loadUserConfig();
+  const cfg = { ...DEFAULT_CONFIG, ...diskConfig, ...userConfig };
   if (!shouldTriggerTranslation(trimmed, cfg.sourceLang)) {
     return null;
   }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), cfg.timeoutMs);
   try {
-    const response = await fetch(cfg.endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${cfg.apiKey}`
-      },
-      body: JSON.stringify({
-        model: cfg.model,
-        messages: [
-          { role: "system", content: LINGUA_SYSTEM_PROMPT },
-          { role: "user", content: trimmed }
-        ],
-        temperature: cfg.temperature
-      }),
-      signal: controller.signal
-    });
-    if (!response.ok) {
+    let content = null;
+    if (typeof cfg.complete === "function") {
+      content = await cfg.complete(trimmed, LINGUA_SYSTEM_PROMPT);
+    } else if (cfg.endpoint) {
+      const headers = {
+        "Content-Type": "application/json"
+      };
+      if (cfg.apiKey) {
+        headers["Authorization"] = `Bearer ${cfg.apiKey}`;
+      }
+      const response = await fetch(cfg.endpoint, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: cfg.model || "gemini-3.8-flash",
+          messages: [
+            { role: "system", content: LINGUA_SYSTEM_PROMPT },
+            { role: "user", content: trimmed }
+          ],
+          temperature: cfg.temperature
+        }),
+        signal: controller.signal
+      });
+      if (!response.ok) {
+        return null;
+      }
+      const json = await response.json();
+      content = json?.choices?.[0]?.message?.content ?? null;
+    } else {
       return null;
     }
-    const json = await response.json();
-    const content = json?.choices?.[0]?.message?.content;
     if (typeof content !== "string" || !content.trim()) {
       return null;
     }
@@ -274,11 +323,32 @@ var DEFAULT_LABELS = {
   spokenLabel: "\u53E3\u8BED",
   writtenLabel: "\u5199\u4F5C"
 };
+var initialDiskConfig = loadUserConfig();
 var state = {
-  mode: "original",
-  sourceLang: "zh",
+  mode: initialDiskConfig.mode || "original",
+  sourceLang: initialDiskConfig.sourceLang || "zh",
+  selectedModel: initialDiskConfig.selectedModel || "auto",
   labels: { ...DEFAULT_LABELS }
 };
+function saveUserLinguaConfig(patch) {
+  try {
+    const configDir = path2.join(os2.homedir(), ".pi", "agent");
+    const configFile = path2.join(configDir, "lingua.json");
+    if (!fs2.existsSync(configDir)) {
+      fs2.mkdirSync(configDir, { recursive: true });
+    }
+    let existing = {};
+    if (fs2.existsSync(configFile)) {
+      try {
+        existing = JSON.parse(fs2.readFileSync(configFile, "utf8"));
+      } catch {
+      }
+    }
+    const updated = { ...existing, ...patch };
+    fs2.writeFileSync(configFile, JSON.stringify(updated, null, 2), "utf8");
+  } catch {
+  }
+}
 var currentRequestId = 0;
 function updateFooter(ctx) {
   if (!ctx.hasUI) return;
@@ -379,6 +449,62 @@ function extension_default(pi) {
       );
     }
   });
+  pi.registerCommand("lingua-model", {
+    description: "\u67E5\u770B\u6216\u5207\u6362\u4F34\u5B66\u6A21\u578B [\u4E8C \u21C4 two]: /lingua-model [model-id|auto]",
+    handler: async (args, ctx) => {
+      const trimmed = args.trim();
+      const currentActive = state.selectedModel === "auto" ? ctx.model ? `auto (\u8DDF\u968F\u4F1A\u8BDD: ${ctx.model.provider}/${ctx.model.id})` : "auto" : state.selectedModel;
+      if (!trimmed) {
+        let msg = `[${state.labels.hudTitle}] \u5F53\u524D\u4F34\u5B66\u6A21\u578B: ${currentActive}
+`;
+        const available = ctx.modelRegistry?.getAvailable?.() || [];
+        if (available.length > 0) {
+          const list = available.map((m) => `\u2022 ${m.provider}/${m.id}`).slice(0, 8).join("\n");
+          msg += `\u53EF\u7528\u6A21\u578B (\u8F93\u5165 /lingua-model <id> \u5207\u6362):
+${list}
+\u2022 auto (\u81EA\u52A8\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD\u4E3B\u6A21\u578B)`;
+        } else {
+          msg += "\u53EF\u8F93\u5165 /lingua-model <model-id> \u6216 auto \u6307\u5B9A\u4F34\u5B66\u6A21\u578B\u3002";
+        }
+        ctx.ui.notify(msg, "info");
+        return;
+      }
+      state.selectedModel = trimmed;
+      saveUserLinguaConfig({ selectedModel: trimmed });
+      ctx.ui.notify(`[${state.labels.hudTitle}] \u4F34\u5B66\u6A21\u578B\u5DF2\u5207\u6362\u4E3A: ${trimmed}`, "info");
+    }
+  });
+  const createModelCompleter = (ctx) => {
+    return async (text, systemPrompt) => {
+      try {
+        if (!ctx.modelRegistry) return null;
+        let targetModel = ctx.model;
+        if (state.selectedModel && state.selectedModel !== "auto") {
+          const available = ctx.modelRegistry.getAvailable?.() || [];
+          const match = available.find(
+            (m) => m.id === state.selectedModel || `${m.provider}/${m.id}` === state.selectedModel || m.id.toLowerCase().includes(state.selectedModel.toLowerCase())
+          );
+          if (match) targetModel = match;
+        }
+        if (!targetModel) return null;
+        const stream = ctx.modelRegistry.streamSimple(targetModel, {
+          systemPrompt,
+          messages: [
+            {
+              role: "user",
+              content: [{ type: "text", text }],
+              timestamp: Date.now()
+            }
+          ]
+        });
+        const res = await stream.result();
+        const content = res.content?.filter((c) => c.type === "text")?.map((c) => c.text)?.join("");
+        return content && content.trim() ? content.trim() : null;
+      } catch {
+        return null;
+      }
+    };
+  };
   pi.on("input", async (event, ctx) => {
     if (state.mode === "off") return { action: "continue" };
     if (event.source === "extension") return { action: "continue" };
@@ -391,13 +517,15 @@ function extension_default(pi) {
       return { action: "continue" };
     }
     const requestId = ++currentRequestId;
+    const completer = createModelCompleter(ctx);
     if (state.mode === "original") {
       if (ctx.hasUI) {
         ctx.ui.setStatus("lingua", ctx.ui.theme.fg("accent", "\u21C4 [lingua] polishing..."));
       }
       translatePrompt(raw, {
         sourceLang: state.sourceLang,
-        labels: state.labels
+        labels: state.labels,
+        complete: completer
       }).then((result) => {
         if (requestId !== currentRequestId || state.mode !== "original") {
           return;
@@ -431,7 +559,8 @@ function extension_default(pi) {
     try {
       const result = await translatePrompt(raw, {
         sourceLang: state.sourceLang,
-        labels: state.labels
+        labels: state.labels,
+        complete: completer
       });
       if (requestId !== currentRequestId) {
         return { action: "continue" };

@@ -28,3 +28,13 @@
 5. **Physical Tests & Build Verification**:
    - `npm test`：9/9 测试全绿（100% Pass）；
    - `npm run typecheck`：0 报错。
+
+## 🕒 Last Session Snapshot (2026/10/8 21:10:06)
+- **Session ID**: `01a11b29-844f-70f7-ac3f-05970e1fd817`
+- **User Intent**: 但是关于翻译模型的选择权，有交给客户吗？你不会硬编码我的本地Token
+- **Last Assistant State**:
+> 已按照你的要求完成调整，并将更新同步推送至 GitHub！
+> 现在无论任何人打开 GitHub 仓库（[`https://github.com/3ZEROS12/pi-lingua`](https://github.com/3ZEROS12/pi-lingua)）还是 npm 页面，**最吸睛的头部第一眼视觉排布**已经变成：
+> ---
+> 1. **头版头条 · 跨语种权威实机展台 (`assets/multilingual-showcase.svg`)**：
+> * 紧跟在标题和 Badge 徽章正下方，居中作为**全项目的首席第一门面**；

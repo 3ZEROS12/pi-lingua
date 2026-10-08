@@ -19,12 +19,14 @@ export interface LinguaConfig {
   endpoint: string;
   apiKey: string;
   model: string;
+  selectedModel?: string;   // e.g. "auto" (default) | "gemini-3.8-flash" | "claude-sonnet-5-5"
   mode?: LinguaMode;
   sourceLang?: string;      // e.g. "zh" (default) | "en" | "ja"
   targetLang?: string;      // e.g. "en" (default) | "ja" | "zh"
   labels?: Partial<LinguaI18nLabels>;
   temperature?: number;
   timeoutMs?: number;
+  complete?: (text: string, systemPrompt: string) => Promise<string | null>;
 }
 
 export interface LinguaResult {

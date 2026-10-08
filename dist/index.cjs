@@ -1,7 +1,9 @@
 "use strict";
+var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __export = (target, all) => {
   for (var name in all)
@@ -15,6 +17,14 @@ var __copyProps = (to, from, except, desc) => {
   }
   return to;
 };
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // src/index.ts
@@ -26,6 +36,7 @@ __export(index_exports, {
   MAX_TRANSLATION_LINES: () => MAX_TRANSLATION_LINES,
   formatTerminalAnnotation: () => formatTerminalAnnotation,
   isNonEnglish: () => isNonEnglish,
+  loadUserConfig: () => loadUserConfig,
   parseLlmResponse: () => parseLlmResponse,
   shouldTriggerTranslation: () => shouldTriggerTranslation,
   stripLinguaAnnotation: () => stripLinguaAnnotation,
@@ -34,10 +45,43 @@ __export(index_exports, {
 module.exports = __toCommonJS(index_exports);
 
 // src/engine.ts
+var import_node_fs = __toESM(require("fs"), 1);
+var import_node_path = __toESM(require("path"), 1);
+var import_node_os = __toESM(require("os"), 1);
+function loadUserConfig() {
+  const configPaths = [
+    import_node_path.default.join(import_node_os.default.homedir(), ".pi", "agent", "lingua.json"),
+    import_node_path.default.join(import_node_os.default.homedir(), ".pi", "agent", "translate.json")
+  ];
+  for (const p of configPaths) {
+    try {
+      if (import_node_fs.default.existsSync(p)) {
+        const raw = import_node_fs.default.readFileSync(p, "utf8");
+        const parsed = JSON.parse(raw);
+        const endpoint = parsed.endpoint || parsed.antigravity?.endpoint;
+        const apiKey = parsed.apiKey || parsed.antigravity?.apiKey;
+        const model = parsed.model || parsed.antigravity?.model;
+        const selectedModel = parsed.selectedModel || parsed.model;
+        return {
+          ...endpoint ? { endpoint } : {},
+          ...apiKey ? { apiKey } : {},
+          ...model ? { model } : {},
+          ...selectedModel ? { selectedModel } : {},
+          ...parsed.mode ? { mode: parsed.mode } : {},
+          ...parsed.sourceLang ? { sourceLang: parsed.sourceLang } : {},
+          ...parsed.targetLang ? { targetLang: parsed.targetLang } : {}
+        };
+      }
+    } catch {
+    }
+  }
+  return {};
+}
 var DEFAULT_CONFIG = {
-  endpoint: process.env.LINGUA_ENDPOINT || "http://127.0.0.1:8045/v1/chat/completions",
-  apiKey: process.env.LINGUA_API_KEY || "sk-d9e62a39dd574907a04100acd9229a6c",
-  model: process.env.LINGUA_MODEL || "gemini-3.8-flash",
+  endpoint: process.env.LINGUA_ENDPOINT || "",
+  apiKey: process.env.LINGUA_API_KEY || "",
+  model: process.env.LINGUA_MODEL || "",
+  selectedModel: "auto",
   mode: "original",
   sourceLang: "zh",
   targetLang: "en",
@@ -269,34 +313,45 @@ function stripLinguaAnnotation(annotatedText) {
 async function translatePrompt(text, userConfig = {}) {
   const trimmed = text.trim();
   if (!trimmed) return null;
-  const cfg = { ...DEFAULT_CONFIG, ...userConfig };
+  const diskConfig = loadUserConfig();
+  const cfg = { ...DEFAULT_CONFIG, ...diskConfig, ...userConfig };
   if (!shouldTriggerTranslation(trimmed, cfg.sourceLang)) {
     return null;
   }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), cfg.timeoutMs);
   try {
-    const response = await fetch(cfg.endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${cfg.apiKey}`
-      },
-      body: JSON.stringify({
-        model: cfg.model,
-        messages: [
-          { role: "system", content: LINGUA_SYSTEM_PROMPT },
-          { role: "user", content: trimmed }
-        ],
-        temperature: cfg.temperature
-      }),
-      signal: controller.signal
-    });
-    if (!response.ok) {
+    let content = null;
+    if (typeof cfg.complete === "function") {
+      content = await cfg.complete(trimmed, LINGUA_SYSTEM_PROMPT);
+    } else if (cfg.endpoint) {
+      const headers = {
+        "Content-Type": "application/json"
+      };
+      if (cfg.apiKey) {
+        headers["Authorization"] = `Bearer ${cfg.apiKey}`;
+      }
+      const response = await fetch(cfg.endpoint, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: cfg.model || "gemini-3.8-flash",
+          messages: [
+            { role: "system", content: LINGUA_SYSTEM_PROMPT },
+            { role: "user", content: trimmed }
+          ],
+          temperature: cfg.temperature
+        }),
+        signal: controller.signal
+      });
+      if (!response.ok) {
+        return null;
+      }
+      const json = await response.json();
+      content = json?.choices?.[0]?.message?.content ?? null;
+    } else {
       return null;
     }
-    const json = await response.json();
-    const content = json?.choices?.[0]?.message?.content;
     if (typeof content !== "string" || !content.trim()) {
       return null;
     }
@@ -342,6 +397,7 @@ async function translatePrompt(text, userConfig = {}) {
   MAX_TRANSLATION_LINES,
   formatTerminalAnnotation,
   isNonEnglish,
+  loadUserConfig,
   parseLlmResponse,
   shouldTriggerTranslation,
   stripLinguaAnnotation,

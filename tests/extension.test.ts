@@ -15,6 +15,30 @@ test("extension input handler - original mode returns continue immediately and r
 
   const mockCtx: any = {
     hasUI: true,
+    model: { id: "mock-model", provider: "mock" },
+    modelRegistry: {
+      getAvailable() {
+        return [{ id: "mock-model", provider: "mock" }];
+      },
+      streamSimple(_model: any, _context: any) {
+        return {
+          result: async () => ({
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({
+                  spoken: "Check all current plugins.",
+                  spoken_meaning: "检查所有当前插件",
+                  written: "Inspect the active extension inventory.",
+                  written_meaning: "审查活动扩展清单",
+                  vocab: "inspect (审查) · inventory (清单)",
+                }),
+              },
+            ],
+          }),
+        };
+      },
+    },
     ui: {
       setStatus() {},
       setWidget(_key: string, content: string[] | undefined) {

@@ -1,9 +1,50 @@
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
 import type { LinguaConfig, LinguaResult, TranslationPayload } from "./types.js";
 
+/**
+ * Load user configuration from ~/.pi/agent/lingua.json (or ~/.pi/agent/translate.json fallback)
+ * Never hardcodes private credentials in source code.
+ */
+export function loadUserConfig(): Partial<LinguaConfig> {
+  const configPaths = [
+    path.join(os.homedir(), ".pi", "agent", "lingua.json"),
+    path.join(os.homedir(), ".pi", "agent", "translate.json"),
+  ];
+
+  for (const p of configPaths) {
+    try {
+      if (fs.existsSync(p)) {
+        const raw = fs.readFileSync(p, "utf8");
+        const parsed = JSON.parse(raw);
+        // Supports both flat lingua.json and nested translate.json schemas
+        const endpoint = parsed.endpoint || parsed.antigravity?.endpoint;
+        const apiKey = parsed.apiKey || parsed.antigravity?.apiKey;
+        const model = parsed.model || parsed.antigravity?.model;
+        const selectedModel = parsed.selectedModel || parsed.model;
+        return {
+          ...(endpoint ? { endpoint } : {}),
+          ...(apiKey ? { apiKey } : {}),
+          ...(model ? { model } : {}),
+          ...(selectedModel ? { selectedModel } : {}),
+          ...(parsed.mode ? { mode: parsed.mode } : {}),
+          ...(parsed.sourceLang ? { sourceLang: parsed.sourceLang } : {}),
+          ...(parsed.targetLang ? { targetLang: parsed.targetLang } : {}),
+        };
+      }
+    } catch {
+      // Ignore read errors gracefully
+    }
+  }
+  return {};
+}
+
 export const DEFAULT_CONFIG: LinguaConfig = {
-  endpoint: process.env.LINGUA_ENDPOINT || "http://127.0.0.1:8045/v1/chat/completions",
-  apiKey: process.env.LINGUA_API_KEY || "sk-d9e62a39dd574907a04100acd9229a6c",
-  model: process.env.LINGUA_MODEL || "gemini-3.8-flash",
+  endpoint: process.env.LINGUA_ENDPOINT || "",
+  apiKey: process.env.LINGUA_API_KEY || "",
+  model: process.env.LINGUA_MODEL || "",
+  selectedModel: "auto",
   mode: "original",
   sourceLang: "zh",
   targetLang: "en",
@@ -305,7 +346,8 @@ export async function translatePrompt(
   const trimmed = text.trim();
   if (!trimmed) return null;
 
-  const cfg = { ...DEFAULT_CONFIG, ...userConfig };
+  const diskConfig = loadUserConfig();
+  const cfg = { ...DEFAULT_CONFIG, ...diskConfig, ...userConfig };
 
   // Language-aware bidirectional trigger check
   if (!shouldTriggerTranslation(trimmed, cfg.sourceLang)) {
@@ -316,30 +358,45 @@ export async function translatePrompt(
   const timer = setTimeout(() => controller.abort(), cfg.timeoutMs);
 
   try {
-    const response = await fetch(cfg.endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${cfg.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: cfg.model,
-        messages: [
-          { role: "system", content: LINGUA_SYSTEM_PROMPT },
-          { role: "user", content: trimmed },
-        ],
-        temperature: cfg.temperature,
-      }),
-      signal: controller.signal,
-    });
+    let content: string | null = null;
 
-    if (!response.ok) {
+    // 1. If custom complete callback is provided (e.g. Pi native ModelRegistry / ctx.model):
+    if (typeof cfg.complete === "function") {
+      content = await cfg.complete(trimmed, LINGUA_SYSTEM_PROMPT);
+    } else if (cfg.endpoint) {
+      // 2. Otherwise fall back to custom OpenAI-compatible endpoint (BYOK / self-hosted proxy)
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (cfg.apiKey) {
+        headers["Authorization"] = `Bearer ${cfg.apiKey}`;
+      }
+
+      const response = await fetch(cfg.endpoint, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: cfg.model || "gemini-3.8-flash",
+          messages: [
+            { role: "system", content: LINGUA_SYSTEM_PROMPT },
+            { role: "user", content: trimmed },
+          ],
+          temperature: cfg.temperature,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const json = (await response.json()) as any;
+      content = json?.choices?.[0]?.message?.content ?? null;
+    } else {
+      // Neither complete callback nor endpoint configured
       return null;
     }
 
-    // Both fetch and response.json stream consumption are guarded by the timeout timer
-    const json = (await response.json()) as any;
-    const content = json?.choices?.[0]?.message?.content;
     if (typeof content !== "string" || !content.trim()) {
       return null;
     }

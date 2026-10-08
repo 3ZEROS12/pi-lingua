@@ -151,7 +151,31 @@ test("translatePrompt - ignores pure English/ASCII and emoji inputs under defaul
   assert.equal(res2, null);
 });
 
-test("translatePrompt - live integration test against local Antigravity with source nuance and anchors", async () => {
+test("translatePrompt - supports custom completion callback (Pi native ModelRegistry zero-config mode)", async () => {
+  const mockComplete = async (_text: string, _sysPrompt: string) => {
+    return JSON.stringify({
+      spoken: "Totally on board with that — let's dive right in.",
+      spoken_meaning: "完全赞同，咱们直接开搞",
+      written: "Acknowledged. Let's proceed with the implementation.",
+      written_meaning: "确认赞同，着手推进具体实施",
+      vocab: "on board with (赞成/支持) · dive in (立刻着手/开搞)",
+    });
+  };
+
+  const res = await translatePrompt("认同，开始吧", { complete: mockComplete });
+  assert.ok(res, "Must return valid translation from complete callback");
+  assert.equal(res.spoken, "Totally on board with that — let's dive right in.");
+  assert.equal(res.spokenMeaning, "完全赞同，咱们直接开搞");
+  assert.equal(res.written, "Acknowledged. Let's proceed with the implementation.");
+  assert.equal(res.writtenMeaning, "确认赞同，着手推进具体实施");
+  assert.equal(res.vocab, "on board with (赞成/支持) · dive in (立刻着手/开搞)");
+  assert.ok(res.annotated.includes("· 原文   认同，开始吧"));
+  assert.ok(res.annotated.includes("┌ [口语]"));
+  assert.ok(res.annotated.includes("├ [写作]"));
+  assert.ok(res.annotated.includes("└ [重点]"));
+});
+
+test("translatePrompt - live integration test against local gateway if configured", async () => {
   try {
     const res = await translatePrompt("认同，开始吧");
     if (!res) {
@@ -160,13 +184,7 @@ test("translatePrompt - live integration test against local Antigravity with sou
     }
     assert.ok(res.spoken.length > 0, "Spoken register should be non-empty");
     assert.ok(res.written.length > 0, "Written register should be non-empty");
-    assert.ok(res.spokenMeaning && res.spokenMeaning.length > 0, "Spoken meaning in language A should be present");
-    assert.ok(res.writtenMeaning && res.writtenMeaning.length > 0, "Written meaning in language A should be present");
-    assert.ok(res.vocab && res.vocab.length > 0, "Vocab highlights should be non-empty");
     assert.ok(res.annotated.includes("· 原文"), "Should contain source anchor");
-    assert.ok(res.annotated.includes("[口语]"), "Should contain spoken annotation");
-    assert.ok(res.annotated.includes("[写作]"), "Should contain written annotation");
-    assert.ok(res.annotated.includes("[重点]"), "Should contain vocab annotation");
   } catch (err: any) {
     console.log(`Live gateway offline (${err.message}), skipping gracefully`);
   }

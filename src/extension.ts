@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
 import type {
   ExtensionAPI,
   ExtensionContext,
@@ -5,11 +8,16 @@ import type {
   InputEventResult,
 } from "@earendil-works/pi-coding-agent";
 import type { LinguaMode, LinguaI18nLabels } from "./types.js";
-import { translatePrompt, shouldTriggerTranslation } from "./engine.js";
+import {
+  translatePrompt,
+  shouldTriggerTranslation,
+  loadUserConfig,
+} from "./engine.js";
 
 interface ExtensionState {
   mode: LinguaMode;
   sourceLang: string;
+  selectedModel: string;
   labels: LinguaI18nLabels;
 }
 
@@ -27,11 +35,32 @@ const DEFAULT_LABELS: LinguaI18nLabels = {
   writtenLabel: "写作",
 };
 
+const initialDiskConfig = loadUserConfig();
+
 const state: ExtensionState = {
-  mode: "original",
-  sourceLang: "zh",
+  mode: initialDiskConfig.mode || "original",
+  sourceLang: initialDiskConfig.sourceLang || "zh",
+  selectedModel: initialDiskConfig.selectedModel || "auto",
   labels: { ...DEFAULT_LABELS },
 };
+
+function saveUserLinguaConfig(patch: Record<string, any>) {
+  try {
+    const configDir = path.join(os.homedir(), ".pi", "agent");
+    const configFile = path.join(configDir, "lingua.json");
+    if (!fs.existsSync(configDir)) {
+      fs.mkdirSync(configDir, { recursive: true });
+    }
+    let existing: Record<string, any> = {};
+    if (fs.existsSync(configFile)) {
+      try {
+        existing = JSON.parse(fs.readFileSync(configFile, "utf8"));
+      } catch {}
+    }
+    const updated = { ...existing, ...patch };
+    fs.writeFileSync(configFile, JSON.stringify(updated, null, 2), "utf8");
+  } catch {}
+}
 
 // 单调递增请求版本号，彻底根除连续输入并发竞态（Stale Overwrite）与幽灵 HUD 复活
 let currentRequestId = 0;
@@ -171,6 +200,79 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
+  pi.registerCommand("lingua-model", {
+    description: "查看或切换伴学模型 [二 ⇄ two]: /lingua-model [model-id|auto]",
+    handler: async (args: string, ctx: ExtensionContext) => {
+      const trimmed = args.trim();
+      const currentActive = state.selectedModel === "auto"
+        ? (ctx.model ? `auto (跟随会话: ${ctx.model.provider}/${ctx.model.id})` : "auto")
+        : state.selectedModel;
+
+      if (!trimmed) {
+        let msg = `[${state.labels.hudTitle}] 当前伴学模型: ${currentActive}\n`;
+        const available = ctx.modelRegistry?.getAvailable?.() || [];
+        if (available.length > 0) {
+          const list = available.map((m) => `• ${m.provider}/${m.id}`).slice(0, 8).join("\n");
+          msg += `可用模型 (输入 /lingua-model <id> 切换):\n${list}\n• auto (自动跟随当前会话主模型)`;
+        } else {
+          msg += "可输入 /lingua-model <model-id> 或 auto 指定伴学模型。";
+        }
+        ctx.ui.notify(msg, "info");
+        return;
+      }
+
+      state.selectedModel = trimmed;
+      saveUserLinguaConfig({ selectedModel: trimmed });
+      ctx.ui.notify(`[${state.labels.hudTitle}] 伴学模型已切换为: ${trimmed}`, "info");
+    },
+  });
+
+  // 创建 Pi 宿主原生模型驱动器：0 配置开箱即用，优先复用 Pi 已授权的会话凭据，拒绝泄露本地私有 Token
+  const createModelCompleter = (ctx: ExtensionContext) => {
+    return async (text: string, systemPrompt: string): Promise<string | null> => {
+      try {
+        if (!ctx.modelRegistry) return null;
+
+        // 1. 解析目标模型：支持 auto 跟随主会话，或用户通过 /lingua-model 自选的模型
+        let targetModel = ctx.model;
+        if (state.selectedModel && state.selectedModel !== "auto") {
+          const available = ctx.modelRegistry.getAvailable?.() || [];
+          const match = available.find(
+            (m) =>
+              m.id === state.selectedModel ||
+              `${m.provider}/${m.id}` === state.selectedModel ||
+              m.id.toLowerCase().includes(state.selectedModel.toLowerCase())
+          );
+          if (match) targetModel = match;
+        }
+
+        if (!targetModel) return null;
+
+        // 2. 调用 Pi 原生无缝流式推理 (streamSimple)，不走硬编码外网代理，完全由 Pi 托管凭证与认证
+        const stream = ctx.modelRegistry.streamSimple(targetModel, {
+          systemPrompt,
+          messages: [
+            {
+              role: "user",
+              content: [{ type: "text", text }],
+              timestamp: Date.now(),
+            },
+          ],
+        });
+
+        const res = await stream.result();
+        const content = res.content
+          ?.filter((c: any) => c.type === "text")
+          ?.map((c: any) => c.text)
+          ?.join("");
+
+        return content && content.trim() ? content.trim() : null;
+      } catch {
+        return null;
+      }
+    };
+  };
+
   // 核心拦截层：绝不把双模标注硬塞入用户的消息历史与 Prompt！
   pi.on("input", async (event: InputEvent, ctx: ExtensionContext): Promise<InputEventResult> => {
     if (state.mode === "off") return { action: "continue" };
@@ -190,6 +292,7 @@ export default function (pi: ExtensionAPI) {
     }
 
     const requestId = ++currentRequestId;
+    const completer = createModelCompleter(ctx);
 
     // 【原文模式】(original · 默认)：彻底非阻塞 (0ms 立即放行原始输入)，后台异步微任务渲染卡片视窗
     if (state.mode === "original") {
@@ -200,6 +303,7 @@ export default function (pi: ExtensionAPI) {
       translatePrompt(raw, {
         sourceLang: state.sourceLang,
         labels: state.labels,
+        complete: completer,
       })
         .then((result) => {
           if (requestId !== currentRequestId || state.mode !== "original") {
@@ -240,6 +344,7 @@ export default function (pi: ExtensionAPI) {
       const result = await translatePrompt(raw, {
         sourceLang: state.sourceLang,
         labels: state.labels,
+        complete: completer,
       });
       if (requestId !== currentRequestId) {
         return { action: "continue" };
