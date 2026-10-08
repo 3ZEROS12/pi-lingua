@@ -1,23 +1,30 @@
 # MISSION STATE & CONTEXT HANDOFF
 - **Directory**: `D:\Workspace\projects\pi-lingua`
-- **Package**: `@3zeros12/pi-lingua` (v0.1.0)
-- **Status**: **Pre-Release Review PASSED · Ready for GitHub & npm Publish**
+- **GitHub Repository**: `https://github.com/3ZEROS12/pi-lingua`
+- **npm Package**: `pi-lingual` (v0.1.0) · [https://www.npmjs.com/package/pi-lingual](https://www.npmjs.com/package/pi-lingual)
+- **Status**: **PUBLISHED & FULLY VERIFIED · RELEASE COMPLETED**
 
-## 🎯 Final Architectural Milestones & Reviewer Sign-Off (终极收敛状态 · 完全闭环)
-1. **Subagent Pre-Release Quality Audit (独立子 Agent 深度审查通过)**:
-   - 调度 `reviewer` (基于 `gemini-3.8-flash:high`) 完成全维度架构与安全审计，裁决结论：`OK with notes`；
-   - 6 项审查建议已 100% 外科手术式修复落地：
-     1. **[P1 修复] 默认语言对齐**：`src/engine.ts` 与 `src/extension.ts` 全面恢复为默认开箱即用的中文母语沉浸流向（`sourceLang: "zh"`，`[口语]`、`[写作]`、`[重点]`、`· 原文`），与 CLI、README 及 Hero 视窗 100% 对齐；
-     2. **[P1 修复] 环境变量与网关文档化**：在双语 README 中正式增加《⚙️ 环境与模型网关配置》章节，全面公开 `LINGUA_ENDPOINT`、`LINGUA_API_KEY` 与 `LINGUA_MODEL`，并安全配置密钥读取；
-     3. **[P1 修复] 测试套件构建联动与离线防御**：`package.json` 引入 `"pretest": "npm run build"`，保障测试永远运行在最新编译单体产物上；集成测试增加网关异常优雅降级，防止 CI 无网超时；
-     4. **[P2 修复] 代码块多行穿透拦截**：`src/engine.ts` 熔断条件升级为 `trimmed.includes("```")`，彻底杜绝多行输入中夹带代码块触发无意义翻译；
-     5. **[P2 修复] 完整 CLI 标志位支持**：`bin/lingua.js` 正式增加 `-h, --help` 与 `-v, --version` 标志位解析；
-     6. **[P2 修复] Unicode / CJK 安全截断**：`formatTerminalAnnotation` 与 `renderHudWidget` 采用 `Array.from()` 安全字符切片，彻底消除宽字符截断与换行撕裂。
-2. **Global Symmetrical Multilingual Architecture (全球对称多语种矩阵)**:
-   - 全面对称支持 8 组世界主流语种与权威原典（中文和合本、英文 KJV/ESV/NIV、西语 RVR1960、日文新共同訳、法文 LSG1910、德文 Lutherbibel）；
-   - 搭载 `assets/hero.svg`（主视觉门面）与 `assets/multilingual-showcase.svg`（跨语种矩阵展台），已在双语 README 中完成嵌入。
-3. **Physical Verification Pipeline (全流程物理验收 100% 通过)**:
-   - `npm test`：9/9 测试全绿；
-   - `npm run typecheck`：0 报错；
-   - `npm run build`：自包含单体打包成功；
-   - CLI 物理实测：`--help`、`--version`、`2 "认同，开始吧"` 完全符合预期。
+## 🎯 Release Verification & Ecosystem Milestones (终极收敛状态 · 全部物理闭环)
+1. **npm Global Release (`pi-lingual@0.1.0`)**:
+   - 官方包名：`pi-lingual`（对齐 Pi 生态统一的无作用域命名规范，如 `pi-anchor`）；
+   - 维护者：`jason-zeros <jiaxinsong312@gmail.com>`；
+   - 标签：`latest: 0.1.0` 已正式生效并同步至全球 npm CDN；
+   - 一键安装指令：`pi install npm:pi-lingual`；
+   - 全局 CLI 注册：`lingua`、`lingual`、`translate`、`lg`、`2`。
+2. **GitHub Source Code Repository**:
+   - 仓库地址：`https://github.com/3ZEROS12/pi-lingua`；
+   - 分支：`main`（包含完整 CI 徽标、双语 README、SVG 视觉展台及干净的 Git 历史）。
+3. **Subagent Pre-Release Audit & Safety Guards**:
+   - 经 `reviewer` 子 Agent 严格审计，6 项 P1/P2 建议已 100% 修复：
+     - 开箱即用母语基准恢复为中文；
+     - 环境变量与模型网关全面文档化（`LINGUA_ENDPOINT`、`LINGUA_API_KEY`、`LINGUA_MODEL`）；
+     - 测试套件构建联动（`pretest: npm run build`）与离线测试防御；
+     - 代码块多行穿透拦截（`trimmed.includes("```")`）；
+     - CLI 完备参数解析（`-h, --help` 与 `-v, --version`）；
+     - Unicode / CJK 宽字符安全截断（40 字符 `...` 单行强收敛保护）。
+4. **Global Symmetrical Multilingual Architecture**:
+   - 覆盖 8 组世界主流语种与权威原典（中文和合本、英文 KJV/ESV/NIV、西语 RVR1960、日文新共同訳、法文 LSG1910、德文 Lutherbibel）；
+   - 内置 `assets/hero.svg`（主门面）与 `assets/multilingual-showcase.svg`（多语种展台）。
+5. **Physical Tests & Build Verification**:
+   - `npm test`：9/9 测试全绿（100% Pass）；
+   - `npm run typecheck`：0 报错。
