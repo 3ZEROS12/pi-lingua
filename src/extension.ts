@@ -18,6 +18,8 @@ import {
   formatCapsuleLine,
   extractVocabPhrases,
   spotlightPhrases,
+  getVisualWidth,
+  wrapVisualText,
 } from "./engine.js";
 import {
   resolveLabelsForLang,
@@ -198,17 +200,42 @@ function renderHudWidget(
   const displaySpoken = spotlightPhrasesList.length > 0 ? spotlightPhrases(spoken, spotlightPhrasesList) : spoken;
   const displayWritten = (written && spotlightPhrasesList.length > 0) ? spotlightPhrases(written, spotlightPhrasesList) : written;
 
-  // 安全单行收敛与视觉列宽截断保护 (严格限制在 32 视觉列宽以内)
-  const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
-  const displaySource = truncateVisual(cleanSource, 32);
-
   // 预留 8 列安全边距，彻底杜绝单字溢出终端物理边界（解决末尾孤单汉字被强制折到第 0 列的缺陷）
   const maxCols = Math.max(30, (process.stdout.columns || 80) - 8);
 
   // 原文标签与树枝标签严格保持一致形制 [原文]，起始位置严格对齐第 11 视觉列
-  let lines: string[] = [
-    ctx.ui.theme.fg("muted", "  · ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", sourceTag) + ctx.ui.theme.fg("muted", "] ") + displaySource + pageTag,
-  ];
+  const prefixRaw = `  · [${sourceTag}] `;
+  const prefixW = getVisualWidth(prefixRaw);
+  const pageTagW = pageTag ? getVisualWidth(pageTag) : 0;
+  const availLine1W = Math.max(20, maxCols - prefixW - pageTagW);
+
+  // 原文锚点渲染：100% 完整原句呈现，绝不以省略号截断开发者输入
+  const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
+  let sourceLines: string[] = [];
+
+  if (getVisualWidth(cleanSource) <= availLine1W) {
+    sourceLines = [
+      ctx.ui.theme.fg("muted", "  · ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", sourceTag) + ctx.ui.theme.fg("muted", "] ") + cleanSource + pageTag,
+    ];
+  } else {
+    // 超过可用宽度时采用悬挂缩进自然折行，保证每一页原句完整展示，零省略号
+    const wrapped = wrapVisualText(cleanSource, Math.max(20, maxCols - prefixW));
+    sourceLines = wrapped.map((wLine, idx) => {
+      if (idx === 0) {
+        return (
+          ctx.ui.theme.fg("muted", "  · ") +
+          ctx.ui.theme.fg("muted", "[") +
+          ctx.ui.theme.fg("dim", sourceTag) +
+          ctx.ui.theme.fg("muted", "] ") +
+          wLine +
+          pageTag
+        );
+      }
+      return " ".repeat(prefixW) + ctx.ui.theme.fg("dim", wLine);
+    });
+  }
+
+  let lines: string[] = [...sourceLines];
 
   const pMuted = (s: string) => ctx.ui.theme.fg("muted", s);
   const pAccent = (s: string) => ctx.ui.theme.fg("accent", s);
@@ -242,9 +269,7 @@ function renderHudWidget(
   // 4. 动态行数终极守卫 (Strict 9-Line Hard Budget Guard)
   // 当用户在极端窄屏/分屏终端下（导致长文折行膨胀超过 9 行）时，自动将子释义优雅内联压缩，确保绝不触发 Pi 核心的 10 行硬截断！
   if (lines.length > 9) {
-    const compactLines: string[] = [
-      ctx.ui.theme.fg("muted", "  · ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", sourceTag) + ctx.ui.theme.fg("muted", "] ") + displaySource + pageTag,
-    ];
+    const compactLines: string[] = [...sourceLines];
     const spText = spokenMeaning ? `${spoken} (${spokenMeaning})` : spoken;
     compactLines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spText, pMuted, pAccent, pMuted, s => s, maxCols));
 

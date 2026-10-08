@@ -1039,8 +1039,7 @@ function formatTerminalAnnotation(sourceText, spoken, written, vocab, options = 
   const displaySpoken = phrases.length > 0 ? spotlightPhrases(spoken, phrases) : spoken;
   const displayWritten = written && phrases.length > 0 ? spotlightPhrases(written, phrases) : written;
   const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
-  const displaySource = truncateVisual(cleanSource, 32);
-  const lines = [`  \xB7 [${sourceTag}] ${displaySource}`];
+  const lines = [`  \xB7 [${sourceTag}] ${cleanSource}`];
   const branch1Char = hasSlot2 || hasVocab ? "\u250C" : "\u2514";
   const cont1Char = hasSlot2 || hasVocab ? "\u2502" : " ";
   lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, displaySpoken));
@@ -1175,9 +1174,12 @@ async function translatePrompt(text, userConfig = {}) {
 }
 
 // src/chunker.ts
-function splitSemanticChunks(text, maxChunkChars = 40) {
+function splitSemanticChunks(text, maxChunkChars = 90) {
   const trimmed = text.trim();
   if (!trimmed) return [];
+  if (trimmed.length <= maxChunkChars) {
+    return [trimmed];
+  }
   const rawSentences = trimmed.split(/([。！？；\n]|(?<=[.!?])\s+)/);
   const sentences = [];
   let cur = "";
@@ -1335,12 +1337,27 @@ function renderHudWidget(ctx, sourceText, spoken, written, vocab, spokenMeaning,
   const spotlightPhrasesList = hasVocab ? extractVocabPhrases(vocab) : [];
   const displaySpoken = spotlightPhrasesList.length > 0 ? spotlightPhrases(spoken, spotlightPhrasesList) : spoken;
   const displayWritten = written && spotlightPhrasesList.length > 0 ? spotlightPhrases(written, spotlightPhrasesList) : written;
-  const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
-  const displaySource = truncateVisual(cleanSource, 32);
   const maxCols = Math.max(30, (process.stdout.columns || 80) - 8);
-  let lines = [
-    ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", sourceTag) + ctx.ui.theme.fg("muted", "] ") + displaySource + pageTag
-  ];
+  const prefixRaw = `  \xB7 [${sourceTag}] `;
+  const prefixW = getVisualWidth(prefixRaw);
+  const pageTagW = pageTag ? getVisualWidth(pageTag) : 0;
+  const availLine1W = Math.max(20, maxCols - prefixW - pageTagW);
+  const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
+  let sourceLines = [];
+  if (getVisualWidth(cleanSource) <= availLine1W) {
+    sourceLines = [
+      ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", sourceTag) + ctx.ui.theme.fg("muted", "] ") + cleanSource + pageTag
+    ];
+  } else {
+    const wrapped = wrapVisualText(cleanSource, Math.max(20, maxCols - prefixW));
+    sourceLines = wrapped.map((wLine, idx) => {
+      if (idx === 0) {
+        return ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", sourceTag) + ctx.ui.theme.fg("muted", "] ") + wLine + pageTag;
+      }
+      return " ".repeat(prefixW) + ctx.ui.theme.fg("dim", wLine);
+    });
+  }
+  let lines = [...sourceLines];
   const pMuted = (s) => ctx.ui.theme.fg("muted", s);
   const pAccent = (s) => ctx.ui.theme.fg("accent", s);
   const pDim = (s) => ctx.ui.theme.fg("dim", s);
@@ -1362,9 +1379,7 @@ function renderHudWidget(ctx, sourceText, spoken, written, vocab, spokenMeaning,
     lines.push(...formatTreeBranch("\u2514", " ", vocabTag, vocab, pMuted, pMuted, pMuted, pDim, maxCols));
   }
   if (lines.length > 9) {
-    const compactLines = [
-      ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", sourceTag) + ctx.ui.theme.fg("muted", "] ") + displaySource + pageTag
-    ];
+    const compactLines = [...sourceLines];
     const spText = spokenMeaning ? `${spoken} (${spokenMeaning})` : spoken;
     compactLines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spText, pMuted, pAccent, pMuted, (s) => s, maxCols));
     if (hasWritten) {

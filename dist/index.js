@@ -362,9 +362,12 @@ ${availableList}
 }
 
 // src/chunker.ts
-function splitSemanticChunks(text, maxChunkChars = 40) {
+function splitSemanticChunks(text, maxChunkChars = 90) {
   const trimmed = text.trim();
   if (!trimmed) return [];
+  if (trimmed.length <= maxChunkChars) {
+    return [trimmed];
+  }
   const rawSentences = trimmed.split(/([。！？；\n]|(?<=[.!?])\s+)/);
   const sentences = [];
   let cur = "";
@@ -1086,8 +1089,7 @@ function formatTerminalAnnotation(sourceText, spoken, written, vocab, options = 
   const displaySpoken = phrases.length > 0 ? spotlightPhrases(spoken, phrases) : spoken;
   const displayWritten = written && phrases.length > 0 ? spotlightPhrases(written, phrases) : written;
   const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
-  const displaySource = truncateVisual(cleanSource, 32);
-  const lines = [`  \xB7 [${sourceTag}] ${displaySource}`];
+  const lines = [`  \xB7 [${sourceTag}] ${cleanSource}`];
   const branch1Char = hasSlot2 || hasVocab ? "\u250C" : "\u2514";
   const cont1Char = hasSlot2 || hasVocab ? "\u2502" : " ";
   lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, displaySpoken));

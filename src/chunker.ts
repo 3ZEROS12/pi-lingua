@@ -2,19 +2,22 @@
  * Splits text into atomic natural sentence chunks when long.
  * Preserves punctuation (。！？；\n and .!?\n).
  *
- * Line Budget Philosophy:
- * In an 80-column terminal, a 40-char Chinese sentence translates to:
- * - 1 line: Source text
- * - 2 lines: Spoken target language B
- * - 1 line: Spoken native language A sub-rail
- * - 2 lines: Written target language B
- * - 1 line: Written native language A sub-rail
- * - 1 line: Key vocab highlights
- * Total = 8 lines (strictly <= 9 lines, guaranteeing immunity against Pi's 10-line hard truncation cap!).
+ * Line Budget & Ergonomics:
+ * 切分仅作为防超出 Pi 10 行硬截断的兜底防线，绝不过度拆碎用户意图。
+ * 结合 9 行硬预算折叠守卫（超行时语感子导轨自动内联进括号），单卡可容纳 80~100 字符的自然句群。
+ * 默认预算提高至 90 字符：
+ * - 80 字以内日常长句：100% 单卡完整呈现，0 翻页；
+ * - 120~180 字中长句：顶多分为 2 页，杜绝因每个句号碎成 4 页；
+ * - 只有真正多段大篇幅文本才适度切分为 3+ 页。
  */
-export function splitSemanticChunks(text: string, maxChunkChars = 40): string[] {
+export function splitSemanticChunks(text: string, maxChunkChars = 90): string[] {
   const trimmed = text.trim();
   if (!trimmed) return [];
+
+  // 如果全文未达到预算上限，坚决不切分，保持整句原子完整性
+  if (trimmed.length <= maxChunkChars) {
+    return [trimmed];
+  }
 
   // Split along sentence terminators: 。 ！？ ； \n and english . ! ? \n
   const rawSentences = trimmed.split(/([。！？；\n]|(?<=[.!?])\s+)/);

@@ -129,6 +129,16 @@ test("formatTerminalAnnotation - formats with source text anchor, native nuance,
   );
   assert.ok(single.includes("· [原文] 继续"));
   assert.ok(single.includes("└ [口语] Let's keep going."));
+
+  // 4. Long original prompt must be 100% complete without arbitrary ellipsis truncation
+  const longPrompt = "需要你针对现在的github和npm上的说明文档做个针对性调整，保有人味儿是绝对必须的。";
+  const longAnnotated = formatTerminalAnnotation(
+    longPrompt,
+    "We need you to give the docs a targeted pass.",
+    "Please perform targeted revisions."
+  );
+  assert.ok(longAnnotated.includes(`· [原文] ${longPrompt}`), "Must preserve 100% complete original sentence without ellipses");
+  assert.ok(!longAnnotated.includes("..."), "Must not arbitrarily truncate original text with ellipsis");
 });
 
 test("stripLinguaAnnotation - cleanly recovers raw text and isolates parenthetical nuance", () => {

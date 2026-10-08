@@ -32,7 +32,7 @@
     "build": "tsup src/index.ts src/extension.ts --format esm,cjs --dts --clean --no-splitting",
     "typecheck": "tsc --noEmit",
     "pretest": "npm run build",
-    "test": "npx tsx --test tests/**/*.test.ts",
+    "test": "npx tsx --test --test-concurrency=1 tests/**/*.test.ts",
     "prepack": "npm run build"
   },
   "keywords": [

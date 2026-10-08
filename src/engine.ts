@@ -442,11 +442,9 @@ export function formatTerminalAnnotation(
   const displaySpoken = phrases.length > 0 ? spotlightPhrases(spoken, phrases) : spoken;
   const displayWritten = (written && phrases.length > 0) ? spotlightPhrases(written, phrases) : written;
 
-  // 安全单行收敛与视觉列宽截断保护，避免多行排版爆炸和终端撕裂 (严格限制在 32 视觉列宽以内)
+  // 原文锚点：保留完整原句输入，严禁以省略号强行截断开发者语义
   const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
-  const displaySource = truncateVisual(cleanSource, 32);
-
-  const lines: string[] = [`  · [${sourceTag}] ${displaySource}`];
+  const lines: string[] = [`  · [${sourceTag}] ${cleanSource}`];
 
   // 1. 口语槽位：若无后续槽位则作为末端分支 └ 呈现；否则作为起始分支 ┌
   const branch1Char = (hasSlot2 || hasVocab) ? "┌" : "└";
