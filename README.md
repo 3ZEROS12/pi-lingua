@@ -11,7 +11,10 @@
 **English** | [简体中文](./README_zh.md)
 
 <p align="center">
-  <img src="assets/hero.svg" alt="pi-lingua Terminal Companion HUD" width="840">
+  <img src="assets/multilingual-showcase.svg" alt="pi-lingual Global Symmetrical Multilingual Showcase" width="840">
+</p>
+<p align="center">
+  <em>▲ Real-world authoritative text matrix: Chinese CUV "What for lunch?", English KJV Genesis, Spanish RVR1960, and German Lutherbibel architecture metaphors</em>
 </p>
 
 ---
@@ -29,6 +32,10 @@ Every day, software engineers type hundreds of terminal prompts into coding agen
 ---
 
 ## Architecture & Core Mechanics
+
+<p align="center">
+  <img src="assets/hero.svg" alt="pi-lingual Terminal Companion HUD Experience" width="840">
+</p>
 
 ```text
   · Original   吃什么？

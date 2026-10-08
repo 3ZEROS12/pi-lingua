@@ -11,7 +11,10 @@
 [English](./README.md) | **简体中文**
 
 <p align="center">
-  <img src="assets/hero.svg" alt="pi-lingua 终端伴学视窗" width="840">
+  <img src="assets/multilingual-showcase.svg" alt="pi-lingual 全球多语种权威原典实机展台" width="840">
+</p>
+<p align="center">
+  <em>▲ 真实实机原典伴学矩阵：中文和合本「吃什么？」、英文 KJV 创世之光、西文雷纳-瓦莱拉、德文路德圣经架构隐喻</em>
 </p>
 
 ---
@@ -29,6 +32,10 @@
 ---
 
 ## 核心架构与物理机制
+
+<p align="center">
+  <img src="assets/hero.svg" alt="pi-lingual 终端伴学视窗交互实录" width="840">
+</p>
 
 ```text
   · 原文   吃什么？
