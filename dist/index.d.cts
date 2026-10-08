@@ -209,7 +209,8 @@ declare const MAX_TRANSLATION_LINES = 8;
 /**
  * Bidirectional language-aware trigger with strict Length & Payload Guards:
  * - If sourceLang is not English (e.g. "zh", "ja"): triggers on natural language scripts;
- * - If sourceLang is English ("en"): detects English natural language sentences while strictly excluding code and CLI commands.
+ * - If sourceLang is English ("en"): detects English natural language sentences while strictly excluding code and CLI commands;
+ * - Centrally delegates to shouldShieldBypass (Single Source of Truth) to exclude code statements, SQL, and 40+ CLI commands;
  * - [Safety Gate]: Rejects oversized payloads (> 1500 chars), monolithic multi-line code (> 8 lines), markdown headings, and code fences.
  */
 declare function shouldTriggerTranslation(text: string, sourceLang?: string): boolean;

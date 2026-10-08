@@ -69,7 +69,7 @@ function saveUserLinguaConfig(patch: Record<string, any>) {
         const currentBlock = settings["pi-lingual"] || {};
 
         for (const [k, v] of Object.entries(patch)) {
-          if (v === undefined || v === "auto" || v === "original") {
+          if (v === undefined || v === "auto" || v === "original" || (k === "compact" && v === false)) {
             delete currentBlock[k]; // 恢复默认值时物理移除键，零残留回滚
           } else {
             currentBlock[k] = v;
@@ -97,13 +97,19 @@ function saveUserLinguaConfig(patch: Record<string, any>) {
       } catch {}
     }
     for (const [k, v] of Object.entries(patch)) {
-      if (v === undefined || v === "auto" || v === "original") {
+      if (v === undefined || v === "auto" || v === "original" || (k === "compact" && v === false)) {
         delete existing[k];
       } else {
         existing[k] = v;
       }
     }
-    fs.writeFileSync(configFile, JSON.stringify(existing, null, 2), "utf8");
+    if (Object.keys(existing).length === 0) {
+      if (fs.existsSync(configFile)) {
+        try { fs.unlinkSync(configFile); } catch {}
+      }
+    } else {
+      fs.writeFileSync(configFile, JSON.stringify(existing, null, 2), "utf8");
+    }
   } catch {}
 }
 

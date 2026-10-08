@@ -19,7 +19,7 @@ test("Primary Language Sovereignty - Japanese (ja) leaves ZERO Chinese in UI and
   assert.ok(jaLabels.notifyEnglish?.includes("【英語モード】に切り替えました"));
   assert.ok(jaLabels.notifyOff?.includes("オフにしました"));
   assert.ok(jaLabels.notifyPaging?.includes("長文を分割しました"));
-  assert.ok(jaLabels.notifyAgentHelp?.includes("言語やスタイルを変更したいですか？"));
+  assert.ok(jaLabels.notifyAgentHelp?.includes("母語の変更は /lingua-lang"));
 
   // Status report contains Japanese chrome
   const report = formatStatusReport(jaLabels, {

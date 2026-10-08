@@ -38,7 +38,7 @@ The Agent should proactively ask the user the following structured questions (in
 ### 铁律 1：【母语 A 拥有最高统治权，彻底替换所有中文】(Primary Language Sovereignty)
 - If the user selects native language A (e.g. A = English, Japanese, Spanish, German, French):
   **LANGUAGE A MUST FULLY REPLACE ALL CHINESE TEXT IN THE PROJECT UI (ZERO CHINESE RESIDUE).**
-  The Agent MUST update `DEFAULT_LABELS` and all user-facing strings (notifications, status bar, command descriptions) in `src/extension.ts` into Language A's authentic expressions:
+  The runtime engine dynamically resolves all user-facing strings (notifications, status bar, command descriptions, status reports) from `src/presets.ts` via `resolveLabelsForLang(sourceLang)` into Language A's authentic expressions:
 
   #### 模式名称本地化映射矩阵 (Mode Localization Matrix):
   | 概念 | 中文 (默认 A=zh) | 英文 (A=en) | 日文 (A=ja) | 西班牙文 (A=es) | 德文 (A=de) |
@@ -47,9 +47,9 @@ The Agent should proactively ask the user the following structured questions (in
   | **英文模式** | `英文` | `English` | `英語` | `Inglés` | `Englisch` |
   | **关闭状态** | `关` | `Off` | `オフ` | `Apagado` | `Aus` |
 
-  #### 状态栏与标签更新规范：
+  #### 状态栏与标签规范：
   - **If A = English (e.g. A=English ➔ B=Japanese)**:
-    `spokenLabel: "Spoken"`, `writtenLabel: "Written"`, `vocabLabel: "Vocab"`,
+    `slot1Label: "Spoken"`, `slot2Label: "Written"`, `vocabLabel: "Vocab"`,
     `hudTitle: "two ⇄ 二"`,
     `statusOriginal: "⇄ [two ⇄ 二] Original"`,
     `statusEnglish: "⇄ [two ⇄ 二] English"`,
@@ -57,7 +57,7 @@ The Agent should proactively ask the user the following structured questions (in
     Notification: `"[two ⇄ 二] switched to [Original]: Prompt passed to AI unmodified, HUD displays Japanese translations"`
     ALL NOTIFICATIONS, STATUS TEXTS, AND COMMAND DESCRIPTIONS MUST BE IN ENGLISH.
   - **If A = Japanese (e.g. A=Japanese ➔ B=English)**:
-    `spokenLabel: "口語"`, `writtenLabel: "文面"`, `vocabLabel: "単語"`,
+    `slot1Label: "口語"`, `slot2Label: "文面"`, `vocabLabel: "単語"`,
     `hudTitle: "二 ⇄ two"`,
     `statusOriginal: "⇄ [二 ⇄ two] 原文"`,
     `statusEnglish: "⇄ [二 ⇄ two] 英語"`,
@@ -71,10 +71,12 @@ The Agent should proactively ask the user the following structured questions (in
   2. **English (英文)**: Replaces input with idiomatic technical English to the LLM for deep reasoning, displays B's dual-registers in the HUD card.
   3. **Off (关)**: Silent pass-through.
 
-### 铁律 2：【必须加粗强制警告：Node.js ESM 缓存需重启终端】(ESM Cache Warning)
-- Upon completing code modification and `npm run build`, the Agent's final message to the user MUST include this exact prominent notice:
-  > **⚠️ 致命生效前提 (Crucial Action Required)**:  
-  > Due to Node.js ESM in-memory module locking, typing `/reload` inside the current session CANNOT reload the newly compiled `dist/` module. **You MUST completely exit the terminal and restart Pi (`pi`) for the new language engine to physically take effect.**
+### 铁律 2：【配置驱动零侵入原则 (Zero-Source-Mutation Invariant)】
+- **Standard Supported Languages (`zh`, `ja`, `en`, `es`, `fr`, `de`)**:
+  Switching native language takes effect **immediately and in-place** without modifying source code or restarting the terminal. The Agent must simply configure `~/.pi/agent/settings.json` under `"pi-lingual": { "sourceLang": "<lang>" }` (or run `/2-lang <lang>`), which survives all future npm updates.
+- **Contributing New Official Presets**:
+  Only when authoring brand new official language presets in `src/presets.ts` or `src/prompts.ts` does `npm run build` and terminal restart apply:
+  > **⚠️ ESM 重新编译生效前提**: Due to Node.js ESM in-memory module locking, editing TypeScript source files requires running `npm run build` and restarting Pi (`pi`) for recompiled `dist/` modules to physically load.
 
 ### 铁律 3：【保持 JSON Schema 与语感释义铁律】
 - In `src/engine.ts`, `LINGUA_SYSTEM_PROMPT` must strictly output JSON:

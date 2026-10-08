@@ -23,7 +23,6 @@ export function loadUserConfig(): Partial<LinguaConfig> {
   const configPaths = [
     path.join(os.homedir(), ".pi", "agent", "settings.json"),
     path.join(os.homedir(), ".pi", "agent", "lingua.json"),
-    path.join(os.homedir(), ".pi", "agent", "translate.json"),
   ];
 
   for (const p of configPaths) {
@@ -41,6 +40,7 @@ export function loadUserConfig(): Partial<LinguaConfig> {
         const selectedModel = target.selectedModel || target.model;
         const sourceLang = target.sourceLang;
         const targetLang = target.targetLang;
+        const compact = target.compact;
         const labels = resolveLabelsForLang(sourceLang || "zh", target.labels);
 
         return {
@@ -49,6 +49,7 @@ export function loadUserConfig(): Partial<LinguaConfig> {
           ...(model ? { model } : {}),
           ...(selectedModel ? { selectedModel } : {}),
           ...(target.mode ? { mode: target.mode } : {}),
+          ...(compact !== undefined ? { compact: Boolean(compact) } : {}),
           ...(sourceLang ? { sourceLang } : {}),
           ...(targetLang ? { targetLang } : {}),
           labels,
@@ -94,23 +95,14 @@ export function isNonEnglish(text: string): boolean {
   return naturalLanguageScript.test(text);
 }
 
-const COMMON_TERMINAL_COMMAND_PREFIXES = [
-  "git ", "npm ", "pnpm ", "yarn ", "bun ", "cd ", "docker ", "cargo ",
-  "go ", "python ", "node ", "deno ", "curl ", "cat ", "ls ", "grep ", "find "
-];
-
-const CODE_STATEMENT_STARTERS = [
-  "const ", "let ", "var ", "function ", "class ", "import ", "export ",
-  "def ", "struct ", "impl ", "interface ", "type ", "return "
-];
-
 export const MAX_TRANSLATION_CHARS = 1500;
 export const MAX_TRANSLATION_LINES = 8;
 
 /**
  * Bidirectional language-aware trigger with strict Length & Payload Guards:
  * - If sourceLang is not English (e.g. "zh", "ja"): triggers on natural language scripts;
- * - If sourceLang is English ("en"): detects English natural language sentences while strictly excluding code and CLI commands.
+ * - If sourceLang is English ("en"): detects English natural language sentences while strictly excluding code and CLI commands;
+ * - Centrally delegates to shouldShieldBypass (Single Source of Truth) to exclude code statements, SQL, and 40+ CLI commands;
  * - [Safety Gate]: Rejects oversized payloads (> 1500 chars), monolithic multi-line code (> 8 lines), markdown headings, and code fences.
  */
 export function shouldTriggerTranslation(text: string, sourceLang = "zh"): boolean {
@@ -125,26 +117,22 @@ export function shouldTriggerTranslation(text: string, sourceLang = "zh"): boole
   if (lines.length > MAX_TRANSLATION_LINES) {
     return false;
   }
-  // Fast bypass markdown headings, horizontal rules, and code blocks anywhere in input
-  if (/^#{1,6}\s/.test(trimmed) || trimmed.includes("```") || trimmed.startsWith("---")) {
+  // Fast bypass markdown headings and horizontal rules
+  if (/^#{1,6}\s/.test(trimmed) || trimmed.startsWith("---")) {
     return false;
   }
 
-  // 2. If source language is non-English (default Chinese/Japanese etc.)
+  // 2. Code & Shell Shield: 0ms bypass for pure commands, code fences, and data structures
+  if (shouldShieldBypass(trimmed)) {
+    return false;
+  }
+
+  // 3. If source language is non-English (default Chinese/Japanese etc.)
   if (sourceLang !== "en") {
     return isNonEnglish(trimmed);
   }
 
-  // 3. If source language is English (e.g. English native learning Japanese):
-  // Fast bypass terminal commands and code statements
-  const lower = trimmed.toLowerCase();
-  if (COMMON_TERMINAL_COMMAND_PREFIXES.some(prefix => lower.startsWith(prefix))) {
-    return false;
-  }
-  if (CODE_STATEMENT_STARTERS.some(prefix => lower.startsWith(prefix))) {
-    return false;
-  }
-
+  // 4. If source language is English (e.g. English native learning Japanese):
   // Pure single words or symbols without spaces are treated as identifiers/commands
   const words = trimmed.split(/\s+/);
   if (words.length < 2) {

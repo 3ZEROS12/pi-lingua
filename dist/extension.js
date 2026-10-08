@@ -26,7 +26,7 @@ var LANGUAGE_PRESETS = {
     notifyPaging: "\u957F\u53E5\u5DF2\u5207\u5206\u591A\u6BB5\uFF0C\u6309 Alt+. \u6216 Alt+, \u7FFB\u9875\u6D4F\u89C8",
     notifyNoHistory: "\u6682\u65E0\u4E0A\u4E00\u6761\u4F34\u5B66\u8BB0\u5F55",
     notifyHistoryRestored: "\u5DF2\u91CD\u65B0\u663E\u793A\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247",
-    notifyAgentHelp: "\u{1F4A1} \u60F3\u8981\u66F4\u6362\u8BED\u8A00\u6216\u98CE\u683C\uFF1F\u5BF9\u4F60\u7684 Agent \u8BF4\u4E00\u53E5\u8BDD\uFF08\u5982\u201C\u6211\u60F3\u5B9A\u5236\u8FD9\u4E2A\u4F34\u5B66\u63D2\u4EF6\u201D\uFF09\uFF0CAgent \u5C06\u81EA\u4E3B\u4E3A\u4F60\u5B8C\u6210\u8BCA\u65AD\u95EE\u5377\u4E0E\u91CD\u65B0\u6784\u5EFA\uFF01\u26A0\uFE0F \u6CE8\u610F\uFF1A\u5B8C\u6210\u540E\u8BF7\u91CD\u542F\u7EC8\u7AEF\u751F\u6548\u3002",
+    notifyAgentHelp: "\u{1F4A1} \u5207\u6362\u6BCD\u8BED\uFF1F\u76F4\u63A5\u8FD0\u884C /lingua-lang <zh|ja|en|es|fr|de> \u5373\u53EF\u5B9E\u65F6\u5207\u6362\u5E76\u6301\u4E45\u5316\uFF1B\u82E5\u9700\u5B9A\u5236\u7279\u6B8A\u98CE\u683C\uFF0C\u53EF\u76F4\u63A5\u5411 Agent \u63CF\u8FF0\u4F60\u7684\u5B9A\u5236\u504F\u597D\u3002",
     notifyModelSwitched: "\u4F34\u5B66\u6A21\u578B\u5DF2\u5207\u6362\u4E3A: {model}",
     notifyLangSwitched: "\u4F34\u5B66\u6BCD\u8BED\u5DF2\u5207\u6362\u4E3A: {lang}",
     notifyLangInvalid: "\u65E0\u6548\u7684\u8BED\u8A00\u4EE3\u7801\u3002\u652F\u6301\u7684\u8BED\u8A00\u4EE3\u7801: zh, ja, en, es, fr, de",
@@ -38,7 +38,7 @@ var LANGUAGE_PRESETS = {
     cmdDescLang: "\u67E5\u770B\u6216\u5207\u6362\u4F34\u5B66\u6BCD\u8BED [\u4E8C \u21C4 two]: /lingua-lang [zh|ja|en|es|fr|de]",
     cmdDescCompact: "\u5207\u6362\u5355\u884C\u80F6\u56CA\u6A21\u5F0F\u4E0E\u5B8C\u6574\u6811\u72B6\u56FE: /lingua-compact",
     cmdDescLast: "\u91CD\u65B0\u56DE\u770B\u6216\u91CD\u73B0\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247: /lingua-last",
-    cmdDescAgent: "\u67E5\u770B AI Coding Agent \u81EA\u4E3B\u5B9A\u5236\u672C\u63D2\u4EF6\u7684\u65B9\u6CD5",
+    cmdDescAgent: "\u67E5\u770B\u4F34\u5B66\u5B9A\u5236\u4E0E\u6BCD\u8BED\u5207\u6362\u6307\u5357: /lingua-agent",
     shortcutNextPage: "\u5207\u6362\u81F3\u4E0B\u4E00\u6BB5\u4F34\u5B66\u5207\u7247",
     shortcutPrevPage: "\u5207\u6362\u81F3\u4E0A\u4E00\u6BB5\u4F34\u5B66\u5207\u7247",
     capsuleSlot1Prefix: "\u53E3",
@@ -78,7 +78,7 @@ var LANGUAGE_PRESETS = {
     notifyPaging: "\u9577\u6587\u3092\u5206\u5272\u3057\u307E\u3057\u305F\u3002Alt+. \u307E\u305F\u306F Alt+, \u3067\u30DA\u30FC\u30B8\u9001\u308A",
     notifyNoHistory: "\u524D\u56DE\u306E\u8A18\u9332\u306F\u3042\u308A\u307E\u305B\u3093",
     notifyHistoryRestored: "\u524D\u56DE\u306E\u30AB\u30FC\u30C9\u3092\u5FA9\u5143\u3057\u307E\u3057\u305F",
-    notifyAgentHelp: "\u{1F4A1} \u8A00\u8A9E\u3084\u30B9\u30BF\u30A4\u30EB\u3092\u5909\u66F4\u3057\u305F\u3044\u3067\u3059\u304B\uFF1FAgent \u306B\u300C\u3053\u306E\u5B66\u7FD2\u30D7\u30E9\u30B0\u30A4\u30F3\u3092\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA\u3057\u305F\u3044\u300D\u3068\u8A71\u3057\u304B\u3051\u308B\u3060\u3051\u3067\u3001\u8A3A\u65AD\u304B\u3089\u518D\u30D3\u30EB\u30C9\u307E\u3067\u81EA\u52D5\u3067\u5B8C\u4E86\u3057\u307E\u3059\uFF01\u26A0\uFE0F \u5B8C\u4E86\u5F8C\u306F\u7AEF\u672B\u3092\u518D\u8D77\u52D5\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+    notifyAgentHelp: "\u{1F4A1} \u6BCD\u8A9E\u306E\u5909\u66F4\u306F /lingua-lang <zh|ja|en|es|fr|de> \u3067\u5373\u6642\u5207\u308A\u66FF\u3048\u30FB\u4FDD\u5B58\u3067\u304D\u307E\u3059\u3002\u7279\u5225\u306A\u6587\u4F53\u3084\u8A9E\u57DF\u306E\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA\u304C\u5FC5\u8981\u306A\u5834\u5408\u306F\u3001Agent \u306B\u76F4\u63A5\u3054\u8981\u671B\u3092\u304A\u4F1D\u3048\u304F\u3060\u3055\u3044\u3002",
     notifyModelSwitched: "\u30E2\u30C7\u30EB\u3092\u5207\u308A\u66FF\u3048\u307E\u3057\u305F: {model}",
     notifyLangSwitched: "\u6BCD\u8A9E\u3092\u5207\u308A\u66FF\u3048\u307E\u3057\u305F: {lang}",
     notifyLangInvalid: "\u7121\u52B9\u306A\u8A00\u8A9E\u30B3\u30FC\u30C9\u3067\u3059\u3002\u5BFE\u5FDC\u8A00\u8A9E: zh, ja, en, es, fr, de",
@@ -90,7 +90,7 @@ var LANGUAGE_PRESETS = {
     cmdDescLang: "\u4F34\u8D70\u306E\u6BCD\u8A9E\u3092\u78BA\u8A8D\u30FB\u5909\u66F4: /lingua-lang [zh|ja|en|es|fr|de]",
     cmdDescCompact: "1\u884C\u30AB\u30D7\u30BB\u30EB\u8868\u793A\u3068\u30D5\u30EB\u30C4\u30EA\u30FC\u306E\u5207\u66FF: /lingua-compact",
     cmdDescLast: "\u524D\u56DE\u306E\u4F34\u8D70\u30AB\u30FC\u30C9\u3092\u518D\u8868\u793A: /lingua-last",
-    cmdDescAgent: "AI \u306B\u3088\u308B\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA\u65B9\u6CD5\u3092\u78BA\u8A8D",
+    cmdDescAgent: "\u4F34\u8D70\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA\u3068\u6BCD\u8A9E\u5909\u66F4\u306E\u6848\u5185\u3092\u8868\u793A: /lingua-agent",
     shortcutNextPage: "\u6B21\u306E\u30BB\u30B0\u30E1\u30F3\u30C8\u306B\u5207\u308A\u66FF\u3048",
     shortcutPrevPage: "\u524D\u306E\u30BB\u30B0\u30E1\u30F3\u30C8\u306B\u5207\u308A\u66FF\u3048",
     capsuleSlot1Prefix: "\u53E3",
@@ -130,7 +130,7 @@ var LANGUAGE_PRESETS = {
     notifyPaging: "[two \u21C4 \u4E8C] Long prompt segmented. Press Alt+. or Alt+, to navigate pages",
     notifyNoHistory: "[two \u21C4 \u4E8C] No previous companion card recorded",
     notifyHistoryRestored: "[two \u21C4 \u4E8C] Restored previous companion card",
-    notifyAgentHelp: "\u{1F4A1} Want to customize language or tone? Just tell your Agent (e.g. 'I want to customize this language companion'), and it will autonomously interview and rebuild it for you! \u26A0\uFE0F Note: Restart terminal afterwards to take effect.",
+    notifyAgentHelp: "\u{1F4A1} Switch native language with /lingua-lang <zh|ja|en|es|fr|de> anytime; for advanced prompt or style customization, simply describe your preferences to your Agent.",
     notifyModelSwitched: "Companion model switched to: {model}",
     notifyLangSwitched: "Native language switched to: {lang}",
     notifyLangInvalid: "Invalid language code. Supported: zh, ja, en, es, fr, de",
@@ -142,7 +142,7 @@ var LANGUAGE_PRESETS = {
     cmdDescLang: "View or switch companion native language: /lingua-lang [zh|ja|en|es|fr|de]",
     cmdDescCompact: "Toggle single-line capsule mode: /lingua-compact",
     cmdDescLast: "Replay previous companion card: /lingua-last",
-    cmdDescAgent: "Learn how to customize this companion with your AI Agent",
+    cmdDescAgent: "Display companion customization & language guide: /lingua-agent",
     shortcutNextPage: "Switch to next companion segment",
     shortcutPrevPage: "Switch to previous companion segment",
     capsuleSlot1Prefix: "Spk",
@@ -182,7 +182,7 @@ var LANGUAGE_PRESETS = {
     notifyPaging: "[dos \u21C4 two] Texto largo segmentado. Presione Alt+. o Alt+, para navegar",
     notifyNoHistory: "[dos \u21C4 two] No hay registros anteriores",
     notifyHistoryRestored: "[dos \u21C4 two] Tarjeta anterior restaurada",
-    notifyAgentHelp: "\u{1F4A1} \xBFDesea cambiar el idioma o estilo? Solo p\xEDdale a su Agente (ej. 'Quiero personalizar este asistente'), \xA1y realizar\xE1 el diagn\xF3stico y la reconstrucci\xF3n autom\xE1ticamente! \u26A0\uFE0F Reinicie la terminal para que surta efecto.",
+    notifyAgentHelp: "\u{1F4A1} Cambie su idioma nativo con /lingua-lang <zh|ja|en|es|fr|de> al instante; para estilos personalizados, simplemente ind\xEDquele sus preferencias a su Agente.",
     notifyModelSwitched: "Modelo cambiado a: {model}",
     notifyLangSwitched: "Idioma nativo cambiado a: {lang}",
     notifyLangInvalid: "C\xF3digo de idioma no v\xE1lido. Admitidos: zh, ja, en, es, fr, de",
@@ -194,7 +194,7 @@ var LANGUAGE_PRESETS = {
     cmdDescLang: "Ver o cambiar idioma nativo: /lingua-lang [zh|ja|en|es|fr|de]",
     cmdDescCompact: "Alternar modo c\xE1psula de una l\xEDnea: /lingua-compact",
     cmdDescLast: "Reaparecer tarjeta anterior: /lingua-last",
-    cmdDescAgent: "C\xF3mo personalizar este complemento con su Agente de IA",
+    cmdDescAgent: "Ver gu\xEDa de personalizaci\xF3n y cambio de idioma: /lingua-agent",
     shortcutNextPage: "Cambiar al siguiente segmento",
     shortcutPrevPage: "Cambiar al segmento anterior",
     capsuleSlot1Prefix: "Col",
@@ -234,7 +234,7 @@ var LANGUAGE_PRESETS = {
     notifyPaging: "[deux \u21C4 two] Long texte segment\xE9. Appuyez sur Alt+. ou Alt+, pour parcourir",
     notifyNoHistory: "[deux \u21C4 two] Aucun historique pr\xE9c\xE9dent",
     notifyHistoryRestored: "[deux \u21C4 two] Carte pr\xE9c\xE9dente restaur\xE9e",
-    notifyAgentHelp: "\u{1F4A1} Vous souhaitez personnaliser la langue ou le style ? Dites simplement \xE0 votre Agent ('Je veux personnaliser ce compagnon'), et il s'en chargera ! \u26A0\uFE0F Red\xE9marrez le terminal ensuite.",
+    notifyAgentHelp: "\u{1F4A1} Changez de langue avec /lingua-lang <zh|ja|en|es|fr|de> \xE0 tout moment ; pour personnaliser le style ou le ton, d\xE9crivez simplement vos pr\xE9f\xE9rences \xE0 votre Agent.",
     notifyModelSwitched: "Mod\xE8le chang\xE9 pour : {model}",
     notifyLangSwitched: "Langue maternelle chang\xE9e en : {lang}",
     notifyLangInvalid: "Code de langue invalide. Pris en charge : zh, ja, en, es, fr, de",
@@ -246,7 +246,7 @@ var LANGUAGE_PRESETS = {
     cmdDescLang: "Afficher ou changer la langue maternelle: /lingua-lang [zh|ja|en|es|fr|de]",
     cmdDescCompact: "Basculer le mode capsule sur une ligne: /lingua-compact",
     cmdDescLast: "R\xE9afficher la carte pr\xE9c\xE9dente: /lingua-last",
-    cmdDescAgent: "Personnaliser cette extension avec votre Agent IA",
+    cmdDescAgent: "Afficher le guide de personnalisation et de changement de langue : /lingua-agent",
     shortcutNextPage: "Passer au segment suivant",
     shortcutPrevPage: "Passer au segment pr\xE9c\xE9dent",
     capsuleSlot1Prefix: "Oral",
@@ -286,7 +286,7 @@ var LANGUAGE_PRESETS = {
     notifyPaging: "[zwei \u21C4 two] Langer Text segmentiert. Mit Alt+. oder Alt+, bl\xE4ttern",
     notifyNoHistory: "[zwei \u21C4 two] Kein vorheriger Eintrag vorhanden",
     notifyHistoryRestored: "[zwei \u21C4 two] Vorherige Karte wiederhergestellt",
-    notifyAgentHelp: "\u{1F4A1} M\xF6chten Sie Sprache oder Stil anpassen? Sagen Sie Ihrem Agenten einfach Bescheid ('Ich m\xF6chte dieses Plugin anpassen'), und er erledigt alles autonom! \u26A0\uFE0F Danach bitte Terminal neu starten.",
+    notifyAgentHelp: "\u{1F4A1} Wechseln Sie die Muttersprache mit /lingua-lang <zh|ja|en|es|fr|de> jederzeit; f\xFCr benutzerdefinierte Stile teilen Sie Ihrem Agenten einfach Ihre W\xFCnsche mit.",
     notifyModelSwitched: "Modell gewechselt zu: {model}",
     notifyLangSwitched: "Muttersprache ge\xE4ndert zu: {lang}",
     notifyLangInvalid: "Ung\xFCltiger Sprachcode. Unterst\xFCtzt: zh, ja, en, es, fr, de",
@@ -298,7 +298,7 @@ var LANGUAGE_PRESETS = {
     cmdDescLang: "Muttersprache anzeigen oder wechseln: /lingua-lang [zh|ja|en|es|fr|de]",
     cmdDescCompact: "Einzeiligen Kapselmodus umschalten: /lingua-compact",
     cmdDescLast: "Vorherige Karte erneut anzeigen: /lingua-last",
-    cmdDescAgent: "Anleitung zur Anpassung mit KI-Agent",
+    cmdDescAgent: "Anleitung zur Anpassung und Sprachumstellung anzeigen: /lingua-agent",
     shortcutNextPage: "Zum n\xE4chsten Segment wechseln",
     shortcutPrevPage: "Zum vorherigen Segment wechseln",
     capsuleSlot1Prefix: "Ges",
@@ -766,8 +766,7 @@ function loadUserConfig() {
   }
   const configPaths = [
     path.join(os.homedir(), ".pi", "agent", "settings.json"),
-    path.join(os.homedir(), ".pi", "agent", "lingua.json"),
-    path.join(os.homedir(), ".pi", "agent", "translate.json")
+    path.join(os.homedir(), ".pi", "agent", "lingua.json")
   ];
   for (const p of configPaths) {
     try {
@@ -782,6 +781,7 @@ function loadUserConfig() {
         const selectedModel = target.selectedModel || target.model;
         const sourceLang = target.sourceLang;
         const targetLang = target.targetLang;
+        const compact = target.compact;
         const labels = resolveLabelsForLang(sourceLang || "zh", target.labels);
         return {
           ...endpoint ? { endpoint } : {},
@@ -789,6 +789,7 @@ function loadUserConfig() {
           ...model ? { model } : {},
           ...selectedModel ? { selectedModel } : {},
           ...target.mode ? { mode: target.mode } : {},
+          ...compact !== void 0 ? { compact: Boolean(compact) } : {},
           ...sourceLang ? { sourceLang } : {},
           ...targetLang ? { targetLang } : {},
           labels
@@ -815,40 +816,6 @@ function isNonEnglish(text) {
   const naturalLanguageScript = /[\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af\u0400-\u04ff\u0600-\u06ff\u00c0-\u024f]/;
   return naturalLanguageScript.test(text);
 }
-var COMMON_TERMINAL_COMMAND_PREFIXES = [
-  "git ",
-  "npm ",
-  "pnpm ",
-  "yarn ",
-  "bun ",
-  "cd ",
-  "docker ",
-  "cargo ",
-  "go ",
-  "python ",
-  "node ",
-  "deno ",
-  "curl ",
-  "cat ",
-  "ls ",
-  "grep ",
-  "find "
-];
-var CODE_STATEMENT_STARTERS = [
-  "const ",
-  "let ",
-  "var ",
-  "function ",
-  "class ",
-  "import ",
-  "export ",
-  "def ",
-  "struct ",
-  "impl ",
-  "interface ",
-  "type ",
-  "return "
-];
 var MAX_TRANSLATION_CHARS = 1500;
 var MAX_TRANSLATION_LINES = 8;
 function shouldTriggerTranslation(text, sourceLang = "zh") {
@@ -861,18 +828,14 @@ function shouldTriggerTranslation(text, sourceLang = "zh") {
   if (lines.length > MAX_TRANSLATION_LINES) {
     return false;
   }
-  if (/^#{1,6}\s/.test(trimmed) || trimmed.includes("```") || trimmed.startsWith("---")) {
+  if (/^#{1,6}\s/.test(trimmed) || trimmed.startsWith("---")) {
+    return false;
+  }
+  if (shouldShieldBypass(trimmed)) {
     return false;
   }
   if (sourceLang !== "en") {
     return isNonEnglish(trimmed);
-  }
-  const lower = trimmed.toLowerCase();
-  if (COMMON_TERMINAL_COMMAND_PREFIXES.some((prefix) => lower.startsWith(prefix))) {
-    return false;
-  }
-  if (CODE_STATEMENT_STARTERS.some((prefix) => lower.startsWith(prefix))) {
-    return false;
   }
   const words = trimmed.split(/\s+/);
   if (words.length < 2) {
@@ -1255,7 +1218,7 @@ function saveUserLinguaConfig(patch) {
         const settings = JSON.parse(raw);
         const currentBlock = settings["pi-lingual"] || {};
         for (const [k, v] of Object.entries(patch)) {
-          if (v === void 0 || v === "auto" || v === "original") {
+          if (v === void 0 || v === "auto" || v === "original" || k === "compact" && v === false) {
             delete currentBlock[k];
           } else {
             currentBlock[k] = v;
@@ -1281,13 +1244,22 @@ function saveUserLinguaConfig(patch) {
       }
     }
     for (const [k, v] of Object.entries(patch)) {
-      if (v === void 0 || v === "auto" || v === "original") {
+      if (v === void 0 || v === "auto" || v === "original" || k === "compact" && v === false) {
         delete existing[k];
       } else {
         existing[k] = v;
       }
     }
-    fs2.writeFileSync(configFile, JSON.stringify(existing, null, 2), "utf8");
+    if (Object.keys(existing).length === 0) {
+      if (fs2.existsSync(configFile)) {
+        try {
+          fs2.unlinkSync(configFile);
+        } catch {
+        }
+      }
+    } else {
+      fs2.writeFileSync(configFile, JSON.stringify(existing, null, 2), "utf8");
+    }
   } catch {
   }
 }
