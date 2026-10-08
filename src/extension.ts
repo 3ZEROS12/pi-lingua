@@ -13,7 +13,17 @@ import {
   shouldTriggerTranslation,
   loadUserConfig,
   formatTreeBranch,
+  formatSubRail,
+  truncateVisual,
 } from "./engine.js";
+import {
+  resolveLabelsForLang,
+  formatStatusReport,
+  formatModelSelectionMessage,
+  LANGUAGE_PRESETS,
+} from "./presets.js";
+import { splitSemanticChunks } from "./chunker.js";
+import { globalLinguaCache } from "./cache.js";
 
 interface ExtensionState {
   mode: LinguaMode;
@@ -37,15 +47,22 @@ const DEFAULT_LABELS: LinguaI18nLabels = {
 };
 
 const initialDiskConfig = loadUserConfig();
+const initialSourceLang = initialDiskConfig.sourceLang || "zh";
+const initialLabels = resolveLabelsForLang(initialSourceLang, initialDiskConfig.labels);
 
 const state: ExtensionState = {
   mode: initialDiskConfig.mode || "original",
-  sourceLang: initialDiskConfig.sourceLang || "zh",
+  sourceLang: initialSourceLang,
   selectedModel: initialDiskConfig.selectedModel || "auto",
-  labels: { ...DEFAULT_LABELS },
+  labels: initialLabels,
 };
 
 function saveUserLinguaConfig(patch: Record<string, any>) {
+  // 测试沙箱隔离：自动化测试期间不污染宿主机用户配置
+  if (process.env.NODE_ENV === "test" || process.execArgv.includes("--test") || process.argv.includes("--test")) {
+    return;
+  }
+
   try {
     const agentDir = path.join(os.homedir(), ".pi", "agent");
     const settingsFile = path.join(agentDir, "settings.json");
@@ -76,7 +93,7 @@ function saveUserLinguaConfig(patch: Record<string, any>) {
       } catch {}
     }
 
-    // 2. 同时更新 ~/.pi/agent/lingua.json 作为独立备用配置
+    // 2. 同时更新 ~/.pi/agent/lingua.json 作为独立备用配置，同样执行删键清理以防永久覆盖 settings.json
     if (!fs.existsSync(agentDir)) {
       fs.mkdirSync(agentDir, { recursive: true });
     }
@@ -86,8 +103,14 @@ function saveUserLinguaConfig(patch: Record<string, any>) {
         existing = JSON.parse(fs.readFileSync(configFile, "utf8"));
       } catch {}
     }
-    const updated = { ...existing, ...patch };
-    fs.writeFileSync(configFile, JSON.stringify(updated, null, 2), "utf8");
+    for (const [k, v] of Object.entries(patch)) {
+      if (v === undefined || v === "auto" || v === "original") {
+        delete existing[k];
+      } else {
+        existing[k] = v;
+      }
+    }
+    fs.writeFileSync(configFile, JSON.stringify(existing, null, 2), "utf8");
   } catch {}
 }
 
@@ -96,6 +119,11 @@ let currentRequestId = 0;
 
 // 内存暂存最近一次成功伴学结果，供 /2-last 与 /lingua-last 随时回看复盘
 let lastResult: LinguaResult | null = null;
+
+// 多句切分原子卡片分页池与当前索引
+let pagedResults: LinguaResult[] = [];
+let currentPageIndex = 0;
+let totalExpectedPages = 1;
 
 function updateFooter(ctx: ExtensionContext) {
   if (!ctx.hasUI) return;
@@ -124,7 +152,8 @@ function renderHudWidget(
   written?: string,
   vocab?: string,
   spokenMeaning?: string,
-  writtenMeaning?: string
+  writtenMeaning?: string,
+  pagination?: { pageIndex: number; totalPages: number }
 ) {
   if (!ctx.hasUI) return;
 
@@ -136,50 +165,94 @@ function renderHudWidget(
   const vocabTag = state.labels.vocabLabel || "重点";
   const sourceTag = state.labels.sourceLabel || "原文";
 
-  const spokenDisplay = spokenMeaning
-    ? `${spoken} ` + ctx.ui.theme.fg("dim", `(${spokenMeaning})`)
-    : spoken;
-  const writtenDisplay = written && writtenMeaning
-    ? `${written} ` + ctx.ui.theme.fg("dim", `(${writtenMeaning})`)
-    : (written || "");
-  const vocabDisplay = vocab ? ctx.ui.theme.fg("dim", vocab) : "";
-
-  // 安全单行收敛与 Unicode/CJK 超长截断保护，避免多行排版爆炸和终端撕裂
+  // 安全单行收敛与视觉列宽截断保护 (严格限制在 32 视觉列宽以内)
   const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
-  const chars = Array.from(cleanSource);
-  const displaySource = chars.length > 40 ? chars.slice(0, 37).join("") + "..." : cleanSource;
+  const displaySource = truncateVisual(cleanSource, 32);
 
-  const maxCols = process.stdout.columns || 100;
-  const lines: string[] = [
-    ctx.ui.theme.fg("muted", "  · ") + ctx.ui.theme.fg("dim", `${sourceTag}   `) + displaySource,
+  // 预留 8 列安全边距，彻底杜绝单字溢出终端物理边界（解决末尾孤单汉字被强制折到第 0 列的缺陷）
+  const maxCols = Math.max(30, (process.stdout.columns || 80) - 8);
+
+  // 极简美学原则：平时绝不显示任何繁杂的翻页长文，唯有触发长句切分多页时，才在角标微弱提示 [1/2 ⌥.]
+  const pageTag = pagination && pagination.totalPages > 1
+    ? ctx.ui.theme.fg("muted", ` [${pagination.pageIndex + 1}/${pagination.totalPages} ⌥.]`)
+    : "";
+
+  // 原文标签与树枝标签严格保持一致形制 [原文]，起始位置严格对齐第 11 视觉列
+  let lines: string[] = [
+    ctx.ui.theme.fg("muted", "  · ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", sourceTag) + ctx.ui.theme.fg("muted", "] ") + displaySource + pageTag,
   ];
 
   const pMuted = (s: string) => ctx.ui.theme.fg("muted", s);
   const pAccent = (s: string) => ctx.ui.theme.fg("accent", s);
+  const pDim = (s: string) => ctx.ui.theme.fg("dim", s);
 
-  if (hasWritten && hasVocab) {
-    lines.push(
-      ...formatTreeBranch("┌", "│", slot1, spokenDisplay, pMuted, pAccent, pMuted, maxCols),
-      ...formatTreeBranch("├", "│", slot2, writtenDisplay, pMuted, pAccent, pMuted, maxCols),
-      ...formatTreeBranch("└", " ", vocabTag, vocabDisplay, pMuted, pMuted, pMuted, maxCols)
-    );
-  } else if (hasWritten) {
-    lines.push(
-      ...formatTreeBranch("┌", "│", slot1, spokenDisplay, pMuted, pAccent, pMuted, maxCols),
-      ...formatTreeBranch("└", " ", slot2, writtenDisplay, pMuted, pAccent, pMuted, maxCols)
-    );
-  } else if (hasVocab) {
-    lines.push(
-      ...formatTreeBranch("┌", "│", slot1, spokenDisplay, pMuted, pAccent, pMuted, maxCols),
-      ...formatTreeBranch("└", " ", vocabTag, vocabDisplay, pMuted, pMuted, pMuted, maxCols)
-    );
-  } else {
-    lines.push(
-      ...formatTreeBranch("└", " ", slot1, spokenDisplay, pMuted, pAccent, pMuted, maxCols)
-    );
+  // 1. 口语主分支 (目标语言 B)：若无后续分支则作为 └ 闭合
+  const branch1Char = (hasWritten || hasVocab) ? "┌" : "└";
+  const cont1Char = (hasWritten || hasVocab) ? "│" : " ";
+  lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spoken, pMuted, pAccent, pMuted, s => s, maxCols));
+  // 1.1 口语子导轨 (母语 A 细微语感)：换行挂载在标签正下方，保持左侧顺序线 │ 不中断
+  if (spokenMeaning) {
+    lines.push(...formatSubRail(cont1Char, spokenMeaning, "↳", pMuted, pDim, maxCols));
+  }
+
+  // 2. 写作分支 (目标语言 B)
+  if (hasWritten) {
+    const branchChar = hasVocab ? "├" : "└";
+    const contChar = hasVocab ? "│" : " ";
+    lines.push(...formatTreeBranch(branchChar, contChar, slot2, written!, pMuted, pAccent, pMuted, s => s, maxCols));
+    // 2.1 写作子导轨 (母语 A 严谨书面语感)
+    if (writtenMeaning) {
+      lines.push(...formatSubRail(contChar, writtenMeaning, "↳", pMuted, pDim, maxCols));
+    }
+  }
+
+  // 3. 重点词汇分支：对每行独立应用 pDim 装饰器，彻底解决折行时 ANSI SGR 重置引发的颜色断裂问题
+  if (hasVocab) {
+    lines.push(...formatTreeBranch("└", " ", vocabTag, vocab!, pMuted, pMuted, pMuted, pDim, maxCols));
+  }
+
+  // 4. 动态行数终极守卫 (Strict 9-Line Hard Budget Guard)
+  // 当用户在极端窄屏/分屏终端下（导致长文折行膨胀超过 9 行）时，自动将子释义优雅内联压缩，确保绝不触发 Pi 核心的 10 行硬截断！
+  if (lines.length > 9) {
+    const compactLines: string[] = [
+      ctx.ui.theme.fg("muted", "  · ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", sourceTag) + ctx.ui.theme.fg("muted", "] ") + displaySource + pageTag,
+    ];
+    const spText = spokenMeaning ? `${spoken} (${spokenMeaning})` : spoken;
+    compactLines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spText, pMuted, pAccent, pMuted, s => s, maxCols));
+
+    if (hasWritten) {
+      const branchChar = hasVocab ? "├" : "└";
+      const contChar = hasVocab ? "│" : " ";
+      const wrText = writtenMeaning ? `${written} (${writtenMeaning})` : (written || "");
+      compactLines.push(...formatTreeBranch(branchChar, contChar, slot2, wrText, pMuted, pAccent, pMuted, s => s, maxCols));
+    }
+
+    if (hasVocab) {
+      compactLines.push(...formatTreeBranch("└", " ", vocabTag, vocab!, pMuted, pMuted, pMuted, pDim, maxCols));
+    }
+    lines = compactLines;
   }
 
   ctx.ui.setWidget("lingua_hud", lines, { placement: "aboveEditor" });
+}
+
+function renderActiveCard(ctx: ExtensionContext) {
+  if (pagedResults.length === 0) return;
+  const res = pagedResults[currentPageIndex];
+  if (!res) return;
+  renderHudWidget(
+    ctx,
+    res.sourceText,
+    res.spoken,
+    res.written,
+    res.vocab,
+    res.spokenMeaning,
+    res.writtenMeaning,
+    {
+      pageIndex: currentPageIndex,
+      totalPages: Math.max(pagedResults.length, totalExpectedPages),
+    }
+  );
 }
 
 export default function (pi: ExtensionAPI) {
@@ -194,107 +267,164 @@ export default function (pi: ExtensionAPI) {
     if (state.mode === "original") {
       state.mode = "english";
       updateFooter(ctx);
-      ctx.ui.notify(`[${state.labels.hudTitle}] 已切换至【英文模式】：发给 AI 的输入将自动转换为纯正技术英文`, "info");
+      ctx.ui.notify(state.labels.notifyEnglish || `[${state.labels.hudTitle}] 已切换至【英文模式】：发给 AI 的输入将自动转换为纯正技术英文`, "info");
     } else if (state.mode === "english") {
       state.mode = "off";
       updateFooter(ctx);
       ctx.ui.setWidget("lingua_hud", undefined);
-      ctx.ui.notify(`[${state.labels.hudTitle}] 已关闭伴学`, "info");
+      ctx.ui.notify(state.labels.notifyOff || `[${state.labels.hudTitle}] 已关闭伴学`, "info");
     } else {
       state.mode = "original";
       updateFooter(ctx);
-      ctx.ui.notify(`[${state.labels.hudTitle}] 已切换至【原文模式】：输入保持纯净母语，上方 HUD 浮现伴学视窗`, "info");
+      ctx.ui.notify(state.labels.notifyOriginal || `[${state.labels.hudTitle}] 已切换至【原文模式】：输入保持纯净母语，上方 HUD 浮现伴学视窗`, "info");
     }
   };
 
   pi.registerCommand("lingua", {
-    description: "切换伴学模式 [二 ⇄ two]: [原文] ➔ [英文] ➔ [关]",
+    description: state.labels.cmdDescMode || "切换伴学模式 [二 ⇄ two]: [原文] ➔ [英文] ➔ [关]",
     handler: cycleModeHandler,
   });
 
   pi.registerCommand("lingual", {
-    description: "切换伴学模式 [二 ⇄ two] (别名)",
+    description: state.labels.cmdDescMode || "切换伴学模式 [二 ⇄ two] (别名)",
     handler: cycleModeHandler,
   });
 
   pi.registerCommand("translate", {
-    description: "切换伴学模式 [二 ⇄ two] (别名)",
+    description: state.labels.cmdDescMode || "切换伴学模式 [二 ⇄ two] (别名)",
     handler: cycleModeHandler,
   });
 
   pi.registerCommand("2", {
-    description: "切换伴学模式 [二 ⇄ two] (别名)",
+    description: state.labels.cmdDescMode || "切换伴学模式 [二 ⇄ two] (别名)",
     handler: cycleModeHandler,
   });
 
   pi.registerCommand("lingua-agent", {
-    description: "查看 AI Coding Agent 自主定制本插件的方法",
+    description: state.labels.cmdDescAgent || "查看 AI Coding Agent 自主定制本插件的方法",
     handler: async (_args, ctx) => {
       ctx.ui.notify(
-        "💡 想要更换语言或风格？对你的 Agent 说一句话（如“我想定制这个伴学插件”），Agent 将自主为你完成诊断问卷与重新构建！⚠️ 注意：完成后请重启终端生效。",
+        state.labels.notifyAgentHelp ||
+          "💡 想要更换语言或风格？对你的 Agent 说一句话（如“我想定制这个伴学插件”），Agent 将自主为你完成诊断问卷与重新构建！⚠️ 注意：完成后请重启终端生效。",
         "info"
       );
     },
   });
 
   pi.registerCommand("lingua-model", {
-    description: "查看或切换伴学模型 [二 ⇄ two]: /lingua-model [model-id|auto]",
+    description: state.labels.cmdDescModel || "查看或切换伴学模型 [二 ⇄ two]: /lingua-model [model-id|auto]",
     handler: async (args: string, ctx: ExtensionContext) => {
       const trimmed = args.trim();
+      const followSessionDesc = state.labels.modelFollowSession || "跟随会话";
       const currentActive = state.selectedModel === "auto"
-        ? (ctx.model ? `auto (跟随会话: ${ctx.model.provider}/${ctx.model.id})` : "auto")
+        ? (ctx.model ? `auto (${followSessionDesc}: ${ctx.model.provider}/${ctx.model.id})` : "auto")
         : state.selectedModel;
 
       if (!trimmed) {
-        let msg = `[${state.labels.hudTitle}] 当前伴学模型: ${currentActive}\n`;
         const available = ctx.modelRegistry?.getAvailable?.() || [];
-        if (available.length > 0) {
-          const list = available.map((m) => `• ${m.provider}/${m.id}`).slice(0, 8).join("\n");
-          msg += `可用模型 (输入 /lingua-model <id> 切换):\n${list}\n• auto (自动跟随当前会话主模型)`;
-        } else {
-          msg += "可输入 /lingua-model <model-id> 或 auto 指定伴学模型。";
-        }
+        const availableList = available.length > 0
+          ? available.map((m) => `• ${m.provider}/${m.id}`).slice(0, 8).join("\n")
+          : undefined;
+
+        const msg = formatModelSelectionMessage(state.labels, currentActive || "auto", availableList);
         ctx.ui.notify(msg, "info");
         return;
       }
 
       state.selectedModel = trimmed;
       saveUserLinguaConfig({ selectedModel: trimmed });
-      ctx.ui.notify(`[${state.labels.hudTitle}] 伴学模型已切换为: ${trimmed}`, "info");
+      const switchTemplate = state.labels.notifyModelSwitched || "伴学模型已切换为: {model}";
+      const switchedMsg = `[${state.labels.hudTitle}] ` + switchTemplate.replace("{model}", trimmed);
+      ctx.ui.notify(switchedMsg, "info");
     },
   });
 
-  const showStatusHandler = async (_args: string, ctx: ExtensionContext) => {
-    const activeModel = state.selectedModel === "auto"
-      ? (ctx.model ? `auto (跟随会话: ${ctx.model.provider}/${ctx.model.id})` : "auto (未检测到会话模型)")
-      : state.selectedModel;
+  const switchLangHandler = async (args: string, ctx: ExtensionContext) => {
+    const trimmed = args.trim().toLowerCase();
+    if (!trimmed) {
+      const langList = [
+        "• zh (中文)",
+        "• ja (日本語)",
+        "• en (English)",
+        "• es (Español)",
+        "• fr (Français)",
+        "• de (Deutsch)",
+      ].join("\n");
+      ctx.ui.notify(
+        `[${state.labels.hudTitle}] ${state.labels.statusReportFlow || "Flow"}: [${state.sourceLang} ➔ en]\n${langList}\nUsage: /lingua-lang <zh|ja|en|es|fr|de>`,
+        "info"
+      );
+      return;
+    }
 
-    const statusMsg = [
-      `⇄ [${state.labels.hudTitle}] 运行状态报告`,
-      `• 当前模式: [${state.mode}] (${state.mode === "original" ? "原文直通 · 0ms非阻塞" : state.mode === "english" ? "英文模式 · 深度代码推理" : "已关闭"})`,
-      `• 语言流向: [${state.sourceLang} ➔ 目标语]`,
-      `• 伴学模型: ${activeModel}`,
-      `• HUD布局: Trifecta 开放式左导轨树状架构 (· ┌ ├ └)`,
-      `• 凭据模式: Pi 原生进程内认证 (Zero Config · 零Token泄露)`,
-      `• 快捷操作: /2 (切换模式) · /lingua-model (切模型) · /lingua-agent (定制语言)`,
-    ].join("\n");
+    if (!LANGUAGE_PRESETS[trimmed]) {
+      ctx.ui.notify(
+        state.labels.notifyLangInvalid || "Invalid language code. Supported: zh, ja, en, es, fr, de",
+        "warning"
+      );
+      return;
+    }
+
+    state.sourceLang = trimmed;
+    state.labels = resolveLabelsForLang(trimmed, initialDiskConfig.labels);
+    saveUserLinguaConfig({ sourceLang: trimmed });
+    globalLinguaCache.clear();
+    updateFooter(ctx);
+
+    const template = state.labels.notifyLangSwitched || "Native language switched to: {lang}";
+    ctx.ui.notify(`[${state.labels.hudTitle}] ` + template.replace("{lang}", trimmed), "info");
+  };
+
+  pi.registerCommand("lingua-lang", {
+    description: state.labels.cmdDescLang || "查看或切换伴学母语 [二 ⇄ two]: /lingua-lang [zh|ja|en|es|fr|de]",
+    handler: switchLangHandler,
+  });
+
+  pi.registerCommand("lingual-lang", {
+    description: state.labels.cmdDescLang || "切换伴学母语 (别名)",
+    handler: switchLangHandler,
+  });
+
+  pi.registerCommand("2-lang", {
+    description: state.labels.cmdDescLang || "极速切换伴学母语 (别名): /2-lang <lang>",
+    handler: switchLangHandler,
+  });
+
+  const showStatusHandler = async (_args: string, ctx: ExtensionContext) => {
+    const followDesc = state.labels.modelFollowSession || "跟随会话";
+    const activeModel = state.selectedModel === "auto"
+      ? (ctx.model ? `auto (${followDesc}: ${ctx.model.provider}/${ctx.model.id})` : "auto")
+      : (state.selectedModel || "auto");
+
+    const statusMsg = formatStatusReport(state.labels, {
+      mode: state.mode,
+      sourceLang: state.sourceLang,
+      targetLang: "en",
+      activeModel,
+      cacheStats: globalLinguaCache.getStats(),
+    });
 
     ctx.ui.notify(statusMsg, "info");
   };
 
   pi.registerCommand("lingua-status", {
-    description: "查看伴学插件当前状态报告与模型诊断: /lingua-status",
+    description: state.labels.cmdDescStatus || "查看伴学插件当前状态报告与模型诊断: /lingua-status",
     handler: showStatusHandler,
   });
 
   pi.registerCommand("2-status", {
-    description: "查看伴学插件当前状态 (别名)",
+    description: state.labels.cmdDescStatus || "查看伴学插件当前状态 (别名)",
     handler: showStatusHandler,
   });
 
   const showLastHandler = async (_args: string, ctx: ExtensionContext) => {
+    if (pagedResults.length > 0) {
+      renderActiveCard(ctx);
+      ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] 已重新显示上一条伴学卡片`, "info");
+      return;
+    }
     if (!lastResult) {
-      ctx.ui.notify(`[${state.labels.hudTitle}] 暂无上一条伴学记录`, "info");
+      ctx.ui.notify(state.labels.notifyNoHistory || `[${state.labels.hudTitle}] 暂无上一条伴学记录`, "info");
       return;
     }
     renderHudWidget(
@@ -306,18 +436,39 @@ export default function (pi: ExtensionAPI) {
       lastResult.spokenMeaning,
       lastResult.writtenMeaning
     );
-    ctx.ui.notify(`[${state.labels.hudTitle}] 已重新显示上一条伴学卡片`, "info");
+    ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] 已重新显示上一条伴学卡片`, "info");
   };
 
   pi.registerCommand("lingua-last", {
-    description: "重新回看或重现上一条伴学卡片: /lingua-last",
+    description: state.labels.cmdDescLast || "重新回看或重现上一条伴学卡片: /lingua-last",
     handler: showLastHandler,
   });
 
   pi.registerCommand("2-last", {
-    description: "回看上一条伴学卡片 (别名)",
+    description: state.labels.cmdDescLast || "回看上一条伴学卡片 (别名)",
     handler: showLastHandler,
   });
+
+  if (typeof pi.registerShortcut === "function") {
+    // 快捷键支持：使用 Alt+. 与 Alt+,（对应 US 键盘 > 与 < 左右方向，零系统冲突）
+    pi.registerShortcut("alt+.", {
+      description: state.labels.shortcutNextPage || "切换至下一段伴学切片",
+      handler: async (ctx) => {
+        if (pagedResults.length <= 1) return;
+        currentPageIndex = (currentPageIndex + 1) % pagedResults.length;
+        renderActiveCard(ctx);
+      },
+    });
+
+    pi.registerShortcut("alt+,", {
+      description: state.labels.shortcutPrevPage || "切换至上一段伴学切片",
+      handler: async (ctx) => {
+        if (pagedResults.length <= 1) return;
+        currentPageIndex = (currentPageIndex - 1 + pagedResults.length) % pagedResults.length;
+        renderActiveCard(ctx);
+      },
+    });
+  }
 
   // 创建 Pi 宿主原生模型驱动器：0 配置开箱即用，优先复用 Pi 已授权的会话凭据，拒绝泄露本地私有 Token
   const createModelCompleter = (ctx: ExtensionContext) => {
@@ -341,7 +492,7 @@ export default function (pi: ExtensionAPI) {
         if (!targetModel) return null;
 
         // 2. 调用 Pi 原生无缝流式推理 (streamSimple)，不走硬编码外网代理，完全由 Pi 托管凭证与认证
-        // 【关键保护】：显式禁用思维链 (reasoning: "off")，防止继承主模型 thinking: max 导致 15s 延迟与 Token 偷跑
+        // 【关键保护 1】：显式禁用思维链 (reasoning: "off")，防止继承主模型 thinking: max 导致 15s 延迟与 Token 偷跑
         const stream = ctx.modelRegistry.streamSimple(
           targetModel,
           {
@@ -360,7 +511,12 @@ export default function (pi: ExtensionAPI) {
           } as any
         );
 
-        const res = await stream.result();
+        // 【关键保护 2】：设置 15s 超时熔断保护，防止上游网络死锁或挂起阻塞用户终端输入
+        const timeoutPromise = new Promise<null>((_, reject) =>
+          setTimeout(() => reject(new Error("Lingua translation timed out")), 15000)
+        );
+        const res = (await Promise.race([stream.result(), timeoutPromise])) as any;
+        if (!res) return null;
         const content = res.content
           ?.filter((c: any) => c.type === "text")
           ?.map((c: any) => c.text)
@@ -394,41 +550,93 @@ export default function (pi: ExtensionAPI) {
     const requestId = ++currentRequestId;
     const completer = createModelCompleter(ctx);
 
+    const chunks = splitSemanticChunks(raw);
+    totalExpectedPages = chunks.length;
+    currentPageIndex = 0;
+    pagedResults = [];
+
     // 【原文模式】(original · 默认)：彻底非阻塞 (0ms 立即放行原始输入)，后台异步微任务渲染卡片视窗
     if (state.mode === "original") {
       if (ctx.hasUI) {
         ctx.ui.setStatus("lingua", ctx.ui.theme.fg("accent", "⇄ [lingua] polishing..."));
       }
 
-      translatePrompt(raw, {
-        sourceLang: state.sourceLang,
-        labels: state.labels,
-        complete: completer,
-      })
-        .then((result) => {
-          if (requestId !== currentRequestId || state.mode !== "original") {
-            return;
-          }
-          if (result) {
-            lastResult = result;
-            if (ctx.hasUI) {
-              renderHudWidget(
-                ctx,
-                result.sourceText,
-                result.spoken,
-                result.written,
-                result.vocab,
-                result.spokenMeaning,
-                result.writtenMeaning
-              );
+      if (chunks.length === 1) {
+        // 单句常规输入：秒级渲染单个卡片，不触发任何分页角标，保持最纯粹美感
+        translatePrompt(raw, {
+          sourceLang: state.sourceLang,
+          labels: state.labels,
+          complete: completer,
+        })
+          .then((result) => {
+            if (requestId !== currentRequestId || state.mode !== "original") {
+              return;
+            }
+            if (result) {
+              lastResult = result;
+              pagedResults = [result];
+              if (ctx.hasUI) {
+                renderHudWidget(
+                  ctx,
+                  result.sourceText,
+                  result.spoken,
+                  result.written,
+                  result.vocab,
+                  result.spokenMeaning,
+                  result.writtenMeaning
+                );
+              }
+            }
+          })
+          .finally(() => {
+            if (requestId === currentRequestId) {
+              updateFooter(ctx);
+            }
+          });
+      } else {
+        // 多句超长输入：触发意群切片保底，第 1 句 200ms 极速呈现，后续句后台无感预加载
+        translatePrompt(chunks[0], {
+          sourceLang: state.sourceLang,
+          labels: state.labels,
+          complete: completer,
+        })
+          .then((result0) => {
+            if (requestId !== currentRequestId || state.mode !== "original") {
+              return;
+            }
+            if (result0) {
+              lastResult = result0;
+              pagedResults[0] = result0;
+              if (ctx.hasUI) {
+                renderActiveCard(ctx);
+                ctx.ui.notify(state.labels.notifyPaging || `[${state.labels.hudTitle}] 长句已切分多段，按 Alt+. 翻页浏览`, "info");
+              }
+            }
+          })
+          .finally(() => {
+            if (requestId === currentRequestId) {
+              updateFooter(ctx);
+            }
+          });
+
+        // 后续切片后台异步并发预加载，就绪后当用户按 Alt+→ 即刻呈现
+        (async () => {
+          for (let i = 1; i < chunks.length; i++) {
+            if (requestId !== currentRequestId || state.mode !== "original") break;
+            const res = await translatePrompt(chunks[i], {
+              sourceLang: state.sourceLang,
+              labels: state.labels,
+              complete: completer,
+            });
+            if (res && requestId === currentRequestId) {
+              pagedResults[i] = res;
+              if (ctx.hasUI && currentPageIndex === 0) {
+                renderActiveCard(ctx);
+              }
             }
           }
-        })
-        .finally(() => {
-          if (requestId === currentRequestId) {
-            updateFooter(ctx);
-          }
-        });
+        })();
+      }
 
       return { action: "continue" };
     }
@@ -444,38 +652,67 @@ export default function (pi: ExtensionAPI) {
     }
 
     try {
-      const result = await translatePrompt(raw, {
-        sourceLang: state.sourceLang,
-        labels: state.labels,
-        complete: completer,
-      });
-      if (requestId !== currentRequestId) {
-        return { action: "continue" };
+      let combinedEnglish = "";
+
+      if (chunks.length === 1) {
+        const result = await translatePrompt(raw, {
+          sourceLang: state.sourceLang,
+          labels: state.labels,
+          complete: completer,
+        });
+        if (requestId !== currentRequestId) {
+          return { action: "continue" };
+        }
+
+        if (!result) {
+          if (ctx.hasUI) ctx.ui.setWidget("lingua_hud", undefined);
+          return { action: "continue" };
+        }
+
+        lastResult = result;
+        pagedResults = [result];
+        if (ctx.hasUI) {
+          renderHudWidget(
+            ctx,
+            result.sourceText,
+            result.spoken,
+            result.written,
+            result.vocab,
+            result.spokenMeaning,
+            result.writtenMeaning
+          );
+        }
+        combinedEnglish = result.written && result.written.trim() ? result.written : result.spoken;
+      } else {
+        // 并发执行所有切片的翻译，将多切片耗时从 N*Latency 降低至 1*Latency
+        const results = await Promise.all(
+          chunks.map((chunk) =>
+            translatePrompt(chunk, {
+              sourceLang: state.sourceLang,
+              labels: state.labels,
+              complete: completer,
+            })
+          )
+        );
+        if (requestId !== currentRequestId) return { action: "continue" };
+        const validResults = results.filter((r): r is LinguaResult => r !== null);
+        if (validResults.length === 0) {
+          if (ctx.hasUI) ctx.ui.setWidget("lingua_hud", undefined);
+          return { action: "continue" };
+        }
+        pagedResults = validResults;
+        lastResult = validResults[0];
+        currentPageIndex = 0;
+        if (ctx.hasUI) {
+          renderActiveCard(ctx);
+          ctx.ui.notify(state.labels.notifyPaging || `[${state.labels.hudTitle}] 长句已切分多段，按 Alt+. 翻页浏览`, "info");
+        }
+        combinedEnglish = validResults.map((r) => (r.written && r.written.trim() ? r.written : r.spoken)).join(" ");
       }
-
-      if (!result) {
-        if (ctx.hasUI) ctx.ui.setWidget("lingua_hud", undefined);
-        return { action: "continue" };
-      }
-
-      lastResult = result;
-
-      renderHudWidget(
-        ctx,
-        result.sourceText,
-        result.spoken,
-        result.written,
-        result.vocab,
-        result.spokenMeaning,
-        result.writtenMeaning
-      );
-
-      // 发给 AI 的是干净地道的技术英文（纯英文，绝无母语释义泄露）
-      const englishText = result.written && result.written.trim() ? result.written : result.spoken;
 
       return {
         action: "transform",
-        text: englishText,
+        text: combinedEnglish,
         images: event.images,
       };
     } catch {

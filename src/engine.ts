@@ -2,6 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import type { LinguaConfig, LinguaResult, TranslationPayload } from "./types.js";
+import { resolveLabelsForLang } from "./presets.js";
+import { buildSystemPrompt } from "./prompts.js";
+import { shouldShieldBypass } from "./shield.js";
+import { LinguaLruCache, globalLinguaCache } from "./cache.js";
 
 /**
  * Load user configuration from:
@@ -11,9 +15,14 @@ import type { LinguaConfig, LinguaResult, TranslationPayload } from "./types.js"
  * Never hardcodes private credentials in source code.
  */
 export function loadUserConfig(): Partial<LinguaConfig> {
+  // 测试沙箱隔离：自动化测试期间不读取宿主机个人配置，防止环境脏数据干扰断言
+  if (process.env.NODE_ENV === "test" || process.execArgv.includes("--test") || process.argv.includes("--test")) {
+    return {};
+  }
+
   const configPaths = [
-    path.join(os.homedir(), ".pi", "agent", "lingua.json"),
     path.join(os.homedir(), ".pi", "agent", "settings.json"),
+    path.join(os.homedir(), ".pi", "agent", "lingua.json"),
     path.join(os.homedir(), ".pi", "agent", "translate.json"),
   ];
 
@@ -30,14 +39,19 @@ export function loadUserConfig(): Partial<LinguaConfig> {
         const apiKey = target.apiKey || target.antigravity?.apiKey;
         const model = target.model || target.antigravity?.model;
         const selectedModel = target.selectedModel || target.model;
+        const sourceLang = target.sourceLang;
+        const targetLang = target.targetLang;
+        const labels = resolveLabelsForLang(sourceLang || "zh", target.labels);
+
         return {
           ...(endpoint ? { endpoint } : {}),
           ...(apiKey ? { apiKey } : {}),
           ...(model ? { model } : {}),
           ...(selectedModel ? { selectedModel } : {}),
           ...(target.mode ? { mode: target.mode } : {}),
-          ...(target.sourceLang ? { sourceLang: target.sourceLang } : {}),
-          ...(target.targetLang ? { targetLang: target.targetLang } : {}),
+          ...(sourceLang ? { sourceLang } : {}),
+          ...(targetLang ? { targetLang } : {}),
+          labels,
         };
       }
     } catch {
@@ -60,66 +74,16 @@ export const DEFAULT_CONFIG: LinguaConfig = {
 };
 
 /**
- * 现代开发者双语伴学系统提示词 (中文 A ➔ 英文 B)
+ * 现代开发者双语伴学系统提示词 (中文 A ➔ 英文 B，默认导出)
  * 设计哲学：
  * 1. 敏捷口语 (Silicon Valley Slack/Standup) + 现代技术书面 (PR/RFC/Docs) 双语域
- * 2. 母语 A (中文) 精准语境释义与反向释义 (Back-translation & Nuance)
+ * 2. 母语 A 精准语境释义与反向释义 (Back-translation & Nuance)
  * 3. 典型开发协同的 3 组黄金 Few-Shot 锚点
  * 4. 代码与专有名词绝对防御机制 (Code & Symbol Shield)
  * 5. 水平自适应重点词汇提取，单行紧凑流排列
  */
-export const LINGUA_SYSTEM_PROMPT = `You are an elite bilingual developer language coach and senior software architect.
-Task:
-Translate the user's message from native Chinese (language A) into TWO distinct authentic English registers (language B), and provide the exact back-translation/nuance in Chinese for each register:
-1. "spoken": Natural, fluent spoken English (daily standup, Slack, pair programming, agile team collaboration, code reviews). Authentic Silicon Valley flow, contractions, native phrasal verbs, natural idioms.
-2. "spoken_meaning": The exact colloquial nuance and meaning in Chinese.
-3. "written": Clear, precise, modern technical written English (PR descriptions, RFCs, issues, architecture docs). High-level Plain English: active, concise, professional. STRICTLY AVOID archaic Victorian fluff (e.g. "we may now proceed", "precipitated", "parsimonious").
-4. "written_meaning": The exact formal technical nuance and meaning in Chinese.
-5. "vocab": Adaptively extract ALL key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging the user to high-level/native developer fluency. Do NOT artificially cap at 1-2; extract as many as genuinely beneficial, while keeping each definition concise in Chinese in parentheses separated by " · " (e.g. "term1 (中文释义) · term2 (中文释义) · ...") to ensure the terminal HUD remains vertically compact.
-
-[CODE & SYMBOL SHIELD - STRICT RULE]:
-All inline code (\`foo()\`), file paths (@file, path/to/file), SQL keywords, variable names, and technical identifiers MUST be preserved 100% verbatim in both spoken and written outputs. Never translate, rephrase, or drop code tokens.
-
-[GOLDEN FEW-SHOT ANCHORS]:
-Input: "认同，开始吧"
-Output:
-{
-  "spoken": "Totally on board with that — let's dive right in.",
-  "spoken_meaning": "完全赞同，咱们直接开搞",
-  "written": "Acknowledged. Let's proceed with the implementation.",
-  "written_meaning": "确认赞同，着手推进具体实施",
-  "vocab": "on board with (赞成/支持) · dive in (立刻着手/开搞)"
-}
-
-Input: "继续"
-Output:
-{
-  "spoken": "Let's keep going.",
-  "spoken_meaning": "继续往下搞",
-  "written": "Proceed with the next steps.",
-  "written_meaning": "推进后续步骤",
-  "vocab": "keep going (继续推进) · proceed with (着手进行)"
-}
-
-Input: "这个方案有点过度设计了，不如直接用标准库实现"
-Output:
-{
-  "spoken": "This feels a bit over-engineered; we'd be much better off just sticking with the standard library.",
-  "spoken_meaning": "感觉有点过度设计了，用标准库划算得多",
-  "written": "The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.",
-  "written_meaning": "该方案引入了不必要的复杂度，建议优先采用原生标准库实现",
-  "vocab": "over-engineered (过度工程化) · be better off (做某事更合适/划算) · stick with (坚持使用/沿用) · leverage (利用/借助)"
-}
-
-Strict JSON format:
-{
-  "spoken": "...",
-  "spoken_meaning": "...",
-  "written": "...",
-  "written_meaning": "...",
-  "vocab": "..."
-}
-Output valid JSON ONLY. Never output markdown code fences, backticks, quotes, or explanations.`;
+export const LINGUA_SYSTEM_PROMPT = buildSystemPrompt("zh", "en");
+export { buildSystemPrompt };
 
 /**
  * Check if the text contains non-English natural language scripts (CJK, accented Latin, Cyrillic, etc.)
@@ -140,14 +104,14 @@ const CODE_STATEMENT_STARTERS = [
   "def ", "struct ", "impl ", "interface ", "type ", "return "
 ];
 
-export const MAX_TRANSLATION_CHARS = 300;
-export const MAX_TRANSLATION_LINES = 3;
+export const MAX_TRANSLATION_CHARS = 1500;
+export const MAX_TRANSLATION_LINES = 8;
 
 /**
  * Bidirectional language-aware trigger with strict Length & Payload Guards:
  * - If sourceLang is not English (e.g. "zh", "ja"): triggers on natural language scripts;
  * - If sourceLang is English ("en"): detects English natural language sentences while strictly excluding code and CLI commands.
- * - [Safety Gate]: Rejects long text (> 300 chars), multi-line docs (> 3 lines), markdown headings, and code fences.
+ * - [Safety Gate]: Rejects oversized payloads (> 1500 chars), monolithic multi-line code (> 8 lines), markdown headings, and code fences.
  */
 export function shouldTriggerTranslation(text: string, sourceLang = "zh"): boolean {
   const trimmed = text.trim();
@@ -193,17 +157,23 @@ export function shouldTriggerTranslation(text: string, sourceLang = "zh"): boole
 
 /**
  * Clean and parse LLM JSON responses safely
- * Uses robust brace-boundary slicing to be immune to markdown fences, thoughts, or prefix chatter
+ * Uses robust brace-boundary slicing and thought stripping to be immune to markdown fences, thoughts, or prefix chatter
  */
 export function parseLlmResponse(raw: string): TranslationPayload | null {
   try {
-    const firstBrace = raw.indexOf("{");
-    const lastBrace = raw.lastIndexOf("}");
+    let cleaned = raw.replace(/<(?:think|thought)>[\s\S]*?<\/(?:think|thought)>/gi, "").trim();
+    const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (fenceMatch) {
+      cleaned = fenceMatch[1].trim();
+    }
+
+    const firstBrace = cleaned.indexOf("{");
+    const lastBrace = cleaned.lastIndexOf("}");
     if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
       return null;
     }
 
-    const jsonSubstr = raw.slice(firstBrace, lastBrace + 1);
+    const jsonSubstr = cleaned.slice(firstBrace, lastBrace + 1);
     const parsed = JSON.parse(jsonSubstr);
 
     const spoken = (parsed.spoken || parsed.casual || parsed.slot1 || "").trim();
@@ -225,6 +195,24 @@ export function parseLlmResponse(raw: string): TranslationPayload | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Truncate string based on visual cell width (CJK = 2 cols, ASCII = 1 col)
+ * Guarantees that header text never exceeds visual column boundaries.
+ */
+export function truncateVisual(str: string, maxVisualCols: number): string {
+  let curWidth = 0;
+  let result = "";
+  for (const char of str) {
+    const w = getVisualWidth(char);
+    if (curWidth + w > maxVisualCols) {
+      return result + "...";
+    }
+    result += char;
+    curWidth += w;
+  }
+  return result;
 }
 
 /**
@@ -306,6 +294,13 @@ export function wrapVisualText(text: string, maxWidth: number): string[] {
  * Line 0: `  ┌ [口语] <content>`
  * Line 1+: `  │        <continuation>` (strictly aligned under text body)
  */
+/**
+ * Format a tree branch with hanging indent (树状悬挂缩进):
+ * Line 0: `  ┌ [口语] <content>`
+ * Line 1+: `  │        <continuation>` (strictly aligned under text body)
+ *
+ * lineDecorator: function to style the content of each line independently (prevents ANSI reset desync / color breakage)
+ */
 export function formatTreeBranch(
   branchChar: string,
   contChar: string,
@@ -314,13 +309,18 @@ export function formatTreeBranch(
   prefixDecorator: (p: string) => string = (s) => s,
   tagDecorator: (t: string) => string = (s) => s,
   contDecorator: (c: string) => string = (s) => s,
-  maxCols = (process.stdout.columns || 100) - 2
+  lineDecorator: ((l: string) => string) | number = (s) => s,
+  maxCols = (process.stdout.columns || 80) - 8
 ): string[] {
+  const actualLineDecorator = typeof lineDecorator === "function" ? lineDecorator : (s: string) => s;
+  const actualMaxCols = typeof lineDecorator === "number" ? lineDecorator : (typeof maxCols === "number" ? maxCols : (process.stdout.columns || 80) - 8);
+
   const rawPrefix = `  ${branchChar} [${tag}] `;
   const prefixW = getVisualWidth(rawPrefix);
   const rawCont = `  ${contChar}${" ".repeat(Math.max(1, prefixW - 3))}`;
-  const availW = Math.max(25, maxCols - prefixW);
+  const availW = Math.max(25, actualMaxCols - prefixW);
 
+  // Wrap clean text, then apply lineDecorator per line to prevent ANSI color desync!
   const lines = wrapVisualText(content, availW);
   if (lines.length === 0) {
     return [prefixDecorator(`  ${branchChar} `) + tagDecorator(`[${tag}]`)];
@@ -328,9 +328,44 @@ export function formatTreeBranch(
 
   return lines.map((line, idx) => {
     if (idx === 0) {
-      return prefixDecorator(`  ${branchChar} `) + tagDecorator(`[${tag}] `) + line;
+      return prefixDecorator(`  ${branchChar} `) + tagDecorator(`[${tag}] `) + actualLineDecorator(line);
     }
-    return contDecorator(rawCont) + line;
+    return contDecorator(rawCont) + actualLineDecorator(line);
+  });
+}
+
+/**
+ * Format a sub-rail line under a branch (子导轨释义行):
+ * Preserves the vertical continuation rail (`  │ `) so the tree is never broken!
+ * Line 0: `  │      ↳ (<nuance in Language A>)`
+ * Line 1+: `  │        <continuation>`
+ */
+export function formatSubRail(
+  contChar: string,
+  nuanceText: string,
+  arrow = "↳",
+  contDecorator: (c: string) => string = (s) => s,
+  lineDecorator: (l: string) => string = (s) => s,
+  maxCols = (process.stdout.columns || 80) - 8,
+  indentCols = 11
+): string[] {
+  if (!nuanceText || !nuanceText.trim()) return [];
+
+  const rawPrefix = `  ${contChar}${" ".repeat(Math.max(1, indentCols - 5))}${arrow} `;
+  const prefixW = getVisualWidth(rawPrefix);
+  const rawCont = `  ${contChar}${" ".repeat(Math.max(1, prefixW - 3))}`;
+  const availW = Math.max(20, maxCols - prefixW);
+
+  const cleanText = nuanceText.startsWith("(") && nuanceText.endsWith(")")
+    ? nuanceText
+    : `(${nuanceText})`;
+
+  const lines = wrapVisualText(cleanText, availW);
+  return lines.map((line, idx) => {
+    if (idx === 0) {
+      return contDecorator(rawPrefix) + lineDecorator(line);
+    }
+    return contDecorator(rawCont) + lineDecorator(line);
   });
 }
 
@@ -357,36 +392,36 @@ export function formatTerminalAnnotation(
   const vocabTag = options.vocabLabel || "重点";
   const sourceTag = options.sourceLabel || "原文";
 
-  const spokenDisplay = options.spokenMeaning ? `${spoken} (${options.spokenMeaning})` : spoken;
-  const writtenDisplay = written && options.writtenMeaning ? `${written} (${options.writtenMeaning})` : (written || "");
-
-  const hasSlot2 = Boolean(writtenDisplay && writtenDisplay.trim());
+  const hasSlot2 = Boolean(written && written.trim());
   const hasVocab = Boolean(vocab && vocab.trim());
 
-  // 安全单行收敛与 Unicode/CJK 超长截断保护，避免多行排版爆炸和终端撕裂
+  // 安全单行收敛与视觉列宽截断保护，避免多行排版爆炸和终端撕裂 (严格限制在 32 视觉列宽以内)
   const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
-  const chars = Array.from(cleanSource);
-  const displaySource = chars.length > 40 ? chars.slice(0, 37).join("") + "..." : cleanSource;
+  const displaySource = truncateVisual(cleanSource, 32);
 
-  const lines = [`  · ${sourceTag}   ${displaySource}`];
-  if (hasSlot2 && hasVocab) {
-    lines.push(
-      ...formatTreeBranch("┌", "│", slot1, spokenDisplay),
-      ...formatTreeBranch("├", "│", slot2, writtenDisplay),
-      ...formatTreeBranch("└", " ", vocabTag, vocab || "")
-    );
-  } else if (hasSlot2) {
-    lines.push(
-      ...formatTreeBranch("┌", "│", slot1, spokenDisplay),
-      ...formatTreeBranch("└", " ", slot2, writtenDisplay)
-    );
-  } else if (hasVocab) {
-    lines.push(
-      ...formatTreeBranch("┌", "│", slot1, spokenDisplay),
-      ...formatTreeBranch("└", " ", vocabTag, vocab || "")
-    );
-  } else {
-    lines.push(...formatTreeBranch("└", " ", slot1, spokenDisplay));
+  const lines: string[] = [`  · [${sourceTag}] ${displaySource}`];
+
+  // 1. 口语槽位：若无后续槽位则作为末端分支 └ 呈现；否则作为起始分支 ┌
+  const branch1Char = (hasSlot2 || hasVocab) ? "┌" : "└";
+  const cont1Char = (hasSlot2 || hasVocab) ? "│" : " ";
+  lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spoken));
+  if (options.spokenMeaning) {
+    lines.push(...formatSubRail(cont1Char, options.spokenMeaning));
+  }
+
+  // 2. 写作槽位
+  if (hasSlot2) {
+    const branchChar = hasVocab ? "├" : "└";
+    const contChar = hasVocab ? "│" : " ";
+    lines.push(...formatTreeBranch(branchChar, contChar, slot2, written!));
+    if (options.writtenMeaning) {
+      lines.push(...formatSubRail(contChar, options.writtenMeaning));
+    }
+  }
+
+  // 3. 重点词汇槽位
+  if (hasVocab) {
+    lines.push(...formatTreeBranch("└", " ", vocabTag, vocab!));
   }
 
   return lines.join("\n");
@@ -411,10 +446,15 @@ export function stripLinguaAnnotation(annotatedText: string): {
   for (const line of lines) {
     const trimmed = line.trim();
 
-    // Check for source line: · 原文 text
-    const sourceMatch = trimmed.match(/^·\s*(?:原文|source|original)\s+(.*)$/i);
+    // Check for source line: · 原文 text or · [原文] text
+    const sourceMatch = trimmed.match(/^·\s*\[?(?:原文|source|original|quelle)\]?\s+(.*)$/i);
     if (sourceMatch) {
       rawLines.push(sourceMatch[1].trim());
+      continue;
+    }
+
+    // Ignore sub-rail nuance lines (↳ ...) so raw text remains completely unpolluted
+    if (/^(?:[│\s]*↳\s*\(.*\)|↳\s*\(.*\))/.test(trimmed)) {
       continue;
     }
 
@@ -468,15 +508,28 @@ export async function translatePrompt(
     return null;
   }
 
+  // Code & Shell Pass-through Shield: 0ms bypass for pure commands, code fences, and data structures
+  if (shouldShieldBypass(trimmed)) {
+    return null;
+  }
+
+  // In-Memory LRU Cache: 0ms hit for high-frequency phrases (e.g. "继续", "认同", "开始吧")
+  const cacheKey = LinguaLruCache.buildKey(trimmed, cfg.sourceLang, cfg.targetLang);
+  const cached = globalLinguaCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), cfg.timeoutMs);
 
   try {
     let content: string | null = null;
+    const sysPrompt = buildSystemPrompt(cfg.sourceLang, cfg.targetLang);
 
     // 1. If custom complete callback is provided (e.g. Pi native ModelRegistry / ctx.model):
     if (typeof cfg.complete === "function") {
-      content = await cfg.complete(trimmed, LINGUA_SYSTEM_PROMPT);
+      content = await cfg.complete(trimmed, sysPrompt);
     } else if (cfg.endpoint) {
       // 2. Otherwise fall back to custom OpenAI-compatible endpoint (BYOK / self-hosted proxy)
       const headers: Record<string, string> = {
@@ -492,7 +545,7 @@ export async function translatePrompt(
         body: JSON.stringify({
           model: cfg.model || "gemini-3.8-flash",
           messages: [
-            { role: "system", content: LINGUA_SYSTEM_PROMPT },
+            { role: "system", content: sysPrompt },
             { role: "user", content: trimmed },
           ],
           temperature: cfg.temperature,
@@ -523,7 +576,7 @@ export async function translatePrompt(
     const vocabLabel = cfg.labels?.vocabLabel || "重点";
     const sourceLabel = cfg.labels?.sourceLabel || "原文";
 
-    return {
+    const result: LinguaResult = {
       spoken: payload.spoken,
       spokenMeaning: payload.spokenMeaning,
       written: payload.written || "",
@@ -545,6 +598,10 @@ export async function translatePrompt(
         }
       ),
     };
+
+    // Store in LRU cache
+    globalLinguaCache.set(cacheKey, result);
+    return result;
   } catch {
     return null;
   } finally {

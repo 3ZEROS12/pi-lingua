@@ -11,6 +11,7 @@ test("extension input handler - original mode returns continue immediately and r
       if (event === "input") registeredInputHandler = handler;
     },
     registerCommand() {},
+    registerShortcut() {},
   };
 
   const mockCtx: any = {

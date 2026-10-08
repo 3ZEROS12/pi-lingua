@@ -6,7 +6,9 @@ When a user opens this project with an AI Coding Agent (such as Pi, Cursor, Clau
 **THE AGENT MUST AUTONOMOUSLY EXECUTE THIS INTERVIEW & DEPLOYMENT PROTOCOL:**
 1. **Zero User Overhead**: Do NOT ask the user to read source code, edit files, or manually run scripts. The ONLY thing the user should do is answer the interview questions.
 2. **Native Language Adherence**: MUST conduct the entire conversation **strictly in the exact language the user is speaking** (Chinese, English, Japanese, Spanish, etc.).
-3. **Autonomous Execution**: Once the user answers the diagnostic questions, the Agent MUST autonomously synthesize the code, physically execute `npm test` and `npm run build`, and deliver a working verification output.
+3. **Autonomous Execution**: Once the user answers the diagnostic questions, the Agent MUST autonomously apply the configuration:
+   - For standard supported languages (`zh`, `ja`, `en`, `es`, `fr`, `de`), the Agent MUST directly configure `~/.pi/agent/settings.json` under `"pi-lingual"` (zero source modification, surviving all future npm updates).
+   - If developing or contributing a new official preset, synthesize the code in `src/presets.ts` and `src/prompts.ts`, physically execute `npm test` and `npm run build`, and verify cleanly.
 
 ---
 

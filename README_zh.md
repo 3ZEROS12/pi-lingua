@@ -6,7 +6,7 @@
 [![npm version](https://img.shields.io/npm/v/pi-lingual?color=blue)](https://www.npmjs.com/package/pi-lingual)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Built for Pi](https://img.shields.io/badge/Built%20for-Pi%20Coding%20Agent-orange)](https://github.com/earendil-works/pi-coding-agent)
-[![Tests](https://img.shields.io/badge/Tests-9%2F9%20Pass-brightgreen)](tests/engine.test.ts)
+[![Tests](https://img.shields.io/badge/Tests-27%2F27%20Pass-brightgreen)](tests/engine.test.ts)
 
 [English](./README.md) | **简体中文**
 
@@ -67,8 +67,13 @@ over-engineered (过度工程化) · be better off (采用……更为合适) ·
 视窗严禁向下折行堆叠词典式解释，确保终端代码编辑区域不被挤压变形。
 
 ### 4. 饱和命令与 CLI 覆盖矩阵
-切换模式或查询翻译均支持最小击键操作：
-* **Pi 终端会话内**：输入 `/lingua`、`/lingual`、`/translate` 或单字符命令 `/2`，即可按 `原文 ➔ 英文 ➔ 关` 顺序循环切换。
+切换模式、管理语言或查询翻译均支持最小击键操作：
+* **Pi 终端会话内**：
+  * `/2`、`/lingua`、`/lingual`、`/translate`：循环切换运行模式（`原文 ➔ 英文 ➔ 关`）；
+  * `/2-lang [lang]` 或 `/lingua-lang [lang]`：秒切母语 A（支持 `zh`、`ja`、`en`、`es`、`fr`、`de`，自动持久化至全局配置）；
+  * `/lingua-model [id|auto]`：查询或解耦切换伴学专有模型；
+  * `/lingua-status`：查看完整系统健康诊断、语言流向与 LRU 缓存命中率；
+  * `/2-last` 或 `/lingua-last`：原地重现上一条伴学卡片。
 * **状态栏实时指示**：终端底部状态栏常驻当前运行状态，如 `⇄ [二 ⇄ two] 原文`，切换时即时响应。
 * **系统全局 CLI**：支持通过 `lingua`、`lingual`、`translate`、`lg`、`2` 等别名在任意 Shell 中快速查询：
   ```bash
@@ -84,7 +89,7 @@ over-engineered (过度工程化) · be better off (采用……更为合适) ·
 > 认同，开始吧
 ```
 ```text
-  · 原文   认同，开始吧
+  · [原文]   认同，开始吧
   ┌ [口语] Totally on board with that — let's dive right in. (完全赞同，咱们直接开搞)
   ├ [写作] Acknowledged. Let's proceed with the implementation. (确认赞同，着手推进具体实施)
   └ [重点] on board with (赞同/支持) · dive in (立刻着手)
@@ -95,7 +100,7 @@ over-engineered (过度工程化) · be better off (采用……更为合适) ·
 > 这个方案有点过度设计了，不如直接用标准库实现
 ```
 ```text
-  · 原文   这个方案有点过度设计了，不如直接用标准库实现
+  · [原文]   这个方案有点过度设计了，不如直接用标准库实现
   ┌ [口语] This feels a bit over-engineered; we'd be much better off just sticking with the standard library. (感觉有点过度设计了，用标准库划算得多)
   ├ [写作] The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred. (该方案引入了不必要的复杂度，建议优先采用原生标准库实现)
   └ [重点] over-engineered (过度工程化) · be better off (做某事更合适) · stick with (坚持使用) · leverage (利用/借助)
@@ -106,7 +111,7 @@ over-engineered (过度工程化) · be better off (采用……更为合适) ·
 > 继续
 ```
 ```text
-  · 原文   继续
+  · [原文]   继续
   ┌ [口语] Let's keep going. (继续往下搞)
   ├ [写作] Proceed with the next steps. (推进后续步骤)
   └ [重点] keep going (继续推进) · proceed with (着手推进)
@@ -177,30 +182,65 @@ lingua "这几个接口需要做幂等性校验"
 
 ---
 
-## 🤖 零配置模型驱动与模型自主选择 (Zero-Config & Model Sovereignty)
+## 🤖 零配置模型驱动与三阶模型方案 (Model Sovereignty for Plan Subscribers)
 
-`pi-lingual` 彻底告别了传统插件繁琐脆弱的外部 API 配置，全面采用 **Pi 宿主原生进程内模型调度 (In-Process Model Engine)**：
+`pi-lingual` 全面采用 **Pi 宿主原生进程内模型调度 (In-Process Model Engine)**，特别针对纯 Plan 订阅用户（Claude Pro、ChatGPT Plus、GitHub Copilot 会员）消除单独购买 Token Key 的负担：
 
-### 1. 零配置安装即用 (Zero-Config by Default)
-* 插件运行在 Pi 会话内时，**直接自动复用当前会话正在使用的模型与已认证凭据**（无论是 Claude、GPT-4o、Gemini、DeepSeek 还是本地 Ollama）；
-* **无需配置任何 API Key，无需配置任何外部网关，0 密钥泄露风险，安装后敲回车立即生效！**
+### 1. 核心默认：Pi 原生免 Key 直连 (Zero-Config by Default · 推荐)
+* **适用人群**：拥有 Pi 会话权限的纯 Plan 订阅开发者，无需单独购买任何 API Key；
+* **工作机理**：直接通过 `ctx.modelRegistry.streamSimple()` 自动复用当前会话正在使用的模型与认证凭据；
+* **优劣权衡**：
+  * **优势**：0 配置、0 门槛、0 密钥泄露风险，安装后敲回车立即生效；
+  * **解耦支持**：可运行 `/lingua-model <model-id>`（例如 `/lingua-model gemini-3.8-flash` 或 `/lingua-model auto`）将伴学指定给轻量模型，主会话负责重度代码逻辑。
 
-### 2. 模型自由解耦与专属命令 (`/lingua-model` & `/lingua-status`)
-如果你不想用昂贵的主模型来做简单的伴学，可以自由解耦：
-* 运行 `/lingua-model`：查看当前伴学正在调用的模型，并列出 Pi 中所有可用的候选模型；
-* 运行 `/lingua-model <model-id>`（例如 `/lingua-model gemini-3.8-flash` 或 `/lingua-model auto`）：
-  * 将伴学任务指派给极速、经济的轻量级模型，主模型依然负责重度代码逻辑编写；
-  * 设置将自动持久化保存至 `~/.pi/agent/settings.json`（对齐 Pi 规范），重启依然生效！
-* 运行 `/lingua-status`：一键调出完整的当前模式、语言流向、模型分配与 HUD 状态自检报告。
+### 2. 可选进阶：本地 0 成本离线模型 (Local Ollama · 真正零额度消耗)
+* **适用人群**：心疼云端对话次数配额、希望日常高频伴学彻底不耗费任何订阅次数的开发者；
+* **工作机理**：本地运行 Ollama 并在后台挂载 2~3B 轻量模型（如 `qwen2.5:3b` 或 `llama3.2:3b`），在 `~/.pi/agent/lingua.json` 中配置：
+  ```json
+  {
+    "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
+    "model": "qwen2.5:3b"
+  }
+  ```
+* **优劣权衡**：
+  * **优势**：100% 免费、0 云端网络请求、0 订阅配额扣减、完全私密离线；
+  * **代价**：需本地运行 Ollama 并占用约 2GB 显存/内存。
 
-### 3. 独立外部网关兼容 (BYOK / 外部 CLI)
-如果你希望在外部终端运行独立 CLI，或者使用独立自建的 OpenAI 兼容网关：
-可直接在 `~/.pi/agent/lingua.json` 或环境变量中声明：
-```bash
-export LINGUA_ENDPOINT="https://api.openai.com/v1/chat/completions"
-export LINGUA_API_KEY="sk-..."
-export LINGUA_MODEL="gpt-4o-mini"
-```
+### 3. 可选扩展：外部自建网关 / 独立 API Key (BYOK)
+* **适用人群**：团队私有代理部署或独立拥有 OpenAI/Anthravity 商业 API 密钥的工程师；
+* **工作机理**：通过环境变量或 `~/.pi/agent/lingua.json` 显式声明：
+  ```bash
+  export LINGUA_ENDPOINT="https://api.openai.com/v1/chat/completions"
+  export LINGUA_API_KEY="sk-..."
+  export LINGUA_MODEL="gpt-4o-mini"
+  ```
+* **优劣权衡**：
+  * **优势**：独立于 Pi 会话环境，在外部独立 Shell（CLI）中也能直接调用；
+  * **代价**：需自行维护 Token Key 账单与网络连通性。
+
+---
+
+## 📄 长句切分与分页保障 (Semantic Chunking & Pagination)
+
+为了严格遵守终端人体工程学并突破宿主 10 行物理截断墙，`pi-lingual` 执行**原子完备切分保底机制**：
+* **日常短句（90% 场景）**：单卡全量呈现，保持极简纯粹，**绝不出现任何多余的快捷键提示**；
+* **超长多句段落（突破行数预算）**：
+  * 自动沿自然标点（`。！？；\n`）将段落拆解为独立的意群切片；
+  * **每一页均完整包含【本段原文】+【槽位1 口语】+【槽位2 写作】+【槽位3 重点】，原子闭环绝不割裂**；
+  * 首段 200ms 极速呈现，角标极其克制地标注 `[1/2 ⌥.]`，按 **`Alt+.`** (`>`) / **`Alt+,`** (`<`) 丝滑翻页，告别断行截断！
+
+---
+
+## ⚡ v0.2.0 核心性能与交互革新 (What's New in v0.2.0)
+
+| 核心特性 | 运作机制与物理收益 | 触发操作 |
+| :--- | :--- | :--- |
+| **🛡️ 纯代码与 CLI 防御盾** | 0ms 智能特征嗅探纯 Shell 指令（`git`、`npm`、`cargo` 等）与代码块，自动放行，**0 Token 损耗**；包含“为什么/报错/？”等技术提问时智能穿透放行 | 自动生效 (无感) |
+| **⚡ 0 依赖内存 LRU 缓存** | 针对“继续”、“认同”、“开始吧”、“可以”等高频确认指令，基于 50 容量内存链表实现 **0ms 极速直出**，零外部模型请求 | 自动生效 (无感) |
+| **🌐 多语言秒切与免魔改** | 彻底废除在用户本地修改源码的脆弱做法，输入指令即刻切换母语 A，自动写入 `settings.json`，**跨 npm 升级无损继承** | `/2-lang [zh\|ja\|en\|es\|fr\|de]` |
+| **🤖 伴学模型独立解耦** | 将轻量伴学模型与会话主推理模型解耦，支持绑定低成本模型独立运行 | `/lingua-model [id\|auto]` |
+| **📊 全景健康诊断报告** | 实时显示当前运行模式、语言流向、模型状态以及 **LRU 缓存命中率与容量** | `/lingua-status` 或 `/2-status` |
+| **📐 像素级对齐与 9 行硬顶** | 首行统一为 `  · [原文] `，与后续分支严格在第 11 列对齐；自适应折叠严守 9 行硬预算，100% 免疫宿主 10 行截断 | 自动生效 (无感) |
 
 ---
 

@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
+import { createRequire } from "node:module";
 import { translatePrompt } from "../dist/index.js";
 
-const VERSION = "0.1.4";
+const require = createRequire(import.meta.url);
+const pkg = require("../package.json");
+const VERSION = pkg.version || "0.1.4";
 
 async function main() {
   const args = process.argv.slice(2);

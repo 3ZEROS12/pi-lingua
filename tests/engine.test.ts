@@ -89,7 +89,7 @@ test("parseLlmResponse - supports proficiency-adaptive vocab with multiple (3+) 
 });
 
 test("formatTerminalAnnotation - formats with source text anchor, native nuance, and Trifecta Left-Rail Tree Branch", () => {
-  // 1. Dual slots + nuance meanings + vocab
+  // 1. Dual slots + nuance meanings + vocab (Two-tier structure: B on main branch, A nuance on sub-rail)
   const full = formatTerminalAnnotation(
     "賛成です、進めましょう",
     "Totally on board with that — let's dive right in.",
@@ -104,10 +104,12 @@ test("formatTerminalAnnotation - formats with source text anchor, native nuance,
       sourceLabel: "原文",
     }
   );
-  assert.ok(full.includes("· 原文   賛成です、進めましょう"), "Must include source text anchor");
-  assert.ok(full.includes("┌ [口語] Totally on board with that — let's dive right in. (完全に賛成、早速取り掛かろう)"));
-  assert.ok(full.includes("├ [文面] Acknowledged. Let's proceed with the implementation. (了解しました。実装を進めましょう)"));
-  assert.ok(full.includes("└ [単語] on board with · dive in"));
+  assert.ok(full.includes("· [原文] 賛成です、進めましょう"), "Must include source text anchor");
+  assert.ok(full.includes("┌ [口語] Totally on board with that — let's dive right in."), "Main branch must contain target language B");
+  assert.ok(full.includes("↳ (完全に賛成、早速取り掛かろう)"), "Sub-rail must contain native language A nuance");
+  assert.ok(full.includes("├ [文面] Acknowledged. Let's proceed with the implementation."), "Main branch must contain target language B");
+  assert.ok(full.includes("↳ (了解しました。実装を進めましょう)"), "Sub-rail must contain native language A nuance");
+  assert.ok(full.includes("└ [単語] on board with · dive in"), "Vocab branch must be cleanly presented");
 
   // 2. Dual slots without vocab
   const noVocab = formatTerminalAnnotation(
@@ -115,7 +117,7 @@ test("formatTerminalAnnotation - formats with source text anchor, native nuance,
     "Let's keep going.",
     "Proceed with the next steps."
   );
-  assert.ok(noVocab.includes("· 原文   继续"));
+  assert.ok(noVocab.includes("· [原文] 继续"));
   assert.ok(noVocab.includes("┌ [口语] Let's keep going."));
   assert.ok(noVocab.includes("└ [写作] Proceed with the next steps."));
 
@@ -124,7 +126,7 @@ test("formatTerminalAnnotation - formats with source text anchor, native nuance,
     "继续",
     "Let's keep going."
   );
-  assert.ok(single.includes("· 原文   继续"));
+  assert.ok(single.includes("· [原文] 继续"));
   assert.ok(single.includes("└ [口语] Let's keep going."));
 });
 
@@ -169,7 +171,7 @@ test("translatePrompt - supports custom completion callback (Pi native ModelRegi
   assert.equal(res.written, "Acknowledged. Let's proceed with the implementation.");
   assert.equal(res.writtenMeaning, "确认赞同，着手推进具体实施");
   assert.equal(res.vocab, "on board with (赞成/支持) · dive in (立刻着手/开搞)");
-  assert.ok(res.annotated.includes("· 原文   认同，开始吧"));
+  assert.ok(res.annotated.includes("· [原文] 认同，开始吧"));
   assert.ok(res.annotated.includes("┌ [口语]"));
   assert.ok(res.annotated.includes("├ [写作]"));
   assert.ok(res.annotated.includes("└ [重点]"));

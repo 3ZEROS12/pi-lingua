@@ -9,6 +9,49 @@ export interface LinguaI18nLabels {
   statusOriginal: string;  // e.g. "⇄ [二 ⇄ two] 原文"
   statusEnglish: string;   // e.g. "⇄ [二 ⇄ two] 英文"
   statusOff: string;       // e.g. "⇄ [二 ⇄ two]: 关"
+  subNuanceLabel?: string; // e.g. "↳"
+
+  // Localized notifications (Primary Language Sovereignty)
+  notifyOriginal?: string;
+  notifyEnglish?: string;
+  notifyOff?: string;
+  notifyPaging?: string;
+  notifyNoHistory?: string;
+  notifyHistoryRestored?: string;
+  notifyAgentHelp?: string;
+  notifyModelSwitched?: string; // template containing {model} or format string
+  notifyLangSwitched?: string;  // template containing {lang}
+  notifyLangInvalid?: string;
+
+  // Localized command descriptions
+  cmdDescMode?: string;
+  cmdDescStatus?: string;
+  cmdDescModel?: string;
+  cmdDescLang?: string;
+  cmdDescLast?: string;
+  cmdDescAgent?: string;
+  shortcutNextPage?: string;
+  shortcutPrevPage?: string;
+
+  // Localized status report & model diagnostics
+  statusReportTitle?: string;
+  statusReportMode?: string;
+  statusReportFlow?: string;
+  statusReportModel?: string;
+  statusReportCache?: string;
+  statusReportLayout?: string;
+  statusReportAuth?: string;
+  statusReportShortcuts?: string;
+  modeDescOriginal?: string;
+  modeDescEnglish?: string;
+  modeDescOff?: string;
+
+  // Localized model selector chrome
+  modelCurrentLabel?: string;
+  modelFollowSession?: string;
+  modelAvailableListHeader?: string;
+  modelAutoFollowDesc?: string;
+  modelSelectHint?: string;
 
   // Aliases for backwards compatibility
   spokenLabel?: string;

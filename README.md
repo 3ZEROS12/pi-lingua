@@ -6,7 +6,7 @@
 [![npm version](https://img.shields.io/npm/v/pi-lingual?color=blue)](https://www.npmjs.com/package/pi-lingual)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Built for Pi](https://img.shields.io/badge/Built%20for-Pi%20Coding%20Agent-orange)](https://github.com/earendil-works/pi-coding-agent)
-[![Tests](https://img.shields.io/badge/Tests-9%2F9%20Pass-brightgreen)](tests/engine.test.ts)
+[![Tests](https://img.shields.io/badge/Tests-27%2F27%20Pass-brightgreen)](tests/engine.test.ts)
 
 **English** | [简体中文](./README_zh.md)
 
@@ -67,8 +67,13 @@ over-engineered (过度工程化) · be better off (采用……更为合适) ·
 The view never stacks multi-line definitions vertically, preventing code lines in the editor from being pushed off-screen.
 
 ### 4. Saturated Command & CLI Coverage
-Switching modes or checking translations requires minimal keystrokes:
-* **Inside Pi Sessions**: Run `/lingua`, `/lingual`, `/translate`, or the single-character toggle `/2` to rotate modes (`Original ➔ English ➔ Off`).
+Switching modes, languages, or checking translations requires minimal keystrokes:
+* **Inside Pi Sessions**:
+  * `/2`, `/lingua`, `/lingual`, `/translate`: Rotate runtime modes (`Original ➔ English ➔ Off`).
+  * `/2-lang [lang]` or `/lingua-lang [lang]`: Instant switch of native language A (`zh`, `ja`, `en`, `es`, `fr`, `de`), persistently saved to settings without code mutations.
+  * `/lingua-model [id|auto]`: Inspect or designate a decoupled companion model.
+  * `/lingua-status`: Full diagnostic report with flow info and in-memory LRU cache hit rate.
+  * `/2-last` or `/lingua-last`: Replay previous companion card.
 * **Status Bar Totem**: Active state shows directly in the footer: `⇄ [二 ⇄ two] 原文`, updating dynamically on toggle.
 * **Global CLI**: Execute translations from any shell via `lingua`, `lingual`, `translate`, `lg`, or `2`:
   ```bash
@@ -84,7 +89,7 @@ Switching modes or checking translations requires minimal keystrokes:
 > 认同，开始吧
 ```
 ```text
-  · 原文   认同，开始吧
+  · [原文]   认同，开始吧
   ┌ [Spoken]  Totally on board with that — let's dive right in. (完全赞同，咱们直接开搞)
   ├ [Written] Acknowledged. Let's proceed with the implementation. (确认赞同，着手推进具体实施)
   └ [Vocab]   on board with (赞同/支持) · dive in (立刻着手)
@@ -95,7 +100,7 @@ Switching modes or checking translations requires minimal keystrokes:
 > 这个方案有点过度设计了，不如直接用标准库实现
 ```
 ```text
-  · 原文   这个方案有点过度设计了，不如直接用标准库实现
+  · [原文]   这个方案有点过度设计了，不如直接用标准库实现
   ┌ [Spoken]  This feels a bit over-engineered; we'd be much better off just sticking with the standard library. (感觉有点过度设计了，用标准库划算得多)
   ├ [Written] The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred. (该方案引入了不必要的复杂度，建议优先采用原生标准库实现)
   └ [Vocab]   over-engineered (过度工程化) · be better off (做某事更合适) · stick with (坚持使用) · leverage (利用/借助)
@@ -106,7 +111,7 @@ Switching modes or checking translations requires minimal keystrokes:
 > 继续
 ```
 ```text
-  · 原文   继续
+  · [原文]   继续
   ┌ [Spoken]  Let's keep going. (继续往下搞)
   ├ [Written] Proceed with the next steps. (推进后续步骤)
   └ [Vocab]   keep going (继续推进) · proceed with (着手推进)
@@ -177,30 +182,65 @@ lingua "这几个接口需要做幂等性校验"
 
 ---
 
-## 🤖 Zero-Config Model Engine & Model Sovereignty
+## 🤖 Zero-Config Model Engine & Model Sovereignty for Plan Subscribers
 
-`pi-lingual` dispenses with brittle third-party proxy configurations by operating directly within the **Pi In-Process Model Architecture**:
+`pi-lingual` operates directly within the **Pi In-Process Model Architecture**, specifically designed to eliminate the need for separate API token keys for users on fixed subscription plans (Claude Pro, ChatGPT Plus, GitHub Copilot):
 
-### 1. Zero-Config by Default
-* When running inside Pi, `pi-lingual` **automatically inherits the active session's model and credentials** (whether Claude, GPT-4o, Gemini, DeepSeek, or local Ollama).
-* **No external API key setup, no manual endpoint configuration, and zero risk of secret leaks. Install and press Enter!**
+### 1. Primary Default: Native Pi In-Process Model (Zero-Config, Recommended)
+* **Target Users**: Plan-only subscribers with active Pi session credentials, requiring zero additional API key purchases.
+* **Mechanism**: Invokes `ctx.modelRegistry.streamSimple()` to seamlessly reuse the authenticated session model and credentials.
+* **Trade-offs**:
+  * **Pros**: Zero configuration, zero cognitive burden, zero risk of credential leaks. Install and press Enter!
+  * **Decoupling**: Run `/lingua-model <model-id>` (e.g. `/lingua-model gemini-3.8-flash` or `/lingua-model auto`) to delegate translation tasks to a lightweight model while keeping your primary model focused on code.
 
-### 2. Model Decoupling & Dedicated Commands (`/lingua-model` & `/lingua-status`)
-If you prefer not to spend heavy reasoning tokens on prompt translations:
-* Run `/lingua-model`: View the currently active translation model and list all available model candidates configured in Pi.
-* Run `/lingua-model <model-id>` (e.g. `/lingua-model gemini-3.8-flash` or `/lingua-model auto`):
-  * Delegate translation tasks to a fast, cost-effective model while keeping your primary model focused on complex software architecture.
-  * Preferences persist across sessions cleanly in Pi's `settings.json`.
-* Run `/lingua-status`: Inspect a complete live diagnostic report covering active mode, language direction, model allocation, and HUD status.
+### 2. Optional Alternative: Local 0-Cost Offline Model (Local Ollama · Zero Token Burn)
+* **Target Users**: Developers who wish to preserve their cloud reasoning quotas and run prompt companions completely free of cost.
+* **Mechanism**: Run Ollama locally with a 2–3B parameter model (e.g. `qwen2.5:3b` or `llama3.2:3b`), and configure `~/.pi/agent/lingua.json`:
+  ```json
+  {
+    "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
+    "model": "qwen2.5:3b"
+  }
+  ```
+* **Trade-offs**:
+  * **Pros**: 100% free, zero external network requests, zero cloud quota consumption, fully private.
+  * **Cons**: Requires local Ollama installation and approximately 2GB of VRAM/RAM.
 
-### 3. Custom Gateway Compatibility (BYOK / Standalone CLI)
-For standalone CLI usage outside Pi or private OpenAI-compatible proxies:
-Configure `~/.pi/agent/lingua.json` or set environment variables:
-```bash
-export LINGUA_ENDPOINT="https://api.openai.com/v1/chat/completions"
-export LINGUA_API_KEY="sk-..."
-export LINGUA_MODEL="gpt-4o-mini"
-```
+### 3. Optional Alternative: Custom BYOK / API Gateway
+* **Target Users**: Teams with self-hosted private proxies or developers with personal commercial API keys.
+* **Mechanism**: Export environment variables or specify in `~/.pi/agent/lingua.json`:
+  ```bash
+  export LINGUA_ENDPOINT="https://api.openai.com/v1/chat/completions"
+  export LINGUA_API_KEY="sk-..."
+  export LINGUA_MODEL="gpt-4o-mini"
+  ```
+* **Trade-offs**:
+  * **Pros**: Independent of active Pi session context, usable directly from standalone CLI shells.
+  * **Cons**: Requires managing API bills, credentials, and network routing.
+
+---
+
+## 📄 Semantic Chunking & Multi-Page Safeguard
+
+To respect terminal ergonomics and strictly avoid the host's 10-line truncation limit, `pi-lingual` implements an **atomic semantic chunking safeguard**:
+* **Standard short prompts (90% of cases)**: Displayed as a single full card. Zero visual clutter, **no shortcut banners**.
+* **Long multi-sentence prompts (exceeding line budget)**:
+  * Automatically split along natural punctuation boundaries (`。！？；\n` or `.!?\n`).
+  * **Each page strictly preserves the complete atomic set: [Source Chunk] + [Slot 1 Spoken] + [Slot 2 Written] + [Slot 3 Vocab] in one view!**
+  * The first chunk renders in ~200ms with an ultra-minimal corner tag `[1/2 ⌥.]`. Flip between chunks seamlessly using **`Alt+.`** (`>`) / **`Alt+,`** (`<`) without cursor collision or text loss!
+
+---
+
+## ⚡ What's New in v0.2.0 (Performance & Ergonomics)
+
+| Core Feature | Mechanism & Impact | Operation |
+| :--- | :--- | :--- |
+| **🛡️ Code & CLI Shield** | 0ms heuristic sniffing of pure shell commands (`git`, `npm`, `cargo`, etc.) and code blocks with **0 token waste**; technical questions (`git status 为什么报错？`) pass through safely | Automatic |
+| **⚡ Zero-Dependency LRU Cache** | High-frequency confirmation phrases ("继续", "认同", "开始吧", "可以") achieve **0ms instant HUD display** backed by a 50-entry in-memory cache | Automatic |
+| **🌐 Dynamic Language Switching** | Replaced fragile local source mutations with config-driven persistence in `settings.json`, surviving npm upgrades with **zero Chinese residue** | `/2-lang [zh\|ja\|en\|es\|fr\|de]` |
+| **🤖 Model Decoupling** | Decouple the lightweight companion engine from deep reasoning models to preserve high-tier session tokens | `/lingua-model [id\|auto]` |
+| **📊 Health & Cache Diagnostics** | Real-time diagnostic overview of active mode, language flow, companion model, and **LRU cache hit rate** | `/lingua-status` or `/2-status` |
+| **📐 Pixel-Perfect Alignment & 9-Line Hard Budget** | Unified `  · [Original] ` tag aligned to column 11; adaptive folding ensures line count <= 9 lines, 100% immune to host widget truncation | Automatic |
 
 ---
 
