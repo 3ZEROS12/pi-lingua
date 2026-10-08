@@ -27,7 +27,7 @@ Every day, software engineers type hundreds of terminal prompts into coding agen
 * **Silent translation plugins** translate input in the background to hide their existence. The agent gets English, but the developer sees nothing and learns nothing.
 * **Inline comment spam** pollutes session histories by appending English translations directly into chat transcripts, wasting model context on every subsequent turn.
 
-`pi-lingua` runs a dual-register language engine directly in the terminal interface. It displays everyday conversational slang and formal technical prose in a detached floating view above your input line, without touching the model conversation log.
+`pi-lingual` runs a dual-register language engine directly in the terminal interface. It displays everyday conversational slang and formal technical prose in a detached floating view above your input line, without touching the model conversation log.
 
 ---
 
@@ -45,7 +45,7 @@ Every day, software engineers type hundreds of terminal prompts into coding agen
 ```
 
 ### 1. Trifecta Left-Rail Tree Branch HUD
-Terminal CJK characters commonly break closed rectangular borders, causing line-wrapping tears in Windows Terminal, Alacritty, and iTerm2. `pi-lingua` discards right-hand box boundaries entirely. It renders an open left-rail tree branch:
+Terminal CJK characters commonly break closed rectangular borders, causing line-wrapping tears in Windows Terminal, Alacritty, and iTerm2. `pi-lingual` discards right-hand box boundaries entirely. It renders an open left-rail tree branch:
 * ` · Original`: Exact user input line for cognitive reference.
 * ` ┌ [Spoken]`: Natural colloquial English (daily standups, Slack huddles, pair programming, contractions, common phrasal verbs) paired with native nuances in parentheses.
 * ` ├ [Written]`: Modern technical Plain English (RFCs, PR descriptions, issue trackers, architectural reviews) paired with native nuances.
@@ -58,7 +58,7 @@ The plugin intercepts input via Pi's extension lifecycle while preserving transc
 * **Off Mode (`off`)**: Bypasses the translation engine entirely.
 
 ### 3. Adaptive Vocabulary in an Inline Stream
-Fixed limits (such as forcing 1–2 vocabulary items) either omit crucial idioms or pad outputs with obvious words. `pi-lingua` evaluates user proficiency dynamically. When an input contains technical idioms, phrasal verbs, or prepositions that intermediate developers miss, the engine extracts them all.
+Fixed limits (such as forcing 1–2 vocabulary items) either omit crucial idioms or pad outputs with obvious words. `pi-lingual` evaluates user proficiency dynamically. When an input contains technical idioms, phrasal verbs, or prepositions that intermediate developers miss, the engine extracts them all.
 
 To protect terminal screen space, all vocabulary entries stream into a single horizontal line joined by ` · `:
 ```text
@@ -121,7 +121,7 @@ Switching modes, languages, or checking translations requires minimal keystrokes
 
 ## Global Symmetrical Multilingual Showcase
 
-`pi-lingua` operates bidirectionally across world languages. English-speaking developers learning Chinese, Japanese, or Spanish receive the same dual-register breakdowns as international developers learning English.
+`pi-lingual` operates bidirectionally across world languages. English-speaking developers learning Chinese, Japanese, or Spanish receive the same dual-register breakdowns as international developers learning English.
 
 <p align="center">
   <img src="assets/multilingual-showcase.svg" alt="Global Multilingual Showcase" width="840">
@@ -250,7 +250,7 @@ To respect terminal ergonomics and strictly avoid the host's 10-line truncation 
 ```bash
 git init
 git add .
-git commit -m "feat: release pi-lingua v0.1.0 with dual-register HUD & multilingual showcase"
+git commit -m "feat: release pi-lingual v0.2.0 with Code Shield, LRU Cache, and /2-lang"
 git branch -M main
 git remote add origin https://github.com/3ZEROS12/pi-lingua.git
 git push -u origin main
