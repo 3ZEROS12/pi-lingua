@@ -228,6 +228,113 @@ export function parseLlmResponse(raw: string): TranslationPayload | null {
 }
 
 /**
+ * Accurate visual cell width calculation:
+ * - ANSI escape codes = 0 visual width
+ * - CJK characters, Fullwidth forms, emojis = 2 visual width
+ * - ASCII characters = 1 visual width
+ */
+export function getVisualWidth(str: string): number {
+  let width = 0;
+  const clean = str.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "");
+  for (const char of clean) {
+    const code = char.codePointAt(0) || 0;
+    if (
+      (code >= 0x1100 && code <= 0x115f) ||
+      (code >= 0x2e80 && code <= 0xa4cf) ||
+      (code >= 0xac00 && code <= 0xd7a3) ||
+      (code >= 0xf900 && code <= 0xfaff) ||
+      (code >= 0xfe10 && code <= 0xfe19) ||
+      (code >= 0xfe30 && code <= 0xfe6f) ||
+      (code >= 0xff00 && code <= 0xff60) ||
+      (code >= 0xffe0 && code <= 0xffe6) ||
+      (code >= 0x1f300 && code <= 0x1f64f) ||
+      (code >= 0x1f900 && code <= 0x1f9ff)
+    ) {
+      width += 2;
+    } else {
+      width += 1;
+    }
+  }
+  return width;
+}
+
+/**
+ * Robust ANSI-safe CJK & Latin visual text wrapper:
+ * Breaks cleanly at word boundaries for Latin words, and character boundaries for CJK.
+ */
+export function wrapVisualText(text: string, maxWidth: number): string[] {
+  if (maxWidth <= 0) return [text];
+  const lines: string[] = [];
+  let currentLine = "";
+  let currentWidth = 0;
+
+  const tokenRegex = /\x1b\[[0-9;]*[a-zA-Z]|\s+|[\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af]|[^\s\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af\x1b]+/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = tokenRegex.exec(text)) !== null) {
+    const token = match[0];
+    const tokenWidth = getVisualWidth(token);
+
+    if (tokenWidth === 0) {
+      currentLine += token;
+      continue;
+    }
+
+    if (currentWidth + tokenWidth <= maxWidth) {
+      currentLine += token;
+      currentWidth += tokenWidth;
+    } else {
+      if (currentLine === "") {
+        lines.push(token);
+        continue;
+      }
+      lines.push(currentLine.trimEnd());
+      currentLine = token.trimStart();
+      currentWidth = getVisualWidth(currentLine);
+    }
+  }
+
+  if (currentLine.trim()) {
+    lines.push(currentLine.trimEnd());
+  }
+
+  return lines;
+}
+
+/**
+ * Format a tree branch with hanging indent (树状悬挂缩进):
+ * Line 0: `  ┌ [口语] <content>`
+ * Line 1+: `  │        <continuation>` (strictly aligned under text body)
+ */
+export function formatTreeBranch(
+  branchChar: string,
+  contChar: string,
+  tag: string,
+  content: string,
+  prefixDecorator: (p: string) => string = (s) => s,
+  tagDecorator: (t: string) => string = (s) => s,
+  contDecorator: (c: string) => string = (s) => s,
+  maxCols = (process.stdout.columns || 100) - 2
+): string[] {
+  const rawPrefix = `  ${branchChar} [${tag}] `;
+  const prefixW = getVisualWidth(rawPrefix);
+  const rawCont = `  ${contChar}${" ".repeat(Math.max(1, prefixW - 3))}`;
+  const availW = Math.max(25, maxCols - prefixW);
+
+  const lines = wrapVisualText(content, availW);
+  if (lines.length === 0) {
+    return [prefixDecorator(`  ${branchChar} `) + tagDecorator(`[${tag}]`)];
+  }
+
+  return lines.map((line, idx) => {
+    if (idx === 0) {
+      return prefixDecorator(`  ${branchChar} `) + tagDecorator(`[${tag}] `) + line;
+    }
+    return contDecorator(rawCont) + line;
+  });
+}
+
+/**
  * Format terminal output with Trifecta Tree Branch aesthetics (┌ ├ └)
  * Displays the original input anchor, dual registers with native language nuance, and vocab highlights.
  */
@@ -264,22 +371,22 @@ export function formatTerminalAnnotation(
   const lines = [`  · ${sourceTag}   ${displaySource}`];
   if (hasSlot2 && hasVocab) {
     lines.push(
-      `  ┌ [${slot1}] ${spokenDisplay}`,
-      `  ├ [${slot2}] ${writtenDisplay}`,
-      `  └ [${vocabTag}] ${vocab}`
+      ...formatTreeBranch("┌", "│", slot1, spokenDisplay),
+      ...formatTreeBranch("├", "│", slot2, writtenDisplay),
+      ...formatTreeBranch("└", " ", vocabTag, vocab || "")
     );
   } else if (hasSlot2) {
     lines.push(
-      `  ┌ [${slot1}] ${spokenDisplay}`,
-      `  └ [${slot2}] ${writtenDisplay}`
+      ...formatTreeBranch("┌", "│", slot1, spokenDisplay),
+      ...formatTreeBranch("└", " ", slot2, writtenDisplay)
     );
   } else if (hasVocab) {
     lines.push(
-      `  ┌ [${slot1}] ${spokenDisplay}`,
-      `  └ [${vocabTag}] ${vocab}`
+      ...formatTreeBranch("┌", "│", slot1, spokenDisplay),
+      ...formatTreeBranch("└", " ", vocabTag, vocab || "")
     );
   } else {
-    lines.push(`  └ [${slot1}] ${spokenDisplay}`);
+    lines.push(...formatTreeBranch("└", " ", slot1, spokenDisplay));
   }
 
   return lines.join("\n");

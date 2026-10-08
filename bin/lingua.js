@@ -2,7 +2,7 @@
 
 import { translatePrompt } from "../dist/index.js";
 
-const VERSION = "0.1.2";
+const VERSION = "0.1.4";
 
 async function main() {
   const args = process.argv.slice(2);

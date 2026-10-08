@@ -199,6 +199,67 @@ function parseLlmResponse(raw) {
     return null;
   }
 }
+function getVisualWidth(str) {
+  let width = 0;
+  const clean = str.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "");
+  for (const char of clean) {
+    const code = char.codePointAt(0) || 0;
+    if (code >= 4352 && code <= 4447 || code >= 11904 && code <= 42191 || code >= 44032 && code <= 55203 || code >= 63744 && code <= 64255 || code >= 65040 && code <= 65049 || code >= 65072 && code <= 65135 || code >= 65280 && code <= 65376 || code >= 65504 && code <= 65510 || code >= 127744 && code <= 128591 || code >= 129280 && code <= 129535) {
+      width += 2;
+    } else {
+      width += 1;
+    }
+  }
+  return width;
+}
+function wrapVisualText(text, maxWidth) {
+  if (maxWidth <= 0) return [text];
+  const lines = [];
+  let currentLine = "";
+  let currentWidth = 0;
+  const tokenRegex = /\x1b\[[0-9;]*[a-zA-Z]|\s+|[\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af]|[^\s\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af\x1b]+/g;
+  let match;
+  while ((match = tokenRegex.exec(text)) !== null) {
+    const token = match[0];
+    const tokenWidth = getVisualWidth(token);
+    if (tokenWidth === 0) {
+      currentLine += token;
+      continue;
+    }
+    if (currentWidth + tokenWidth <= maxWidth) {
+      currentLine += token;
+      currentWidth += tokenWidth;
+    } else {
+      if (currentLine === "") {
+        lines.push(token);
+        continue;
+      }
+      lines.push(currentLine.trimEnd());
+      currentLine = token.trimStart();
+      currentWidth = getVisualWidth(currentLine);
+    }
+  }
+  if (currentLine.trim()) {
+    lines.push(currentLine.trimEnd());
+  }
+  return lines;
+}
+function formatTreeBranch(branchChar, contChar, tag, content, prefixDecorator = (s) => s, tagDecorator = (s) => s, contDecorator = (s) => s, maxCols = (process.stdout.columns || 100) - 2) {
+  const rawPrefix = `  ${branchChar} [${tag}] `;
+  const prefixW = getVisualWidth(rawPrefix);
+  const rawCont = `  ${contChar}${" ".repeat(Math.max(1, prefixW - 3))}`;
+  const availW = Math.max(25, maxCols - prefixW);
+  const lines = wrapVisualText(content, availW);
+  if (lines.length === 0) {
+    return [prefixDecorator(`  ${branchChar} `) + tagDecorator(`[${tag}]`)];
+  }
+  return lines.map((line, idx) => {
+    if (idx === 0) {
+      return prefixDecorator(`  ${branchChar} `) + tagDecorator(`[${tag}] `) + line;
+    }
+    return contDecorator(rawCont) + line;
+  });
+}
 function formatTerminalAnnotation(sourceText, spoken, written, vocab, options = {}) {
   const slot1 = options.slot1Label || "\u53E3\u8BED";
   const slot2 = options.slot2Label || "\u5199\u4F5C";
@@ -214,22 +275,22 @@ function formatTerminalAnnotation(sourceText, spoken, written, vocab, options = 
   const lines = [`  \xB7 ${sourceTag}   ${displaySource}`];
   if (hasSlot2 && hasVocab) {
     lines.push(
-      `  \u250C [${slot1}] ${spokenDisplay}`,
-      `  \u251C [${slot2}] ${writtenDisplay}`,
-      `  \u2514 [${vocabTag}] ${vocab}`
+      ...formatTreeBranch("\u250C", "\u2502", slot1, spokenDisplay),
+      ...formatTreeBranch("\u251C", "\u2502", slot2, writtenDisplay),
+      ...formatTreeBranch("\u2514", " ", vocabTag, vocab || "")
     );
   } else if (hasSlot2) {
     lines.push(
-      `  \u250C [${slot1}] ${spokenDisplay}`,
-      `  \u2514 [${slot2}] ${writtenDisplay}`
+      ...formatTreeBranch("\u250C", "\u2502", slot1, spokenDisplay),
+      ...formatTreeBranch("\u2514", " ", slot2, writtenDisplay)
     );
   } else if (hasVocab) {
     lines.push(
-      `  \u250C [${slot1}] ${spokenDisplay}`,
-      `  \u2514 [${vocabTag}] ${vocab}`
+      ...formatTreeBranch("\u250C", "\u2502", slot1, spokenDisplay),
+      ...formatTreeBranch("\u2514", " ", vocabTag, vocab || "")
     );
   } else {
-    lines.push(`  \u2514 [${slot1}] ${spokenDisplay}`);
+    lines.push(...formatTreeBranch("\u2514", " ", slot1, spokenDisplay));
   }
   return lines.join("\n");
 }
@@ -375,6 +436,7 @@ function saveUserLinguaConfig(patch) {
   }
 }
 var currentRequestId = 0;
+var lastResult = null;
 function updateFooter(ctx) {
   if (!ctx.hasUI) return;
   switch (state.mode) {
@@ -393,37 +455,41 @@ function renderHudWidget(ctx, sourceText, spoken, written, vocab, spokenMeaning,
   if (!ctx.hasUI) return;
   const hasWritten = Boolean(written && written.trim());
   const hasVocab = Boolean(vocab && vocab.trim());
-  const slot1 = state.labels.slot1Label || state.labels.spokenLabel || "\u53E3\u8A9E";
-  const slot2 = state.labels.slot2Label || state.labels.writtenLabel || "\u6587\u9762";
-  const vocabTag = state.labels.vocabLabel || "\u5358\u8A9E";
+  const slot1 = state.labels.slot1Label || state.labels.spokenLabel || "\u53E3\u8BED";
+  const slot2 = state.labels.slot2Label || state.labels.writtenLabel || "\u5199\u4F5C";
+  const vocabTag = state.labels.vocabLabel || "\u91CD\u70B9";
   const sourceTag = state.labels.sourceLabel || "\u539F\u6587";
   const spokenDisplay = spokenMeaning ? `${spoken} ` + ctx.ui.theme.fg("dim", `(${spokenMeaning})`) : spoken;
   const writtenDisplay = written && writtenMeaning ? `${written} ` + ctx.ui.theme.fg("dim", `(${writtenMeaning})`) : written || "";
+  const vocabDisplay = vocab ? ctx.ui.theme.fg("dim", vocab) : "";
   const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
   const chars = Array.from(cleanSource);
   const displaySource = chars.length > 40 ? chars.slice(0, 37).join("") + "..." : cleanSource;
+  const maxCols = process.stdout.columns || 100;
   const lines = [
     ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("dim", `${sourceTag}   `) + displaySource
   ];
+  const pMuted = (s) => ctx.ui.theme.fg("muted", s);
+  const pAccent = (s) => ctx.ui.theme.fg("accent", s);
   if (hasWritten && hasVocab) {
     lines.push(
-      ctx.ui.theme.fg("muted", "  \u250C ") + ctx.ui.theme.fg("accent", `[${slot1}] `) + spokenDisplay,
-      ctx.ui.theme.fg("muted", "  \u251C ") + ctx.ui.theme.fg("accent", `[${slot2}] `) + writtenDisplay,
-      ctx.ui.theme.fg("muted", "  \u2514 ") + ctx.ui.theme.fg("muted", `[${vocabTag}] `) + ctx.ui.theme.fg("dim", vocab)
+      ...formatTreeBranch("\u250C", "\u2502", slot1, spokenDisplay, pMuted, pAccent, pMuted, maxCols),
+      ...formatTreeBranch("\u251C", "\u2502", slot2, writtenDisplay, pMuted, pAccent, pMuted, maxCols),
+      ...formatTreeBranch("\u2514", " ", vocabTag, vocabDisplay, pMuted, pMuted, pMuted, maxCols)
     );
   } else if (hasWritten) {
     lines.push(
-      ctx.ui.theme.fg("muted", "  \u250C ") + ctx.ui.theme.fg("accent", `[${slot1}] `) + spokenDisplay,
-      ctx.ui.theme.fg("muted", "  \u2514 ") + ctx.ui.theme.fg("accent", `[${slot2}] `) + writtenDisplay
+      ...formatTreeBranch("\u250C", "\u2502", slot1, spokenDisplay, pMuted, pAccent, pMuted, maxCols),
+      ...formatTreeBranch("\u2514", " ", slot2, writtenDisplay, pMuted, pAccent, pMuted, maxCols)
     );
   } else if (hasVocab) {
     lines.push(
-      ctx.ui.theme.fg("muted", "  \u250C ") + ctx.ui.theme.fg("accent", `[${slot1}] `) + spokenDisplay,
-      ctx.ui.theme.fg("muted", "  \u2514 ") + ctx.ui.theme.fg("muted", `[${vocabTag}] `) + ctx.ui.theme.fg("dim", vocab)
+      ...formatTreeBranch("\u250C", "\u2502", slot1, spokenDisplay, pMuted, pAccent, pMuted, maxCols),
+      ...formatTreeBranch("\u2514", " ", vocabTag, vocabDisplay, pMuted, pMuted, pMuted, maxCols)
     );
   } else {
     lines.push(
-      ctx.ui.theme.fg("muted", "  \u2514 ") + ctx.ui.theme.fg("accent", `[${slot1}] `) + spokenDisplay
+      ...formatTreeBranch("\u2514", " ", slot1, spokenDisplay, pMuted, pAccent, pMuted, maxCols)
     );
   }
   ctx.ui.setWidget("lingua_hud", lines, { placement: "aboveEditor" });
@@ -520,6 +586,30 @@ ${list}
     description: "\u67E5\u770B\u4F34\u5B66\u63D2\u4EF6\u5F53\u524D\u72B6\u6001 (\u522B\u540D)",
     handler: showStatusHandler
   });
+  const showLastHandler = async (_args, ctx) => {
+    if (!lastResult) {
+      ctx.ui.notify(`[${state.labels.hudTitle}] \u6682\u65E0\u4E0A\u4E00\u6761\u4F34\u5B66\u8BB0\u5F55`, "info");
+      return;
+    }
+    renderHudWidget(
+      ctx,
+      lastResult.sourceText,
+      lastResult.spoken,
+      lastResult.written,
+      lastResult.vocab,
+      lastResult.spokenMeaning,
+      lastResult.writtenMeaning
+    );
+    ctx.ui.notify(`[${state.labels.hudTitle}] \u5DF2\u91CD\u65B0\u663E\u793A\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247`, "info");
+  };
+  pi.registerCommand("lingua-last", {
+    description: "\u91CD\u65B0\u56DE\u770B\u6216\u91CD\u73B0\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247: /lingua-last",
+    handler: showLastHandler
+  });
+  pi.registerCommand("2-last", {
+    description: "\u56DE\u770B\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247 (\u522B\u540D)",
+    handler: showLastHandler
+  });
   const createModelCompleter = (ctx) => {
     return async (text, systemPrompt) => {
       try {
@@ -533,16 +623,23 @@ ${list}
           if (match) targetModel = match;
         }
         if (!targetModel) return null;
-        const stream = ctx.modelRegistry.streamSimple(targetModel, {
-          systemPrompt,
-          messages: [
-            {
-              role: "user",
-              content: [{ type: "text", text }],
-              timestamp: Date.now()
-            }
-          ]
-        });
+        const stream = ctx.modelRegistry.streamSimple(
+          targetModel,
+          {
+            systemPrompt,
+            messages: [
+              {
+                role: "user",
+                content: [{ type: "text", text }],
+                timestamp: Date.now()
+              }
+            ]
+          },
+          {
+            reasoning: "off",
+            maxTokens: 600
+          }
+        );
         const res = await stream.result();
         const content = res.content?.filter((c) => c.type === "text")?.map((c) => c.text)?.join("");
         return content && content.trim() ? content.trim() : null;
@@ -576,16 +673,19 @@ ${list}
         if (requestId !== currentRequestId || state.mode !== "original") {
           return;
         }
-        if (result && ctx.hasUI) {
-          renderHudWidget(
-            ctx,
-            result.sourceText,
-            result.spoken,
-            result.written,
-            result.vocab,
-            result.spokenMeaning,
-            result.writtenMeaning
-          );
+        if (result) {
+          lastResult = result;
+          if (ctx.hasUI) {
+            renderHudWidget(
+              ctx,
+              result.sourceText,
+              result.spoken,
+              result.written,
+              result.vocab,
+              result.spokenMeaning,
+              result.writtenMeaning
+            );
+          }
         }
       }).finally(() => {
         if (requestId === currentRequestId) {
@@ -615,6 +715,7 @@ ${list}
         if (ctx.hasUI) ctx.ui.setWidget("lingua_hud", void 0);
         return { action: "continue" };
       }
+      lastResult = result;
       renderHudWidget(
         ctx,
         result.sourceText,

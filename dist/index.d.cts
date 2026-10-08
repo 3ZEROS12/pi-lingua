@@ -80,6 +80,24 @@ declare function shouldTriggerTranslation(text: string, sourceLang?: string): bo
  */
 declare function parseLlmResponse(raw: string): TranslationPayload | null;
 /**
+ * Accurate visual cell width calculation:
+ * - ANSI escape codes = 0 visual width
+ * - CJK characters, Fullwidth forms, emojis = 2 visual width
+ * - ASCII characters = 1 visual width
+ */
+declare function getVisualWidth(str: string): number;
+/**
+ * Robust ANSI-safe CJK & Latin visual text wrapper:
+ * Breaks cleanly at word boundaries for Latin words, and character boundaries for CJK.
+ */
+declare function wrapVisualText(text: string, maxWidth: number): string[];
+/**
+ * Format a tree branch with hanging indent (树状悬挂缩进):
+ * Line 0: `  ┌ [口语] <content>`
+ * Line 1+: `  │        <continuation>` (strictly aligned under text body)
+ */
+declare function formatTreeBranch(branchChar: string, contChar: string, tag: string, content: string, prefixDecorator?: (p: string) => string, tagDecorator?: (t: string) => string, contDecorator?: (c: string) => string, maxCols?: number): string[];
+/**
  * Format terminal output with Trifecta Tree Branch aesthetics (┌ ├ └)
  * Displays the original input anchor, dual registers with native language nuance, and vocab highlights.
  */
@@ -106,4 +124,4 @@ declare function stripLinguaAnnotation(annotatedText: string): {
  */
 declare function translatePrompt(text: string, userConfig?: Partial<LinguaConfig>): Promise<LinguaResult | null>;
 
-export { DEFAULT_CONFIG, LINGUA_SYSTEM_PROMPT, type LinguaConfig, type LinguaI18nLabels, type LinguaMode, type LinguaResult, MAX_TRANSLATION_CHARS, MAX_TRANSLATION_LINES, type TranslationPayload, formatTerminalAnnotation, isNonEnglish, loadUserConfig, parseLlmResponse, shouldTriggerTranslation, stripLinguaAnnotation, translatePrompt };
+export { DEFAULT_CONFIG, LINGUA_SYSTEM_PROMPT, type LinguaConfig, type LinguaI18nLabels, type LinguaMode, type LinguaResult, MAX_TRANSLATION_CHARS, MAX_TRANSLATION_LINES, type TranslationPayload, formatTerminalAnnotation, formatTreeBranch, getVisualWidth, isNonEnglish, loadUserConfig, parseLlmResponse, shouldTriggerTranslation, stripLinguaAnnotation, translatePrompt, wrapVisualText };

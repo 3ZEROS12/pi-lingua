@@ -7,11 +7,12 @@ import type {
   InputEvent,
   InputEventResult,
 } from "@earendil-works/pi-coding-agent";
-import type { LinguaMode, LinguaI18nLabels } from "./types.js";
+import type { LinguaMode, LinguaI18nLabels, LinguaResult } from "./types.js";
 import {
   translatePrompt,
   shouldTriggerTranslation,
   loadUserConfig,
+  formatTreeBranch,
 } from "./engine.js";
 
 interface ExtensionState {
@@ -93,6 +94,9 @@ function saveUserLinguaConfig(patch: Record<string, any>) {
 // 单调递增请求版本号，彻底根除连续输入并发竞态（Stale Overwrite）与幽灵 HUD 复活
 let currentRequestId = 0;
 
+// 内存暂存最近一次成功伴学结果，供 /2-last 与 /lingua-last 随时回看复盘
+let lastResult: LinguaResult | null = null;
+
 function updateFooter(ctx: ExtensionContext) {
   if (!ctx.hasUI) return;
   switch (state.mode) {
@@ -127,9 +131,9 @@ function renderHudWidget(
   const hasWritten = Boolean(written && written.trim());
   const hasVocab = Boolean(vocab && vocab.trim());
 
-  const slot1 = state.labels.slot1Label || state.labels.spokenLabel || "口語";
-  const slot2 = state.labels.slot2Label || state.labels.writtenLabel || "文面";
-  const vocabTag = state.labels.vocabLabel || "単語";
+  const slot1 = state.labels.slot1Label || state.labels.spokenLabel || "口语";
+  const slot2 = state.labels.slot2Label || state.labels.writtenLabel || "写作";
+  const vocabTag = state.labels.vocabLabel || "重点";
   const sourceTag = state.labels.sourceLabel || "原文";
 
   const spokenDisplay = spokenMeaning
@@ -138,35 +142,40 @@ function renderHudWidget(
   const writtenDisplay = written && writtenMeaning
     ? `${written} ` + ctx.ui.theme.fg("dim", `(${writtenMeaning})`)
     : (written || "");
+  const vocabDisplay = vocab ? ctx.ui.theme.fg("dim", vocab) : "";
 
   // 安全单行收敛与 Unicode/CJK 超长截断保护，避免多行排版爆炸和终端撕裂
   const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
   const chars = Array.from(cleanSource);
   const displaySource = chars.length > 40 ? chars.slice(0, 37).join("") + "..." : cleanSource;
 
+  const maxCols = process.stdout.columns || 100;
   const lines: string[] = [
     ctx.ui.theme.fg("muted", "  · ") + ctx.ui.theme.fg("dim", `${sourceTag}   `) + displaySource,
   ];
 
+  const pMuted = (s: string) => ctx.ui.theme.fg("muted", s);
+  const pAccent = (s: string) => ctx.ui.theme.fg("accent", s);
+
   if (hasWritten && hasVocab) {
     lines.push(
-      ctx.ui.theme.fg("muted", "  ┌ ") + ctx.ui.theme.fg("accent", `[${slot1}] `) + spokenDisplay,
-      ctx.ui.theme.fg("muted", "  ├ ") + ctx.ui.theme.fg("accent", `[${slot2}] `) + writtenDisplay,
-      ctx.ui.theme.fg("muted", "  └ ") + ctx.ui.theme.fg("muted", `[${vocabTag}] `) + ctx.ui.theme.fg("dim", vocab!)
+      ...formatTreeBranch("┌", "│", slot1, spokenDisplay, pMuted, pAccent, pMuted, maxCols),
+      ...formatTreeBranch("├", "│", slot2, writtenDisplay, pMuted, pAccent, pMuted, maxCols),
+      ...formatTreeBranch("└", " ", vocabTag, vocabDisplay, pMuted, pMuted, pMuted, maxCols)
     );
   } else if (hasWritten) {
     lines.push(
-      ctx.ui.theme.fg("muted", "  ┌ ") + ctx.ui.theme.fg("accent", `[${slot1}] `) + spokenDisplay,
-      ctx.ui.theme.fg("muted", "  └ ") + ctx.ui.theme.fg("accent", `[${slot2}] `) + writtenDisplay
+      ...formatTreeBranch("┌", "│", slot1, spokenDisplay, pMuted, pAccent, pMuted, maxCols),
+      ...formatTreeBranch("└", " ", slot2, writtenDisplay, pMuted, pAccent, pMuted, maxCols)
     );
   } else if (hasVocab) {
     lines.push(
-      ctx.ui.theme.fg("muted", "  ┌ ") + ctx.ui.theme.fg("accent", `[${slot1}] `) + spokenDisplay,
-      ctx.ui.theme.fg("muted", "  └ ") + ctx.ui.theme.fg("muted", `[${vocabTag}] `) + ctx.ui.theme.fg("dim", vocab!)
+      ...formatTreeBranch("┌", "│", slot1, spokenDisplay, pMuted, pAccent, pMuted, maxCols),
+      ...formatTreeBranch("└", " ", vocabTag, vocabDisplay, pMuted, pMuted, pMuted, maxCols)
     );
   } else {
     lines.push(
-      ctx.ui.theme.fg("muted", "  └ ") + ctx.ui.theme.fg("accent", `[${slot1}] `) + spokenDisplay
+      ...formatTreeBranch("└", " ", slot1, spokenDisplay, pMuted, pAccent, pMuted, maxCols)
     );
   }
 
@@ -283,6 +292,33 @@ export default function (pi: ExtensionAPI) {
     handler: showStatusHandler,
   });
 
+  const showLastHandler = async (_args: string, ctx: ExtensionContext) => {
+    if (!lastResult) {
+      ctx.ui.notify(`[${state.labels.hudTitle}] 暂无上一条伴学记录`, "info");
+      return;
+    }
+    renderHudWidget(
+      ctx,
+      lastResult.sourceText,
+      lastResult.spoken,
+      lastResult.written,
+      lastResult.vocab,
+      lastResult.spokenMeaning,
+      lastResult.writtenMeaning
+    );
+    ctx.ui.notify(`[${state.labels.hudTitle}] 已重新显示上一条伴学卡片`, "info");
+  };
+
+  pi.registerCommand("lingua-last", {
+    description: "重新回看或重现上一条伴学卡片: /lingua-last",
+    handler: showLastHandler,
+  });
+
+  pi.registerCommand("2-last", {
+    description: "回看上一条伴学卡片 (别名)",
+    handler: showLastHandler,
+  });
+
   // 创建 Pi 宿主原生模型驱动器：0 配置开箱即用，优先复用 Pi 已授权的会话凭据，拒绝泄露本地私有 Token
   const createModelCompleter = (ctx: ExtensionContext) => {
     return async (text: string, systemPrompt: string): Promise<string | null> => {
@@ -305,16 +341,24 @@ export default function (pi: ExtensionAPI) {
         if (!targetModel) return null;
 
         // 2. 调用 Pi 原生无缝流式推理 (streamSimple)，不走硬编码外网代理，完全由 Pi 托管凭证与认证
-        const stream = ctx.modelRegistry.streamSimple(targetModel, {
-          systemPrompt,
-          messages: [
-            {
-              role: "user",
-              content: [{ type: "text", text }],
-              timestamp: Date.now(),
-            },
-          ],
-        });
+        // 【关键保护】：显式禁用思维链 (reasoning: "off")，防止继承主模型 thinking: max 导致 15s 延迟与 Token 偷跑
+        const stream = ctx.modelRegistry.streamSimple(
+          targetModel,
+          {
+            systemPrompt,
+            messages: [
+              {
+                role: "user",
+                content: [{ type: "text", text }],
+                timestamp: Date.now(),
+              },
+            ],
+          },
+          {
+            reasoning: "off",
+            maxTokens: 600,
+          } as any
+        );
 
         const res = await stream.result();
         const content = res.content
@@ -365,16 +409,19 @@ export default function (pi: ExtensionAPI) {
           if (requestId !== currentRequestId || state.mode !== "original") {
             return;
           }
-          if (result && ctx.hasUI) {
-            renderHudWidget(
-              ctx,
-              result.sourceText,
-              result.spoken,
-              result.written,
-              result.vocab,
-              result.spokenMeaning,
-              result.writtenMeaning
-            );
+          if (result) {
+            lastResult = result;
+            if (ctx.hasUI) {
+              renderHudWidget(
+                ctx,
+                result.sourceText,
+                result.spoken,
+                result.written,
+                result.vocab,
+                result.spokenMeaning,
+                result.writtenMeaning
+              );
+            }
           }
         })
         .finally(() => {
@@ -410,6 +457,8 @@ export default function (pi: ExtensionAPI) {
         if (ctx.hasUI) ctx.ui.setWidget("lingua_hud", undefined);
         return { action: "continue" };
       }
+
+      lastResult = result;
 
       renderHudWidget(
         ctx,
