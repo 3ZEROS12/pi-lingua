@@ -1,9 +1,9 @@
-# @3zeros12/pi-lingua
+# @jason-zeros/pi-lingua
 
 > **Zero-friction developer translator & dual-register language companion for Pi Coding Agent**  
 > Run pair-programming interactions in your native tongue while building native Silicon Valley spoken flow and technical RFC precision above your editor.
 
-[![npm version](https://img.shields.io/npm/v/@3zeros12/pi-lingua?color=blue)](https://www.npmjs.com/package/@3zeros12/pi-lingua)
+[![npm version](https://img.shields.io/npm/v/@jason-zeros/pi-lingua?color=blue)](https://www.npmjs.com/package/@jason-zeros/pi-lingua)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Built for Pi](https://img.shields.io/badge/Built%20for-Pi%20Coding%20Agent-orange)](https://github.com/earendil-works/pi-coding-agent)
 [![Tests](https://img.shields.io/badge/Tests-9%2F9%20Pass-brightgreen)](tests/engine.test.ts)
@@ -157,7 +157,7 @@ Your agent will run the configuration workflow autonomously:
 pi install D:/Workspace/projects/pi-lingua
 
 # Or install from npm registry
-pi install npm:@3zeros12/pi-lingua
+pi install npm:@jason-zeros/pi-lingua
 ```
 
 ### Standalone CLI
@@ -211,9 +211,9 @@ npm publish --access public
 ### 3. Add to Pi Package Ecosystem
 ```bash
 # Global user installation
-pi install npm:@3zeros12/pi-lingua
+pi install npm:@jason-zeros/pi-lingua
 ```
-Submit a pull request to `packages.md` in the official [pi-coding-agent](https://github.com/earendil-works/pi-coding-agent) repository to list `@3zeros12/pi-lingua` under community extensions.
+Submit a pull request to `packages.md` in the official [pi-coding-agent](https://github.com/earendil-works/pi-coding-agent) repository to list `@jason-zeros/pi-lingua` under community extensions.
 
 ---
 
