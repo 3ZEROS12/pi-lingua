@@ -38,20 +38,6 @@ interface ExtensionState {
   labels: LinguaI18nLabels;
 }
 
-// 默认配置：中文母语 ➔ 英文伴走工作流 [二 ⇄ two]
-const DEFAULT_LABELS: LinguaI18nLabels = {
-  slot1Label: "口语",
-  slot2Label: "写作",
-  vocabLabel: "重点",
-  sourceLabel: "原文",
-  hudTitle: "二 ⇄ two",
-  statusOriginal: "⇄ [二 ⇄ two] 原文",
-  statusEnglish: "⇄ [二 ⇄ two] 英文",
-  statusOff: "⇄ [二 ⇄ two]: 关",
-  spokenLabel: "口语",
-  writtenLabel: "写作",
-};
-
 const initialDiskConfig = loadUserConfig();
 const initialSourceLang = initialDiskConfig.sourceLang || "zh";
 const initialLabels = resolveLabelsForLang(initialSourceLang, initialDiskConfig.labels);
