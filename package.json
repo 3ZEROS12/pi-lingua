@@ -1,6 +1,6 @@
 {
-  "name": "@jason-zeros/pi-lingua",
-  "version": "0.1.0",
+  "name": "pi-lingual",
+  "version": "0.1.1",
   "description": "Zero-friction developer translator & bilingual companion (Spoken vs Written) for AI coding agents",
   "type": "module",
   "main": "dist/index.js",

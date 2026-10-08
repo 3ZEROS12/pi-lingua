@@ -1,9 +1,9 @@
-# @jason-zeros/pi-lingua
+# pi-lingual
 
 > **专为 Pi Coding Agent 打造的零侵扰开发者翻译与双语域沉浸伴学插件**  
 > 在终端内用母语自然敲击提示词，输入框上方即时浮现北美硅谷敏捷口语与严谨工程技术写作，兼顾代码编写心流与日常语感积累。
 
-[![npm version](https://img.shields.io/npm/v/@jason-zeros/pi-lingua?color=blue)](https://www.npmjs.com/package/@jason-zeros/pi-lingua)
+[![npm version](https://img.shields.io/npm/v/pi-lingual?color=blue)](https://www.npmjs.com/package/pi-lingual)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Built for Pi](https://img.shields.io/badge/Built%20for-Pi%20Coding%20Agent-orange)](https://github.com/earendil-works/pi-coding-agent)
 [![Tests](https://img.shields.io/badge/Tests-9%2F9%20Pass-brightgreen)](tests/engine.test.ts)
@@ -157,7 +157,7 @@ over-engineered (过度工程化) · be better off (采用……更为合适) ·
 pi install D:/Workspace/projects/pi-lingua
 
 # 或从 npm 仓库安装
-pi install npm:@jason-zeros/pi-lingua
+pi install npm:pi-lingual
 ```
 
 ### 作为独立 CLI 运行
@@ -211,9 +211,9 @@ npm publish --access public
 ### 3. 挂载到 Pi 生态扩展库
 ```bash
 # 个人全局安装验证
-pi install npm:@jason-zeros/pi-lingua
+pi install npm:pi-lingual
 ```
-向官方 [pi-coding-agent](https://github.com/earendil-works/pi-coding-agent) 仓库提交 PR，在 `packages.md` 中登记 `@jason-zeros/pi-lingua`。
+向官方 [pi-coding-agent](https://github.com/earendil-works/pi-coding-agent) 仓库提交 PR，在 `packages.md` 中登记 `pi-lingual`。
 
 ---
 
