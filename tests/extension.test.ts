@@ -74,9 +74,12 @@ test("extension input handler - original mode returns continue immediately and r
 
   // 【核心断言 2】：后台微任务完成后，双模伴学内容必须以极简左导轨树状形式渲染到 Widget 中
   const maxWait = 25000;
-  const pollInterval = 100;
+  const pollInterval = 50;
   let waited = 0;
-  while (!widgetLines && waited < maxWait) {
+  while (waited < maxWait) {
+    if (widgetLines && Array.isArray(widgetLines) && (widgetLines as string[]).some((l: string) => l.includes("├"))) {
+      break;
+    }
     await new Promise((resolve) => setTimeout(resolve, pollInterval));
     waited += pollInterval;
   }

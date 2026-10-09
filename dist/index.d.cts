@@ -180,6 +180,32 @@ declare class LinguaLruCache<T> {
 declare const globalLinguaCache: LinguaLruCache<LinguaResult>;
 
 /**
+ * Prompt Sanitizer & Intent Distiller (报错审查与意图萃取器)
+ *
+ * 物理职责：
+ * 1. 剥离图片路径与文件路径前缀 (如 C:\Users\...\pi-clipboard-xxx.png)；
+ * 2. 识别并折叠多行堆栈追踪 (Node.js at ..., Python Traceback, Java Caused by...)；
+ * 3. 识别并折叠多行 Markdown 代码块 (```...```) 为 [...]；
+ * 4. 识别并折叠多行编译器/Linter 诊断报错，仅保留首行关键信息；
+ * 5. 严格保留 shell 命令行 (git, npm, cargo 等) 原型，不进行破坏性抹除；
+ * 6. 提炼出核心自然语言意图，防止几百行报错撑爆终端与大模型上下文。
+ */
+interface SanitizedPromptResult {
+    /** 审查折叠后用于翻译与分句的紧凑意图文本 */
+    distilledText: string;
+    /** 是否包含有效的人类自然语言提问/意图 */
+    hasNaturalLanguage: boolean;
+    /** 是否折叠了堆栈、代码块或报错 */
+    hasCollapsedContent: boolean;
+    /** 自然语言核心字符数估算 */
+    naturalCharsLength: number;
+}
+/**
+ * 对用户原始输入进行审查与折叠萃取
+ */
+declare function sanitizePromptForTranslation(raw: string): SanitizedPromptResult;
+
+/**
  * Load user configuration from:
  * 1. ~/.pi/agent/settings.json (under "pi-lingual" block)
  * 2. ~/.pi/agent/lingua.json (flat or nested)
@@ -204,8 +230,8 @@ declare const LINGUA_SYSTEM_PROMPT: string;
  * Strictly avoids triggering on pure emojis, typographical quotes, or terminal commands.
  */
 declare function isNonEnglish(text: string): boolean;
-declare const MAX_TRANSLATION_CHARS = 1500;
-declare const MAX_TRANSLATION_LINES = 8;
+declare const MAX_TRANSLATION_CHARS = 2500;
+declare const MAX_TRANSLATION_LINES = 30;
 /**
  * Bidirectional language-aware trigger with strict Length & Payload Guards:
  * - If sourceLang is not English (e.g. "zh", "ja"): triggers on natural language scripts;
@@ -304,4 +330,4 @@ declare function stripLinguaAnnotation(annotatedText: string): {
  */
 declare function translatePrompt(text: string, userConfig?: Partial<LinguaConfig>): Promise<LinguaResult | null>;
 
-export { type CacheStats, DEFAULT_CONFIG, LANGUAGE_PRESETS, LINGUA_SYSTEM_PROMPT, type LinguaConfig, type LinguaI18nLabels, LinguaLruCache, type LinguaMode, type LinguaResult, MAX_TRANSLATION_CHARS, MAX_TRANSLATION_LINES, type TranslationPayload, buildSystemPrompt, extractVocabPhrases, formatCapsuleLine, formatModelSelectionMessage, formatStatusReport, formatSubRail, formatTerminalAnnotation, formatTreeBranch, getVisualWidth, globalLinguaCache, isNonEnglish, loadUserConfig, parseLlmResponse, resolveLabelsForLang, shouldShieldBypass, shouldTriggerTranslation, splitSemanticChunks, spotlightPhrases, stripLinguaAnnotation, translatePrompt, truncateVisual, wrapVisualText };
+export { type CacheStats, DEFAULT_CONFIG, LANGUAGE_PRESETS, LINGUA_SYSTEM_PROMPT, type LinguaConfig, type LinguaI18nLabels, LinguaLruCache, type LinguaMode, type LinguaResult, MAX_TRANSLATION_CHARS, MAX_TRANSLATION_LINES, type SanitizedPromptResult, type TranslationPayload, buildSystemPrompt, extractVocabPhrases, formatCapsuleLine, formatModelSelectionMessage, formatStatusReport, formatSubRail, formatTerminalAnnotation, formatTreeBranch, getVisualWidth, globalLinguaCache, isNonEnglish, loadUserConfig, parseLlmResponse, resolveLabelsForLang, sanitizePromptForTranslation, shouldShieldBypass, shouldTriggerTranslation, splitSemanticChunks, spotlightPhrases, stripLinguaAnnotation, translatePrompt, truncateVisual, wrapVisualText };

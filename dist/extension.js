@@ -816,8 +816,8 @@ function isNonEnglish(text) {
   const naturalLanguageScript = /[\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af\u0400-\u04ff\u0600-\u06ff\u00c0-\u024f]/;
   return naturalLanguageScript.test(text);
 }
-var MAX_TRANSLATION_CHARS = 1500;
-var MAX_TRANSLATION_LINES = 8;
+var MAX_TRANSLATION_CHARS = 2500;
+var MAX_TRANSLATION_LINES = 30;
 function shouldTriggerTranslation(text, sourceLang = "zh") {
   const trimmed = text.trim();
   if (!trimmed) return false;
@@ -1191,6 +1191,93 @@ function splitSemanticChunks(text, maxChunkChars = 90) {
     chunks.push(chunkBuffer.trim());
   }
   return chunks.length > 0 ? chunks : [trimmed];
+}
+
+// src/sanitizer.ts
+var CLIPBOARD_IMAGE_REGEX = /^(?:[a-zA-Z]:\\[^\r\n\t]+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf)|(?:\/[^\r\n\t]+)+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf))\s*/i;
+var STACK_LINE_REGEX = /^\s*(?:at\s+(?:[\w$.<>]+|[^\s]+)\s*\(.*:\d+:\d+\)|at\s+.*:\d+:\d+|File\s+".*", line \d+, in\s+.*|goroutine \d+ \[.*\]:|Caused by:.*|^\s*\d+:\s+0x[0-9a-f]+)/;
+var COMPILER_DIAGNOSTIC_REGEX = /^(?:[a-zA-Z]:[\\\/]|\.{0,2}[\\\/]|[a-zA-Z0-9_\-\.]+)[^:\r\n]+:\d+:\d+:\s*(?:error|warning|fatal error|note):/i;
+function sanitizePromptForTranslation(raw) {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return {
+      distilledText: "",
+      hasNaturalLanguage: false,
+      hasCollapsedContent: false,
+      naturalCharsLength: 0
+    };
+  }
+  let text = trimmed.replace(CLIPBOARD_IMAGE_REGEX, "").trim();
+  if (!text) {
+    return {
+      distilledText: "",
+      hasNaturalLanguage: false,
+      hasCollapsedContent: false,
+      naturalCharsLength: 0
+    };
+  }
+  let hasCollapsed = false;
+  text = text.replace(/```[\w\-]*\r?\n([\s\S]*?)\r?\n```/g, (_match, codeContent) => {
+    hasCollapsed = true;
+    const codeLines = codeContent.trim().split(/\r?\n/);
+    if (codeLines.length <= 1) {
+      return `[${codeLines[0] || "code"}]`;
+    }
+    return "[code ...]";
+  });
+  const lines = text.split(/\r?\n/);
+  const resultLines = [];
+  let inStackBlock = false;
+  let inDiagnosticBlock = false;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const lineTrim = line.trim();
+    if (!lineTrim) {
+      inStackBlock = false;
+      inDiagnosticBlock = false;
+      continue;
+    }
+    if (STACK_LINE_REGEX.test(lineTrim) || lineTrim.startsWith("Traceback (most recent call last):")) {
+      hasCollapsed = true;
+      if (!inStackBlock) {
+        resultLines.push("[... stack trace ...]");
+        inStackBlock = true;
+      }
+      continue;
+    } else {
+      inStackBlock = false;
+    }
+    if (COMPILER_DIAGNOSTIC_REGEX.test(lineTrim)) {
+      hasCollapsed = true;
+      if (!inDiagnosticBlock) {
+        resultLines.push(lineTrim);
+        resultLines.push("[... diagnostics ...]");
+        inDiagnosticBlock = true;
+      }
+      continue;
+    } else {
+      inDiagnosticBlock = false;
+    }
+    if (/^npm ERR!/i.test(lineTrim)) {
+      hasCollapsed = true;
+      if (!resultLines[resultLines.length - 1]?.includes("npm ERR! [...]")) {
+        resultLines.push("npm ERR! [...]");
+      }
+      continue;
+    }
+    resultLines.push(line);
+  }
+  const distilledText = resultLines.join(" ").replace(/\s+/g, " ").trim();
+  const withoutPlaceholders = distilledText.replace(/\[\.\.\.[^\]]*\]/g, "").replace(/[a-zA-Z0-9_\-\.\/\\:]+/g, "").trim();
+  const hasCJK = isNonEnglish(distilledText);
+  const hasQuestionKeywords = /(?:为什么|怎么|如何|帮我|排查|优化|修改|修复|为何|报错|explain|why|how|please|help|could you|fix)/i.test(distilledText);
+  const hasNaturalLanguage = hasCJK || hasQuestionKeywords || withoutPlaceholders.length > 5;
+  return {
+    distilledText,
+    hasNaturalLanguage,
+    hasCollapsedContent: hasCollapsed,
+    naturalCharsLength: distilledText.length
+  };
 }
 
 // src/extension.ts
@@ -1674,7 +1761,7 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
           }
         );
         const timeoutPromise = new Promise(
-          (_, reject) => setTimeout(() => reject(new Error("Lingua translation timed out")), 15e3)
+          (_, reject) => setTimeout(() => reject(new Error("Lingua translation timed out")), 8e3)
         );
         const res = await Promise.race([stream.result(), timeoutPromise]);
         if (!res) return null;
@@ -1693,21 +1780,32 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
     if (raw.startsWith("/") || raw.startsWith("!")) {
       return { action: "continue" };
     }
-    if (!shouldTriggerTranslation(raw, state.sourceLang)) {
+    const sanitized = sanitizePromptForTranslation(raw);
+    const promptToTranslate = sanitized.distilledText;
+    if (!sanitized.hasNaturalLanguage || promptToTranslate.length > 500 || !shouldTriggerTranslation(promptToTranslate, state.sourceLang)) {
+      if (ctx.hasUI) {
+        ctx.ui.setWidget("lingua_hud", void 0);
+      }
       return { action: "continue" };
     }
     const requestId = ++currentRequestId;
     const completer = createModelCompleter(ctx);
-    const chunks = splitSemanticChunks(raw);
+    const chunks = splitSemanticChunks(promptToTranslate);
     totalExpectedPages = chunks.length;
     currentPageIndex = 0;
     pagedResults = [];
     if (state.mode === "original") {
       if (ctx.hasUI) {
         ctx.ui.setStatus("lingua", ctx.ui.theme.fg("accent", "\u21C4 [lingua] polishing..."));
+        const cleanFirstChunk = chunks[0].replace(/\r?\n+/g, " ").trim();
+        const skeletonLines = [
+          ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", state.labels.sourceLabel) + ctx.ui.theme.fg("muted", "] ") + cleanFirstChunk,
+          ctx.ui.theme.fg("muted", "  \u250C ") + ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) + ctx.ui.theme.fg("dim", "\u21C4 generating companion nuances...")
+        ];
+        ctx.ui.setWidget("lingua_hud", skeletonLines, { placement: "aboveEditor" });
       }
       if (chunks.length === 1) {
-        translatePrompt(raw, {
+        translatePrompt(promptToTranslate, {
           sourceLang: state.sourceLang,
           labels: state.labels,
           complete: completer
@@ -1729,6 +1827,14 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
                 result.writtenMeaning
               );
             }
+          } else {
+            if (ctx.hasUI) {
+              ctx.ui.setWidget("lingua_hud", void 0);
+            }
+          }
+        }).catch(() => {
+          if (requestId === currentRequestId && ctx.hasUI) {
+            ctx.ui.setWidget("lingua_hud", void 0);
           }
         }).finally(() => {
           if (requestId === currentRequestId) {
@@ -1751,6 +1857,14 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
               renderActiveCard(ctx);
               ctx.ui.notify(state.labels.notifyPaging || `[${state.labels.hudTitle}] \u957F\u53E5\u5DF2\u5207\u5206\u591A\u6BB5\uFF0C\u6309 Alt+. \u7FFB\u9875\u6D4F\u89C8`, "info");
             }
+          } else {
+            if (ctx.hasUI) {
+              ctx.ui.setWidget("lingua_hud", void 0);
+            }
+          }
+        }).catch(() => {
+          if (requestId === currentRequestId && ctx.hasUI) {
+            ctx.ui.setWidget("lingua_hud", void 0);
           }
         }).finally(() => {
           if (requestId === currentRequestId) {

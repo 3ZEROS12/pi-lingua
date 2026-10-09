@@ -95,8 +95,8 @@ export function isNonEnglish(text: string): boolean {
   return naturalLanguageScript.test(text);
 }
 
-export const MAX_TRANSLATION_CHARS = 1500;
-export const MAX_TRANSLATION_LINES = 8;
+export const MAX_TRANSLATION_CHARS = 2500;
+export const MAX_TRANSLATION_LINES = 30;
 
 /**
  * Bidirectional language-aware trigger with strict Length & Payload Guards:

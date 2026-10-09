@@ -28,6 +28,7 @@ import {
   LANGUAGE_PRESETS,
 } from "./presets.js";
 import { splitSemanticChunks } from "./chunker.js";
+import { sanitizePromptForTranslation } from "./sanitizer.js";
 import { globalLinguaCache } from "./cache.js";
 
 interface ExtensionState {
@@ -653,9 +654,9 @@ export default function (pi: ExtensionAPI) {
           } as any
         );
 
-        // 【关键保护 2】：设置 15s 超时熔断保护，防止上游网络死锁或挂起阻塞用户终端输入
+        // 【关键保护 2】：设置 8s 超时熔断保护，防止上游网络死锁或挂起阻塞用户终端输入
         const timeoutPromise = new Promise<null>((_, reject) =>
-          setTimeout(() => reject(new Error("Lingua translation timed out")), 15000)
+          setTimeout(() => reject(new Error("Lingua translation timed out")), 8000)
         );
         const res = (await Promise.race([stream.result(), timeoutPromise])) as any;
         if (!res) return null;
@@ -684,15 +685,29 @@ export default function (pi: ExtensionAPI) {
       return { action: "continue" };
     }
 
-    // 双向语言感知判定：支持非英语母语，也支持英语母语学外语，同时严格排除终端命令与代码
-    if (!shouldTriggerTranslation(raw, state.sourceLang)) {
+    // 智能审查与意图萃取：剥离剪贴板图片、折叠多行堆栈追踪与代码块为 [...]，提炼真实自然语言核心
+    const sanitized = sanitizePromptForTranslation(raw);
+    const promptToTranslate = sanitized.distilledText;
+
+    // 判定 1：若整段输入经过审查后，发现毫无自然语言意图 (纯堆栈/纯代码/纯命令)
+    // 判定 2：或提炼后的真实自然语言超出了合理伴学上限 (> 500 字符)
+    // 判定 3：或命中底层代码与 CLI 盾牌
+    if (
+      !sanitized.hasNaturalLanguage ||
+      promptToTranslate.length > 500 ||
+      !shouldTriggerTranslation(promptToTranslate, state.sourceLang)
+    ) {
+      // 【关键体验防线 1 · 绝无僵尸残留】：当前输入不触发翻译时，立刻物理销毁上一轮的旧卡片，绝不让上上一句死死挂在屏幕上！
+      if (ctx.hasUI) {
+        ctx.ui.setWidget("lingua_hud", undefined);
+      }
       return { action: "continue" };
     }
 
     const requestId = ++currentRequestId;
     const completer = createModelCompleter(ctx);
 
-    const chunks = splitSemanticChunks(raw);
+    const chunks = splitSemanticChunks(promptToTranslate);
     totalExpectedPages = chunks.length;
     currentPageIndex = 0;
     pagedResults = [];
@@ -701,11 +716,26 @@ export default function (pi: ExtensionAPI) {
     if (state.mode === "original") {
       if (ctx.hasUI) {
         ctx.ui.setStatus("lingua", ctx.ui.theme.fg("accent", "⇄ [lingua] polishing..."));
+
+        // 【关键体验防线 2 · 输入即响应握手】：在回车敲下的第 0ms，立即用当前句子替换上一轮陈旧卡片！
+        // 彻底消除“等待期间依然显示上一句”的心智误解
+        const cleanFirstChunk = chunks[0].replace(/\r?\n+/g, " ").trim();
+        const skeletonLines = [
+          ctx.ui.theme.fg("muted", "  · ") +
+            ctx.ui.theme.fg("muted", "[") +
+            ctx.ui.theme.fg("dim", state.labels.sourceLabel) +
+            ctx.ui.theme.fg("muted", "] ") +
+            cleanFirstChunk,
+          ctx.ui.theme.fg("muted", "  ┌ ") +
+            ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) +
+            ctx.ui.theme.fg("dim", "⇄ generating companion nuances..."),
+        ];
+        ctx.ui.setWidget("lingua_hud", skeletonLines, { placement: "aboveEditor" });
       }
 
       if (chunks.length === 1) {
         // 单句常规输入：秒级渲染单个卡片，不触发任何分页角标，保持最纯粹美感
-        translatePrompt(raw, {
+        translatePrompt(promptToTranslate, {
           sourceLang: state.sourceLang,
           labels: state.labels,
           complete: completer,
@@ -728,6 +758,16 @@ export default function (pi: ExtensionAPI) {
                   result.writtenMeaning
                 );
               }
+            } else {
+              // 【关键体验防线 3 · 失败优雅清空】：若推理超时或返回 null，立即清空骨架屏，绝不留脏卡片
+              if (ctx.hasUI) {
+                ctx.ui.setWidget("lingua_hud", undefined);
+              }
+            }
+          })
+          .catch(() => {
+            if (requestId === currentRequestId && ctx.hasUI) {
+              ctx.ui.setWidget("lingua_hud", undefined);
             }
           })
           .finally(() => {
@@ -753,6 +793,15 @@ export default function (pi: ExtensionAPI) {
                 renderActiveCard(ctx);
                 ctx.ui.notify(state.labels.notifyPaging || `[${state.labels.hudTitle}] 长句已切分多段，按 Alt+. 翻页浏览`, "info");
               }
+            } else {
+              if (ctx.hasUI) {
+                ctx.ui.setWidget("lingua_hud", undefined);
+              }
+            }
+          })
+          .catch(() => {
+            if (requestId === currentRequestId && ctx.hasUI) {
+              ctx.ui.setWidget("lingua_hud", undefined);
             }
           })
           .finally(() => {
