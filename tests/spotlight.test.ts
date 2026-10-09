@@ -19,6 +19,15 @@ test("spotlightPhrases - non-destructively highlights matched phrases with ANSI 
   assert.ok(highlighted.includes("Totally "), "Unmatched words must remain clean");
 });
 
+test("spotlightPhrases - successfully underlines CJK (Japanese/Chinese) expressions without ASCII word boundary failure", () => {
+  const text = "いい感じですね、リリースしましょう！本番環境へデプロイを進めます。";
+  const phrases = ["リリース", "本番環境"];
+  const highlighted = spotlightPhrases(text, phrases);
+
+  assert.ok(highlighted.includes("\x1b[4mリリース\x1b[24m"), "Must underline Japanese phrase 'リリース'");
+  assert.ok(highlighted.includes("\x1b[4m本番環境\x1b[24m"), "Must underline Japanese phrase '本番環境'");
+});
+
 test("formatTerminalAnnotation - applies spotlight to spoken and written branches when vocab is present", () => {
   const annotated = formatTerminalAnnotation(
     "认同，开始吧",

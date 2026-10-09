@@ -466,7 +466,7 @@ export default function (pi: ExtensionAPI) {
     }
 
     state.sourceLang = trimmed;
-    state.labels = resolveLabelsForLang(trimmed, initialDiskConfig.labels);
+    state.labels = resolveLabelsForLang(trimmed);
     saveUserLingualConfig({ sourceLang: trimmed });
     globalLingualCache.clear();
     updateFooter(ctx);
@@ -686,10 +686,13 @@ export default function (pi: ExtensionAPI) {
       promptToTranslate.length > 500 ||
       !shouldTriggerTranslation(promptToTranslate, state.sourceLang)
     ) {
-      // 【关键体验防线 1 · 绝无僵尸残留】：当前输入不触发翻译时，立刻物理销毁上一轮的旧卡片，绝不让上上一句死死挂在屏幕上！
+      // 【关键体验防线 1 · 绝无僵尸残留与幽灵复活】：当前输入不触发翻译时，立刻物理销毁旧卡片，并彻底清空分页池！
       if (ctx.hasUI) {
         ctx.ui.setWidget("lingual_hud", undefined);
       }
+      pagedResults = [];
+      currentPageIndex = 0;
+      totalExpectedPages = 1;
       return { action: "continue" };
     }
 
@@ -812,6 +815,7 @@ export default function (pi: ExtensionAPI) {
 
         if (!result) {
           if (ctx.hasUI) {
+            ctx.ui.setWidget("lingual_hud", undefined);
             ctx.ui.notify(`[${state.labels.hudTitle}] 英文翻译请求未就绪或超时，本次已放行原文`, "warning");
           }
           return { action: "continue" };
@@ -846,6 +850,7 @@ export default function (pi: ExtensionAPI) {
         const validResults = results.filter((r): r is LingualResult => r !== null);
         if (validResults.length === 0) {
           if (ctx.hasUI) {
+            ctx.ui.setWidget("lingual_hud", undefined);
             ctx.ui.notify(`[${state.labels.hudTitle}] 英文翻译请求未就绪或超时，本次已放行原文`, "warning");
           }
           return { action: "continue" };
@@ -874,6 +879,7 @@ export default function (pi: ExtensionAPI) {
       };
     } catch {
       if (ctx.hasUI) {
+        ctx.ui.setWidget("lingual_hud", undefined);
         ctx.ui.notify(`[${state.labels.hudTitle}] 英文翻译请求异常，本次已放行原文`, "warning");
       }
       return { action: "continue" };

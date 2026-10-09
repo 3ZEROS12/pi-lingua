@@ -253,7 +253,7 @@ declare function shouldTriggerTranslation(text: string, sourceLang?: string): bo
 declare function parseLlmResponse(raw: string): TranslationPayload | null;
 /**
  * Truncate string based on visual cell width (CJK = 2 cols, ASCII = 1 col)
- * Guarantees that header text never exceeds visual column boundaries.
+ * Guarantees that header text never exceeds visual column boundaries (including the "..." ellipsis).
  */
 declare function truncateVisual(str: string, maxVisualCols: number): string;
 /**
@@ -298,6 +298,7 @@ declare function extractVocabPhrases(vocab: string | undefined): string[];
 /**
  * 对目标文本中的指定短语进行非破坏性 ANSI 下划线瞄准点亮 (Spotlight Highlighting)
  * 大小写不敏感匹配，保留原始文本的大小写与排版
+ * 原生支持 CJK (日文/中文) 以及 ASCII 西文字符 (彻底修复 BUG-M5)
  */
 declare function spotlightPhrases(text: string, phrases: string[]): string;
 /**
@@ -315,7 +316,7 @@ declare function formatTerminalAnnotation(sourceText: string, spoken: string, wr
 }): string;
 /**
  * 格式化极端分屏下的单行高密度胶囊流 (Single-Line Capsule Layout)
- * 严格限制在 1 行内，按终端列宽动态均衡截断，避免任何换行撕裂
+ * 严格限制在 1 行内，按终端列宽动态均衡截断，避免任何换行撕裂 (彻底修复 BUG-M3)
  */
 declare function formatCapsuleLine(hudTitle: string, spoken: string, written?: string, options?: {
     slot1Short?: string;

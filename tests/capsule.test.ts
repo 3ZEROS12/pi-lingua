@@ -1,6 +1,28 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { formatCapsuleLine } from "../src/engine.js";
+import { formatCapsuleLine, getVisualWidth, truncateVisual } from "../src/engine.js";
+
+test("truncateVisual - strictly respects maxVisualCols including ellipsis allowance", () => {
+  const cjk = "落霞与孤鹜齐飞秋水共长天一色";
+  assert.ok(getVisualWidth(truncateVisual(cjk, 10)) <= 10, "Width must strictly be <= 10 cells");
+  assert.ok(getVisualWidth(truncateVisual(cjk, 15)) <= 15, "Width must strictly be <= 15 cells");
+  assert.ok(getVisualWidth(truncateVisual(cjk, 20)) <= 20, "Width must strictly be <= 20 cells");
+});
+
+test("formatCapsuleLine - strictly bounds visual width under extreme narrow columns", () => {
+  const spoken = "This feels a bit over-engineered; we'd be much better off just sticking with standard library.";
+  const written = "The proposed approach introduces unnecessary complexity. Native implementations are preferred.";
+
+  for (const cols of [30, 40, 50, 60, 80]) {
+    const line = formatCapsuleLine("zh ⇄ en", spoken, written, { maxCols: cols });
+    const actualWidth = getVisualWidth(line);
+    assert.ok(
+      actualWidth <= cols,
+      `Capsule line width (${actualWidth}) must strictly be <= maxCols (${cols})`
+    );
+    assert.ok(!line.includes("\n"), "Must be strictly a single terminal line");
+  }
+});
 
 test("formatCapsuleLine - formats single-line compact representation for both slots", () => {
   const line = formatCapsuleLine(

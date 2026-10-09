@@ -169,3 +169,43 @@ test("formatStatusReport - includes in-memory cache statistics and hit rate", ()
   assert.ok(report.includes("80% hit rate"), "Must include percentage");
   assert.ok(report.includes("5/50 items"), "Must include capacity info");
 });
+
+test("extension paging - non-translating inputs fully clear pagination pool to prevent ghost resurrection", async () => {
+  let registeredInputHandler: any = null;
+  const registeredShortcuts: Record<string, any> = {};
+
+  const mockPi: any = {
+    on(event: string, handler: any) {
+      if (event === "input") registeredInputHandler = handler;
+    },
+    registerCommand() {},
+    registerShortcut(key: string, def: any) {
+      registeredShortcuts[key] = def;
+    },
+  };
+
+  let activeWidget: any = undefined;
+  const mockCtx: any = {
+    hasUI: true,
+    ui: {
+      setWidget(_key: string, content: any) {
+        activeWidget = content;
+      },
+      setStatus() {},
+      notify() {},
+      theme: { fg: (_c: string, t: string) => t },
+    },
+  };
+
+  extensionFactory(mockPi);
+
+  // Send a non-translating command (e.g. CLI command)
+  await registeredInputHandler({ type: "input", text: "git status", source: "interactive" }, mockCtx);
+  assert.equal(activeWidget, undefined, "Widget must be dismissed on non-translating inputs");
+
+  // Pressing Alt+. after dismissal must NOT resurrect previous companion card
+  if (registeredShortcuts["alt+."]) {
+    await registeredShortcuts["alt+."].handler(mockCtx);
+    assert.equal(activeWidget, undefined, "Ghost companion card must NOT resurrect after dismissal");
+  }
+});

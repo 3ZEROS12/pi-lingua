@@ -368,14 +368,14 @@ function splitSemanticChunks(text, maxChunkChars = 65) {
   if (trimmed.length <= maxChunkChars) {
     return [trimmed];
   }
-  const rawSentences = trimmed.split(/([。！？；\n]|(?<=[.!?])\s+)/);
+  const rawSegments = trimmed.split(/([。！？；\n]|[.!?](?=\s|$))/);
   const sentences = [];
   let cur = "";
-  for (let i = 0; i < rawSentences.length; i++) {
-    const part = rawSentences[i];
+  for (let i = 0; i < rawSegments.length; i++) {
+    const part = rawSegments[i];
     if (!part) continue;
     cur += part;
-    if (/[。！？；\n]/.test(part) || /(?<=[.!?])\s+/.test(part)) {
+    if (/[。！？；\n]/.test(part) || /[.!?]/.test(part)) {
       if (cur.trim()) sentences.push(cur.trim());
       cur = "";
     }
@@ -387,7 +387,18 @@ function splitSemanticChunks(text, maxChunkChars = 65) {
     if (trimmed.length <= maxChunkChars) {
       return [trimmed];
     }
-    const commaParts = trimmed.split(/([，,、])/);
+    const commaParts = [];
+    let lastIdx = 0;
+    const commaRegex = /[，,、]/g;
+    let match;
+    while ((match = commaRegex.exec(trimmed)) !== null) {
+      const end = match.index + 1;
+      commaParts.push(trimmed.slice(lastIdx, end).trim());
+      lastIdx = end;
+    }
+    if (lastIdx < trimmed.length) {
+      commaParts.push(trimmed.slice(lastIdx).trim());
+    }
     const subChunks = [];
     let subCur = "";
     for (const cp of commaParts) {
@@ -422,8 +433,10 @@ function splitSemanticChunks(text, maxChunkChars = 65) {
   const chunks = [];
   let chunkBuffer = "";
   for (const s of sentences) {
-    if (chunkBuffer.length + s.length <= maxChunkChars || chunkBuffer === "") {
-      chunkBuffer += (chunkBuffer ? " " : "") + s;
+    const needSpace = chunkBuffer && !/[\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af，。！？；]/.test(chunkBuffer.slice(-1));
+    const addedLen = s.length + (needSpace ? 1 : 0);
+    if (chunkBuffer.length + addedLen <= maxChunkChars || chunkBuffer === "") {
+      chunkBuffer += (needSpace ? " " : "") + s;
     } else {
       if (chunkBuffer.trim()) chunks.push(chunkBuffer.trim());
       chunkBuffer = s;
@@ -965,17 +978,21 @@ function parseLlmResponse(raw) {
   }
 }
 function truncateVisual(str, maxVisualCols) {
+  if (maxVisualCols <= 0) return "";
+  const fullWidth = getVisualWidth(str);
+  if (fullWidth <= maxVisualCols) return str;
+  const targetCols = Math.max(1, maxVisualCols - 3);
   let curWidth = 0;
   let result = "";
   for (const char of str) {
     const w = getVisualWidth(char);
-    if (curWidth + w > maxVisualCols) {
-      return result + "...";
+    if (curWidth + w > targetCols) {
+      break;
     }
     result += char;
     curWidth += w;
   }
-  return result;
+  return result + "...";
 }
 function getVisualWidth(str) {
   let width = 0;
@@ -1032,6 +1049,27 @@ function wrapVisualText(text, maxWidth) {
       currentWidth += tokenWidth;
     } else {
       if (currentLine === "") {
+        if (tokenWidth > maxWidth) {
+          let curToken = token;
+          while (getVisualWidth(curToken) > maxWidth) {
+            let sliceIdx = 0;
+            let accW = 0;
+            for (const ch of curToken) {
+              const chW = getVisualWidth(ch);
+              if (accW + chW > maxWidth) break;
+              accW += chW;
+              sliceIdx += ch.length;
+            }
+            if (sliceIdx === 0) sliceIdx = 1;
+            rawLines.push(curToken.slice(0, sliceIdx));
+            curToken = curToken.slice(sliceIdx);
+          }
+          if (curToken.trim()) {
+            currentLine = curToken;
+            currentWidth = getVisualWidth(curToken);
+          }
+          continue;
+        }
         rawLines.push(token);
         continue;
       }
@@ -1110,8 +1148,10 @@ function spotlightPhrases(text, phrases) {
   let result = text;
   for (const phrase of phrases) {
     const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const wordBoundary = `(?<=\\b|^)${escaped}(?=\\b|$)`;
-    const regex = new RegExp(wordBoundary, "gi");
+    const startsWithAscii = /^[a-zA-Z0-9]/.test(phrase);
+    const endsWithAscii = /[a-zA-Z0-9]$/.test(phrase);
+    const pattern = `${startsWithAscii ? "(?<=\\b|^)" : ""}${escaped}${endsWithAscii ? "(?=\\b|$)" : ""}`;
+    const regex = new RegExp(pattern, "gi");
     result = result.replace(regex, (matched) => `\x1B[4m${matched}\x1B[24m`);
   }
   return result;
@@ -1149,27 +1189,36 @@ function formatTerminalAnnotation(sourceText, spoken, written, vocab, options = 
   return lines.join("\n");
 }
 function formatCapsuleLine(hudTitle, spoken, written, options = {}) {
-  const slot1 = options.slot1Short || "\u53E3";
-  const slot2 = options.slot2Short || "\u5199";
-  const maxCols = options.maxCols || (process.stdout?.columns ? Math.max(40, process.stdout.columns) : 80);
-  const safeCols = Math.max(36, maxCols - 4);
+  const maxCols = options.maxCols || (process.stdout?.columns ? Math.max(30, process.stdout.columns) : 80);
+  const slot1 = options.slot1Short || "Spk";
+  const slot2 = options.slot2Short || "Wrt";
   const cleanSpoken = spoken.replace(/\r?\n+/g, " ").trim();
   const cleanWritten = (written || "").replace(/\r?\n+/g, " ").trim();
   const prefix = `\u21C4 [${hudTitle}] `;
   const prefixW = getVisualWidth(prefix);
   const hasSlot2 = Boolean(cleanWritten);
-  const availW = Math.max(16, safeCols - prefixW);
+  const availW = Math.max(8, maxCols - prefixW);
   let body = "";
   if (hasSlot2) {
-    const slotW = Math.max(8, Math.floor((availW - 5) / 2));
-    const s1 = truncateVisual(cleanSpoken, slotW);
-    const s2 = truncateVisual(cleanWritten, slotW);
+    const s1PrefixW = getVisualWidth(`${slot1}: `);
+    const s2PrefixW = getVisualWidth(`${slot2}: `);
+    const fixedOverhead = s1PrefixW + 3 + s2PrefixW;
+    const textAvail = Math.max(4, availW - fixedOverhead);
+    const halfW = Math.max(2, Math.floor(textAvail / 2));
+    const s1 = truncateVisual(cleanSpoken, halfW);
+    const s2 = truncateVisual(cleanWritten, halfW);
     body = `${slot1}: ${s1} \xB7 ${slot2}: ${s2}`;
   } else {
-    const s1 = truncateVisual(cleanSpoken, availW - 4);
+    const s1PrefixW = getVisualWidth(`${slot1}: `);
+    const textAvail = Math.max(2, availW - s1PrefixW);
+    const s1 = truncateVisual(cleanSpoken, textAvail);
     body = `${slot1}: ${s1}`;
   }
-  return prefix + body;
+  const fullLine = prefix + body;
+  if (getVisualWidth(fullLine) > maxCols) {
+    return truncateVisual(fullLine, maxCols);
+  }
+  return fullLine;
 }
 function stripLingualAnnotation(annotatedText) {
   const lines = annotatedText.split("\n");

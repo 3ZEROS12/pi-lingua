@@ -205,20 +205,26 @@ export function parseLlmResponse(raw: string): TranslationPayload | null {
 
 /**
  * Truncate string based on visual cell width (CJK = 2 cols, ASCII = 1 col)
- * Guarantees that header text never exceeds visual column boundaries.
+ * Guarantees that header text never exceeds visual column boundaries (including the "..." ellipsis).
  */
 export function truncateVisual(str: string, maxVisualCols: number): string {
+  if (maxVisualCols <= 0) return "";
+  const fullWidth = getVisualWidth(str);
+  if (fullWidth <= maxVisualCols) return str;
+
+  // 必须预留 3 列给省略号 "..."，确保拼接后总宽度严格 <= maxVisualCols (彻底修复 BUG-M4)
+  const targetCols = Math.max(1, maxVisualCols - 3);
   let curWidth = 0;
   let result = "";
   for (const char of str) {
     const w = getVisualWidth(char);
-    if (curWidth + w > maxVisualCols) {
-      return result + "...";
+    if (curWidth + w > targetCols) {
+      break;
     }
     result += char;
     curWidth += w;
   }
-  return result;
+  return result + "...";
 }
 
 /**
@@ -289,6 +295,28 @@ export function wrapVisualText(text: string, maxWidth: number): string[] {
       currentWidth += tokenWidth;
     } else {
       if (currentLine === "") {
+        // 彻底修复 BUG-m2: 单个超长无空格 Token (长 URL / 路径) 强制按列宽平滑切片分行
+        if (tokenWidth > maxWidth) {
+          let curToken = token;
+          while (getVisualWidth(curToken) > maxWidth) {
+            let sliceIdx = 0;
+            let accW = 0;
+            for (const ch of curToken) {
+              const chW = getVisualWidth(ch);
+              if (accW + chW > maxWidth) break;
+              accW += chW;
+              sliceIdx += ch.length;
+            }
+            if (sliceIdx === 0) sliceIdx = 1;
+            rawLines.push(curToken.slice(0, sliceIdx));
+            curToken = curToken.slice(sliceIdx);
+          }
+          if (curToken.trim()) {
+            currentLine = curToken;
+            currentWidth = getVisualWidth(curToken);
+          }
+          continue;
+        }
         rawLines.push(token);
         continue;
       }
@@ -428,6 +456,7 @@ export function extractVocabPhrases(vocab: string | undefined): string[] {
 /**
  * 对目标文本中的指定短语进行非破坏性 ANSI 下划线瞄准点亮 (Spotlight Highlighting)
  * 大小写不敏感匹配，保留原始文本的大小写与排版
+ * 原生支持 CJK (日文/中文) 以及 ASCII 西文字符 (彻底修复 BUG-M5)
  */
 export function spotlightPhrases(text: string, phrases: string[]): string {
   if (!text || phrases.length === 0) return text;
@@ -435,9 +464,11 @@ export function spotlightPhrases(text: string, phrases: string[]): string {
   let result = text;
   for (const phrase of phrases) {
     const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    // 单词边界匹配 (若短语以英文字符起步/结尾)
-    const wordBoundary = `(?<=\\b|^)${escaped}(?=\\b|$)`;
-    const regex = new RegExp(wordBoundary, "gi");
+    // 只有当短语起止是 ASCII 单词字符时才应用 \b 边界；CJK 字符直接字面匹配，避免 \b 误杀
+    const startsWithAscii = /^[a-zA-Z0-9]/.test(phrase);
+    const endsWithAscii = /[a-zA-Z0-9]$/.test(phrase);
+    const pattern = `${startsWithAscii ? "(?<=\\b|^)" : ""}${escaped}${endsWithAscii ? "(?=\\b|$)" : ""}`;
+    const regex = new RegExp(pattern, "gi");
     result = result.replace(regex, (matched) => `\x1b[4m${matched}\x1b[24m`);
   }
   return result;
@@ -508,7 +539,7 @@ export function formatTerminalAnnotation(
 
 /**
  * 格式化极端分屏下的单行高密度胶囊流 (Single-Line Capsule Layout)
- * 严格限制在 1 行内，按终端列宽动态均衡截断，避免任何换行撕裂
+ * 严格限制在 1 行内，按终端列宽动态均衡截断，避免任何换行撕裂 (彻底修复 BUG-M3)
  */
 export function formatCapsuleLine(
   hudTitle: string,
@@ -520,10 +551,9 @@ export function formatCapsuleLine(
     maxCols?: number;
   } = {}
 ): string {
-  const slot1 = options.slot1Short || "口";
-  const slot2 = options.slot2Short || "写";
-  const maxCols = options.maxCols || (process.stdout?.columns ? Math.max(40, process.stdout.columns) : 80);
-  const safeCols = Math.max(36, maxCols - 4); // 预留 4 列安全边距
+  const maxCols = options.maxCols || (process.stdout?.columns ? Math.max(30, process.stdout.columns) : 80);
+  const slot1 = options.slot1Short || "Spk";
+  const slot2 = options.slot2Short || "Wrt";
 
   const cleanSpoken = spoken.replace(/\r?\n+/g, " ").trim();
   const cleanWritten = (written || "").replace(/\r?\n+/g, " ").trim();
@@ -532,22 +562,33 @@ export function formatCapsuleLine(
   const prefixW = getVisualWidth(prefix);
   const hasSlot2 = Boolean(cleanWritten);
 
-  // 可分配给槽位的剩余列宽
-  const availW = Math.max(16, safeCols - prefixW);
+  // 严格预算可分配给主体的列宽
+  const availW = Math.max(8, maxCols - prefixW);
 
   let body = "";
   if (hasSlot2) {
-    // 两个槽位各分配一半可用宽度 (扣除间隔 " · ")
-    const slotW = Math.max(8, Math.floor((availW - 5) / 2));
-    const s1 = truncateVisual(cleanSpoken, slotW);
-    const s2 = truncateVisual(cleanWritten, slotW);
+    const s1PrefixW = getVisualWidth(`${slot1}: `);
+    const s2PrefixW = getVisualWidth(`${slot2}: `);
+    const fixedOverhead = s1PrefixW + 3 + s2PrefixW; // 包含中间间隔 " · "
+    const textAvail = Math.max(4, availW - fixedOverhead);
+    const halfW = Math.max(2, Math.floor(textAvail / 2));
+
+    const s1 = truncateVisual(cleanSpoken, halfW);
+    const s2 = truncateVisual(cleanWritten, halfW);
     body = `${slot1}: ${s1} · ${slot2}: ${s2}`;
   } else {
-    const s1 = truncateVisual(cleanSpoken, availW - 4);
+    const s1PrefixW = getVisualWidth(`${slot1}: `);
+    const textAvail = Math.max(2, availW - s1PrefixW);
+    const s1 = truncateVisual(cleanSpoken, textAvail);
     body = `${slot1}: ${s1}`;
   }
 
-  return prefix + body;
+  // 终极保护：整行输出严格截断至 maxCols，绝对不溢出单行
+  const fullLine = prefix + body;
+  if (getVisualWidth(fullLine) > maxCols) {
+    return truncateVisual(fullLine, maxCols);
+  }
+  return fullLine;
 }
 
 /**

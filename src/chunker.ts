@@ -17,16 +17,16 @@ export function splitSemanticChunks(text: string, maxChunkChars = 65): string[] 
     return [trimmed];
   }
 
-  // Split along sentence terminators: 。 ！？ ； \n and english . ! ? \n
-  const rawSentences = trimmed.split(/([。！？；\n]|(?<=[.!?])\s+)/);
+  // Split along sentence terminators: 。 ！？ ； \n 以及英文 [.!?] 后跟空白或行尾
+  const rawSegments = trimmed.split(/([。！？；\n]|[.!?](?=\s|$))/);
   const sentences: string[] = [];
   let cur = "";
 
-  for (let i = 0; i < rawSentences.length; i++) {
-    const part = rawSentences[i];
+  for (let i = 0; i < rawSegments.length; i++) {
+    const part = rawSegments[i];
     if (!part) continue;
     cur += part;
-    if (/[。！？；\n]/.test(part) || /(?<=[.!?])\s+/.test(part)) {
+    if (/[。！？；\n]/.test(part) || /[.!?]/.test(part)) {
       if (cur.trim()) sentences.push(cur.trim());
       cur = "";
     }
@@ -41,7 +41,20 @@ export function splitSemanticChunks(text: string, maxChunkChars = 65): string[] 
       return [trimmed];
     }
     // Sub-split by comma/clause if single sentence is gigantic
-    const commaParts = trimmed.split(/([，,、])/);
+    // 标点粘连在前句末尾，绝不生成孤立的单逗号切片 (彻底解决 BUG-M2)
+    const commaParts: string[] = [];
+    let lastIdx = 0;
+    const commaRegex = /[，,、]/g;
+    let match: RegExpExecArray | null;
+    while ((match = commaRegex.exec(trimmed)) !== null) {
+      const end = match.index + 1;
+      commaParts.push(trimmed.slice(lastIdx, end).trim());
+      lastIdx = end;
+    }
+    if (lastIdx < trimmed.length) {
+      commaParts.push(trimmed.slice(lastIdx).trim());
+    }
+
     const subChunks: string[] = [];
     let subCur = "";
     for (const cp of commaParts) {
@@ -78,13 +91,16 @@ export function splitSemanticChunks(text: string, maxChunkChars = 65): string[] 
     return boundedChunks.length > 0 ? boundedChunks : [trimmed];
   }
 
-  // Combine small consecutive sentences if under maxChunkChars (budget ~40 chars)
+  // Combine small consecutive sentences if under maxChunkChars
+  // CJK 结尾句子不盲目插入空格 (彻底解决 BUG-m6)
   const chunks: string[] = [];
   let chunkBuffer = "";
 
   for (const s of sentences) {
-    if (chunkBuffer.length + s.length <= maxChunkChars || chunkBuffer === "") {
-      chunkBuffer += (chunkBuffer ? " " : "") + s;
+    const needSpace = chunkBuffer && !/[\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af，。！？；]/.test(chunkBuffer.slice(-1));
+    const addedLen = s.length + (needSpace ? 1 : 0);
+    if (chunkBuffer.length + addedLen <= maxChunkChars || chunkBuffer === "") {
+      chunkBuffer += (needSpace ? " " : "") + s;
     } else {
       if (chunkBuffer.trim()) chunks.push(chunkBuffer.trim());
       chunkBuffer = s;

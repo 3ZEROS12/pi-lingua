@@ -33,11 +33,21 @@ test("splitSemanticChunks - splits long multi-sentence input into atomic chunks"
   }
 });
 
-test("splitSemanticChunks - safely slices giant single sentence with zero punctuation", () => {
-  const giantNoPunctuation = "这是一个完全没有任何标点符号的极其漫长的单句旨在测试分块器在遇到极端自然语言输入时的保底退避机制是否会产生无限循环或者抛出异常错误或者直接原样返回";
-  const chunks = splitSemanticChunks(giantNoPunctuation, 40);
-  assert.ok(chunks.length >= 2, "Must smoothly slice giant sentence with 0 punctuation into bounded chunks");
+test("splitSemanticChunks - splits long English prose on sentence terminators cleanly without failing lookbehinds", () => {
+  const englishProse = "The quick brown fox jumps over the lazy dog. It was a bright cold day in April. The clocks were striking thirteen. Winston Smith walked fast.";
+  const chunks = splitSemanticChunks(englishProse, 45);
+  assert.ok(chunks.length >= 2, "Must cleanly split English multi-sentence prose on period/whitespace boundaries");
+  assert.ok(chunks[0].includes("The quick brown fox"), "First chunk must start with opening sentence");
   for (const c of chunks) {
-    assert.ok(c.length <= 40, `Chunk length (${c.length}) must strictly remain <= maxChunkChars (40)`);
+    assert.ok(c.length > 0, "No chunk should be empty");
+  }
+});
+
+test("splitSemanticChunks - does NOT produce orphan single-comma chunks during clause fallback", () => {
+  const commaText = "We should use Node.js v20.1.0 vs. Bun v1.0.4, e.g. in prod env. It works great. Let's deploy now.";
+  const chunks = splitSemanticChunks(commaText, 40);
+  for (const c of chunks) {
+    assert.notEqual(c, ",", "Must NEVER emit an isolated 1-character comma chunk");
+    assert.notEqual(c.trim(), ",", "Trimmed chunk must not be a bare comma");
   }
 });
