@@ -158,7 +158,17 @@ export function sanitizePromptForTranslation(raw: string): SanitizedPromptResult
   // 纯编译器诊断守卫：如果整段输入全是 TS/GCC 编译报错模板句，且没有任何人类疑问词，判定为纯输出
   const isPureDiagnosticOutput = /^(?:[a-zA-Z0-9_\-\.\/\\:]+\s*-\s*error\s+[a-zA-Z0-9]+|error(?:\s+TS\d+|:)|warning:)/i.test(distilledText) && !hasQuestionKeywords;
 
-  const hasNaturalLanguage = (hasCJK || hasQuestionKeywords || withoutPlaceholders.length > 5) && !isPureDiagnosticOutput;
+  // 纯报错/堆栈守卫：纯 Error: ... 紧随堆栈，且无任何人类提问意图
+  const isPureErrorOrDiagnostic =
+    isPureDiagnosticOutput ||
+    (/^Error:\s*[\w\s:]*\[\.\.\.\s*stack trace\s*\.\.\.\]/i.test(distilledText) && !hasQuestionKeywords);
+
+  // 自然语言英语句子判定：在非纯堆栈场景下，包含由空格分隔的标准英文自然词汇 >= 4 个 (确保英文陈述句被准确识别)
+  const cleanEnglishWords = distilledText.replace(/\[\.\.\.[^\]]*\]|\[code[^\]]*\]/gi, " ").trim();
+  const words = cleanEnglishWords.match(/\b[a-zA-Z]{2,}\b/g) || [];
+  const hasEnglishSentence = !isPureErrorOrDiagnostic && words.length >= 4 && !distilledText.startsWith("Error:");
+
+  const hasNaturalLanguage = (hasCJK || hasQuestionKeywords || hasEnglishSentence || withoutPlaceholders.length > 5) && !isPureErrorOrDiagnostic;
 
   // 5. 提取可能被折叠的原始代码块与堆栈追踪附件 (供 english 模式嫁接保留真实排障上下文)
   let rawPayload: string | undefined;

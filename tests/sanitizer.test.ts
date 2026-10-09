@@ -147,3 +147,16 @@ test("sanitizePromptForTranslation - safely strips clipboard paths with double b
   assert.ok(!res.distilledText.includes("pi-clipboard"));
   assert.ok(res.distilledText.includes("帮我排查下错误"));
 });
+
+test("sanitizePromptForTranslation - correctly recognizes declarative English sentences without question keywords", () => {
+  const line11 = `The user's question indicates a request for situational awareness. Considering the available tools and current
+ directory might offer clues about the current task or state. It is necessary to identify if any recent actions or
+ context initialization can be reported.
+
+ All systems are idle and ready. I am currently stationed in C:/Users/Jason/Desktop.`;
+
+  const res = sanitizePromptForTranslation(line11);
+  assert.equal(res.hasNaturalLanguage, true, "Declarative English prose must be recognized as natural language");
+  assert.ok(res.distilledText.includes("The user's question indicates a request"));
+  assert.ok(res.distilledText.includes("situational awareness"));
+});

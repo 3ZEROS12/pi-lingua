@@ -1502,7 +1502,11 @@ function sanitizePromptForTranslation(raw) {
   const hasCJK = isNonEnglish(distilledText);
   const hasQuestionKeywords = /(?:为什么|怎么|如何|帮我|排查|优化|修改|修复|为何|报错|审查|看下|explain|why|how|please|help|could you|fix|should|what|inspect)/i.test(distilledText);
   const isPureDiagnosticOutput = /^(?:[a-zA-Z0-9_\-\.\/\\:]+\s*-\s*error\s+[a-zA-Z0-9]+|error(?:\s+TS\d+|:)|warning:)/i.test(distilledText) && !hasQuestionKeywords;
-  const hasNaturalLanguage = (hasCJK || hasQuestionKeywords || withoutPlaceholders.length > 5) && !isPureDiagnosticOutput;
+  const isPureErrorOrDiagnostic = isPureDiagnosticOutput || /^Error:\s*[\w\s:]*\[\.\.\.\s*stack trace\s*\.\.\.\]/i.test(distilledText) && !hasQuestionKeywords;
+  const cleanEnglishWords = distilledText.replace(/\[\.\.\.[^\]]*\]|\[code[^\]]*\]/gi, " ").trim();
+  const words = cleanEnglishWords.match(/\b[a-zA-Z]{2,}\b/g) || [];
+  const hasEnglishSentence = !isPureErrorOrDiagnostic && words.length >= 4 && !distilledText.startsWith("Error:");
+  const hasNaturalLanguage = (hasCJK || hasQuestionKeywords || hasEnglishSentence || withoutPlaceholders.length > 5) && !isPureErrorOrDiagnostic;
   let rawPayload;
   const payloadParts = [];
   if (trailingPathPayload) {
