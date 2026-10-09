@@ -6,7 +6,7 @@
 [![npm version](https://img.shields.io/npm/v/pi-lingual?color=blue)](https://www.npmjs.com/package/pi-lingual)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Built for Pi](https://img.shields.io/badge/Built%20for-Pi%20Coding%20Agent-orange)](https://github.com/earendil-works/pi-coding-agent)
-[![Tests](https://img.shields.io/badge/Tests-35%2F35%20Pass-brightgreen)](tests/engine.test.ts)
+[![Tests](https://img.shields.io/badge/Tests-36%2F36%20Pass-brightgreen)](tests/engine.test.ts)
 
 [English](./README.md) | **简体中文**
 
@@ -202,7 +202,7 @@ pi install git:github.com/3ZEROS12/pi-lingua
 git clone https://github.com/3ZEROS12/pi-lingua.git
 cd pi-lingua
 npm install
-npm test            # 35/35 套件全部通过
+npm test            # 36/36 套件全部通过
 npm run typecheck   # 0 TypeScript 错误
 ```
 
