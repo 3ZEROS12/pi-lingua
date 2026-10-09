@@ -247,13 +247,13 @@ lingual "这个方案有点过度设计了，不如直接用标准库实现"
 pi install npm:pi-lingual
 
 # 或从 GitHub 安装
-pi install git:github.com/3ZEROS12/pi-lingua
+pi install git:github.com/3ZEROS12/pi-lingual
 ```
 
 ### 本地开发与验证
 ```bash
-git clone https://github.com/3ZEROS12/pi-lingua.git
-cd pi-lingua
+git clone https://github.com/3ZEROS12/pi-lingual.git
+cd pi-lingual
 npm install
 npm test            # 74/74 套件全部通过 (100% Green)
 npm run typecheck   # 0 TypeScript 编译错误

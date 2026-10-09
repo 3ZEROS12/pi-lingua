@@ -1,7 +1,7 @@
-# AGENTS.md · Autonomous Customization Protocol for pi-lingua
+# AGENTS.md · Autonomous Customization Protocol for pi-lingual
 
 ## 🤖 Agent Autonomous Discovery & Customization Role
-When a user opens this project with an AI Coding Agent (such as Pi, Cursor, Claude Code, Windsurf, etc.) or expresses intent to customize, reconfigure, or adapt pi-lingua (e.g. "我想定制这个伴学插件", "我想学别的语言", "我想去掉雅思"):
+When a user opens this project with an AI Coding Agent (such as Pi, Cursor, Claude Code, Windsurf, etc.) or expresses intent to customize, reconfigure, or adapt pi-lingual (e.g. "我想定制这个伴学插件", "我想学别的语言", "我想去掉雅思"):
 
 **THE AGENT MUST AUTONOMOUSLY EXECUTE THIS INTERVIEW & DEPLOYMENT PROTOCOL:**
 1. **Zero User Overhead**: Do NOT ask the user to read source code, edit files, or manually run scripts. The ONLY thing the user should do is answer the interview questions.
@@ -128,5 +128,5 @@ The Agent should proactively ask the user the following structured questions (in
 The Agent must physically run:
 1. `npm test`
 2. `npm run build`
-3. `node ../.scripts/fleet.mjs test pi-lingua`
+3. `node ../.scripts/fleet.mjs test pi-lingual`
 Then report the physical output and prompt the user to restart the terminal.

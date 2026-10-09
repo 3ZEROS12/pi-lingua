@@ -248,13 +248,13 @@ I hope everyone takes the time to tune a prompt that works best for them, catche
 pi install npm:pi-lingual
 
 # Or install from GitHub
-pi install git:github.com/3ZEROS12/pi-lingua
+pi install git:github.com/3ZEROS12/pi-lingual
 ```
 
 ### Development & Verification
 ```bash
-git clone https://github.com/3ZEROS12/pi-lingua.git
-cd pi-lingua
+git clone https://github.com/3ZEROS12/pi-lingual.git
+cd pi-lingual
 npm install
 npm test            # 74/74 test suites pass (100% green)
 npm run typecheck   # 0 TypeScript compiler errors
