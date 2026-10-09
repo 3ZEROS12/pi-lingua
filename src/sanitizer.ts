@@ -30,6 +30,8 @@ export interface SanitizedPromptResult {
   hasCollapsedContent: boolean;
   /** 自然语言核心字符数估算 */
   naturalCharsLength: number;
+  /** 提取出的原始代码块、堆栈或诊断附件 (供 english 模式实施混合意图嫁接) */
+  rawPayload?: string;
 }
 
 /**
@@ -139,10 +141,30 @@ export function sanitizePromptForTranslation(raw: string): SanitizedPromptResult
   const hasQuestionKeywords = /(?:为什么|怎么|如何|帮我|排查|优化|修改|修复|为何|报错|explain|why|how|please|help|could you|fix)/i.test(distilledText);
   const hasNaturalLanguage = hasCJK || hasQuestionKeywords || withoutPlaceholders.length > 5;
 
+  // 5. 提取可能被折叠的原始代码块与堆栈追踪附件 (供 english 模式嫁接保留真实排障上下文)
+  let rawPayload: string | undefined;
+  if (hasCollapsed) {
+    const payloadParts: string[] = [];
+    const codeMatch = trimmed.match(/```[\w\-]*\r?\n([\s\S]*?)\r?\n```/g);
+    if (codeMatch) {
+      payloadParts.push(...codeMatch);
+    }
+    const stackLines = lines.filter(
+      (l) => STACK_LINE_REGEX.test(l.trim()) || COMPILER_DIAGNOSTIC_REGEX.test(l.trim()) || l.trim().startsWith("Traceback")
+    );
+    if (stackLines.length > 0 && !codeMatch) {
+      payloadParts.push(stackLines.join("\n"));
+    }
+    if (payloadParts.length > 0) {
+      rawPayload = payloadParts.join("\n\n").trim();
+    }
+  }
+
   return {
     distilledText,
     hasNaturalLanguage,
     hasCollapsedContent: hasCollapsed,
     naturalCharsLength: distilledText.length,
+    rawPayload,
   };
 }

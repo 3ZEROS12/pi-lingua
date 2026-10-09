@@ -7,17 +7,31 @@ import { buildSystemPrompt } from "./prompts.js";
 import { shouldShieldBypass } from "./shield.js";
 import { LinguaLruCache, globalLinguaCache } from "./cache.js";
 
+let cachedUserConfig: Partial<LinguaConfig> | null = null;
+let lastConfigCheckTime = 0;
+const CONFIG_CACHE_TTL_MS = 2000;
+
+export function invalidateUserConfigCache(): void {
+  cachedUserConfig = null;
+  lastConfigCheckTime = 0;
+}
+
 /**
  * Load user configuration from:
  * 1. ~/.pi/agent/settings.json (under "pi-lingual" block)
  * 2. ~/.pi/agent/lingua.json (flat or nested)
- * 3. ~/.pi/agent/translate.json (compatibility fallback)
+ * Uses high-efficiency 2-second in-memory memoization to prevent synchronous disk I/O thrashing during parallel chunk translations.
  * Never hardcodes private credentials in source code.
  */
 export function loadUserConfig(): Partial<LinguaConfig> {
   // 测试沙箱隔离：自动化测试期间不读取宿主机个人配置，防止环境脏数据干扰断言
   if (process.env.NODE_ENV === "test" || process.execArgv.includes("--test") || process.argv.includes("--test")) {
     return {};
+  }
+
+  const now = Date.now();
+  if (cachedUserConfig && now - lastConfigCheckTime < CONFIG_CACHE_TTL_MS) {
+    return cachedUserConfig;
   }
 
   const configPaths = [
@@ -43,7 +57,7 @@ export function loadUserConfig(): Partial<LinguaConfig> {
         const compact = target.compact;
         const labels = resolveLabelsForLang(sourceLang || "zh", target.labels);
 
-        return {
+        cachedUserConfig = {
           ...(endpoint ? { endpoint } : {}),
           ...(apiKey ? { apiKey } : {}),
           ...(model ? { model } : {}),
@@ -54,11 +68,15 @@ export function loadUserConfig(): Partial<LinguaConfig> {
           ...(targetLang ? { targetLang } : {}),
           labels,
         };
+        lastConfigCheckTime = now;
+        return cachedUserConfig;
       }
     } catch {
       // Ignore read errors gracefully
     }
   }
+  cachedUserConfig = {};
+  lastConfigCheckTime = now;
   return {};
 }
 

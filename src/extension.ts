@@ -846,7 +846,7 @@ export default function (pi: ExtensionAPI) {
       let combinedEnglish = "";
 
       if (chunks.length === 1) {
-        const result = await translatePrompt(raw, {
+        const result = await translatePrompt(promptToTranslate, {
           sourceLang: state.sourceLang,
           labels: state.labels,
           complete: completer,
@@ -901,9 +901,16 @@ export default function (pi: ExtensionAPI) {
         combinedEnglish = validResults.map((r) => (r.written && r.written.trim() ? r.written : r.spoken)).join(" ");
       }
 
+      // 【核心体验跃升 · 混合意图嫁接 (Hybrid Intent Grafting)】:
+      // 若原始输入包含大段被折叠的堆栈追踪或代码块，将纯英文专业指令与原始真实堆栈缝合，
+      // 既驱动大模型展开顶级全英文代码推理，又绝不丢失排查必需的代码与堆栈物理上下文！
+      const finalText = sanitized.rawPayload
+        ? `${combinedEnglish}\n\n${sanitized.rawPayload}`
+        : combinedEnglish;
+
       return {
         action: "transform",
-        text: combinedEnglish,
+        text: finalText,
         images: event.images,
       };
     } catch {

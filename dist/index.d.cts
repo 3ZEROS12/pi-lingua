@@ -199,17 +199,20 @@ interface SanitizedPromptResult {
     hasCollapsedContent: boolean;
     /** 自然语言核心字符数估算 */
     naturalCharsLength: number;
+    /** 提取出的原始代码块、堆栈或诊断附件 (供 english 模式实施混合意图嫁接) */
+    rawPayload?: string;
 }
 /**
  * 对用户原始输入进行审查与折叠萃取
  */
 declare function sanitizePromptForTranslation(raw: string): SanitizedPromptResult;
 
+declare function invalidateUserConfigCache(): void;
 /**
  * Load user configuration from:
  * 1. ~/.pi/agent/settings.json (under "pi-lingual" block)
  * 2. ~/.pi/agent/lingua.json (flat or nested)
- * 3. ~/.pi/agent/translate.json (compatibility fallback)
+ * Uses high-efficiency 2-second in-memory memoization to prevent synchronous disk I/O thrashing during parallel chunk translations.
  * Never hardcodes private credentials in source code.
  */
 declare function loadUserConfig(): Partial<LinguaConfig>;
@@ -330,4 +333,4 @@ declare function stripLinguaAnnotation(annotatedText: string): {
  */
 declare function translatePrompt(text: string, userConfig?: Partial<LinguaConfig>): Promise<LinguaResult | null>;
 
-export { type CacheStats, DEFAULT_CONFIG, LANGUAGE_PRESETS, LINGUA_SYSTEM_PROMPT, type LinguaConfig, type LinguaI18nLabels, LinguaLruCache, type LinguaMode, type LinguaResult, MAX_TRANSLATION_CHARS, MAX_TRANSLATION_LINES, type SanitizedPromptResult, type TranslationPayload, buildSystemPrompt, extractVocabPhrases, formatCapsuleLine, formatModelSelectionMessage, formatStatusReport, formatSubRail, formatTerminalAnnotation, formatTreeBranch, getVisualWidth, globalLinguaCache, isNonEnglish, loadUserConfig, parseLlmResponse, resolveLabelsForLang, sanitizePromptForTranslation, shouldShieldBypass, shouldTriggerTranslation, splitSemanticChunks, spotlightPhrases, stripLinguaAnnotation, translatePrompt, truncateVisual, wrapVisualText };
+export { type CacheStats, DEFAULT_CONFIG, LANGUAGE_PRESETS, LINGUA_SYSTEM_PROMPT, type LinguaConfig, type LinguaI18nLabels, LinguaLruCache, type LinguaMode, type LinguaResult, MAX_TRANSLATION_CHARS, MAX_TRANSLATION_LINES, type SanitizedPromptResult, type TranslationPayload, buildSystemPrompt, extractVocabPhrases, formatCapsuleLine, formatModelSelectionMessage, formatStatusReport, formatSubRail, formatTerminalAnnotation, formatTreeBranch, getVisualWidth, globalLinguaCache, invalidateUserConfigCache, isNonEnglish, loadUserConfig, parseLlmResponse, resolveLabelsForLang, sanitizePromptForTranslation, shouldShieldBypass, shouldTriggerTranslation, splitSemanticChunks, spotlightPhrases, stripLinguaAnnotation, translatePrompt, truncateVisual, wrapVisualText };

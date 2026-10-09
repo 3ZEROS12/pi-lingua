@@ -760,9 +760,16 @@ var LinguaLruCache = class {
 var globalLinguaCache = new LinguaLruCache(50);
 
 // src/engine.ts
+var cachedUserConfig = null;
+var lastConfigCheckTime = 0;
+var CONFIG_CACHE_TTL_MS = 2e3;
 function loadUserConfig() {
   if (process.env.NODE_ENV === "test" || process.execArgv.includes("--test") || process.argv.includes("--test")) {
     return {};
+  }
+  const now = Date.now();
+  if (cachedUserConfig && now - lastConfigCheckTime < CONFIG_CACHE_TTL_MS) {
+    return cachedUserConfig;
   }
   const configPaths = [
     path.join(os.homedir(), ".pi", "agent", "settings.json"),
@@ -783,7 +790,7 @@ function loadUserConfig() {
         const targetLang = target.targetLang;
         const compact = target.compact;
         const labels = resolveLabelsForLang(sourceLang || "zh", target.labels);
-        return {
+        cachedUserConfig = {
           ...endpoint ? { endpoint } : {},
           ...apiKey ? { apiKey } : {},
           ...model ? { model } : {},
@@ -794,10 +801,14 @@ function loadUserConfig() {
           ...targetLang ? { targetLang } : {},
           labels
         };
+        lastConfigCheckTime = now;
+        return cachedUserConfig;
       }
     } catch {
     }
   }
+  cachedUserConfig = {};
+  lastConfigCheckTime = now;
   return {};
 }
 var DEFAULT_CONFIG = {
@@ -1272,11 +1283,29 @@ function sanitizePromptForTranslation(raw) {
   const hasCJK = isNonEnglish(distilledText);
   const hasQuestionKeywords = /(?:为什么|怎么|如何|帮我|排查|优化|修改|修复|为何|报错|explain|why|how|please|help|could you|fix)/i.test(distilledText);
   const hasNaturalLanguage = hasCJK || hasQuestionKeywords || withoutPlaceholders.length > 5;
+  let rawPayload;
+  if (hasCollapsed) {
+    const payloadParts = [];
+    const codeMatch = trimmed.match(/```[\w\-]*\r?\n([\s\S]*?)\r?\n```/g);
+    if (codeMatch) {
+      payloadParts.push(...codeMatch);
+    }
+    const stackLines = lines.filter(
+      (l) => STACK_LINE_REGEX.test(l.trim()) || COMPILER_DIAGNOSTIC_REGEX.test(l.trim()) || l.trim().startsWith("Traceback")
+    );
+    if (stackLines.length > 0 && !codeMatch) {
+      payloadParts.push(stackLines.join("\n"));
+    }
+    if (payloadParts.length > 0) {
+      rawPayload = payloadParts.join("\n\n").trim();
+    }
+  }
   return {
     distilledText,
     hasNaturalLanguage,
     hasCollapsedContent: hasCollapsed,
-    naturalCharsLength: distilledText.length
+    naturalCharsLength: distilledText.length,
+    rawPayload
   };
 }
 
@@ -1901,7 +1930,7 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
     try {
       let combinedEnglish = "";
       if (chunks.length === 1) {
-        const result = await translatePrompt(raw, {
+        const result = await translatePrompt(promptToTranslate, {
           sourceLang: state.sourceLang,
           labels: state.labels,
           complete: completer
@@ -1952,9 +1981,12 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
         }
         combinedEnglish = validResults.map((r) => r.written && r.written.trim() ? r.written : r.spoken).join(" ");
       }
+      const finalText = sanitized.rawPayload ? `${combinedEnglish}
+
+${sanitized.rawPayload}` : combinedEnglish;
       return {
         action: "transform",
-        text: combinedEnglish,
+        text: finalText,
         images: event.images
       };
     } catch {

@@ -93,3 +93,18 @@ test("sanitizePromptForTranslation - strictly preserves CLI command verbatim", (
   assert.ok(res.distilledText.includes("git cherry-pick"), "Command prototype must remain 100% intact");
   assert.ok(res.distilledText.includes("commit"), "Technical keyword must remain 100% intact");
 });
+
+test("sanitizePromptForTranslation - extracts rawPayload for hybrid intent grafting", () => {
+  const input = `
+看下这段代码报错了：
+\`\`\`typescript
+const a: number = "string";
+\`\`\`
+帮我修复一下
+`;
+
+  const res = sanitizePromptForTranslation(input);
+  assert.equal(res.hasCollapsedContent, true);
+  assert.ok(res.rawPayload, "Must extract raw code payload");
+  assert.ok(res.rawPayload.includes("const a: number"), "Payload must contain original code for AI context");
+});
