@@ -739,21 +739,6 @@ export default function (pi: ExtensionAPI) {
     if (state.mode === "original") {
       if (ctx.hasUI) {
         ctx.ui.setStatus("lingua", ctx.ui.theme.fg("accent", "⇄ [lingua] polishing..."));
-
-        // 【关键体验防线 2 · 输入即响应握手】：在回车敲下的第 0ms，立即用当前句子替换上一轮陈旧卡片！
-        // 彻底消除“等待期间依然显示上一句”的心智误解
-        const cleanFirstChunk = chunks[0].replace(/\r?\n+/g, " ").trim();
-        const skeletonLines = [
-          ctx.ui.theme.fg("muted", "  · ") +
-            ctx.ui.theme.fg("muted", "[") +
-            ctx.ui.theme.fg("dim", state.labels.sourceLabel) +
-            ctx.ui.theme.fg("muted", "] ") +
-            cleanFirstChunk,
-          ctx.ui.theme.fg("muted", "  ┌ ") +
-            ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) +
-            ctx.ui.theme.fg("dim", "⇄ generating companion nuances..."),
-        ];
-        ctx.ui.setWidget("lingua_hud", skeletonLines, { placement: "aboveEditor" });
       }
 
       if (chunks.length === 1) {
@@ -781,38 +766,6 @@ export default function (pi: ExtensionAPI) {
                   result.writtenMeaning
                 );
               }
-            } else {
-              // 失败/延迟优雅沉降：绝不神经质地闪退消失小部件，平稳保留原句锚点
-              if (ctx.hasUI) {
-                const cleanFirst = chunks[0].replace(/\r?\n+/g, " ").trim();
-                const fallbackLines = [
-                  ctx.ui.theme.fg("muted", "  · ") +
-                    ctx.ui.theme.fg("muted", "[") +
-                    ctx.ui.theme.fg("dim", state.labels.sourceLabel) +
-                    ctx.ui.theme.fg("muted", "] ") +
-                    cleanFirst,
-                  ctx.ui.theme.fg("muted", "  ┌ ") +
-                    ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) +
-                    ctx.ui.theme.fg("dim", "(伴学生成稍有延迟，空闲时键入 /2-last 即可重新获取)"),
-                ];
-                ctx.ui.setWidget("lingua_hud", fallbackLines, { placement: "aboveEditor" });
-              }
-            }
-          })
-          .catch(() => {
-            if (requestId === currentRequestId && ctx.hasUI) {
-              const cleanFirst = chunks[0].replace(/\r?\n+/g, " ").trim();
-              const fallbackLines = [
-                ctx.ui.theme.fg("muted", "  · ") +
-                  ctx.ui.theme.fg("muted", "[") +
-                  ctx.ui.theme.fg("dim", state.labels.sourceLabel) +
-                  ctx.ui.theme.fg("muted", "] ") +
-                  cleanFirst,
-                ctx.ui.theme.fg("muted", "  ┌ ") +
-                  ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) +
-                  ctx.ui.theme.fg("dim", "(伴学生成稍有延迟，空闲时键入 /2-last 即可重新获取)"),
-              ];
-              ctx.ui.setWidget("lingua_hud", fallbackLines, { placement: "aboveEditor" });
             }
           })
           .finally(() => {
@@ -838,37 +791,6 @@ export default function (pi: ExtensionAPI) {
                 renderActiveCard(ctx);
                 ctx.ui.notify(state.labels.notifyPaging || `[${state.labels.hudTitle}] 长句已切分多段，按 Alt+. 翻页浏览`, "info");
               }
-            } else {
-              if (ctx.hasUI) {
-                const cleanFirst = chunks[0].replace(/\r?\n+/g, " ").trim();
-                const fallbackLines = [
-                  ctx.ui.theme.fg("muted", "  · ") +
-                    ctx.ui.theme.fg("muted", "[") +
-                    ctx.ui.theme.fg("dim", state.labels.sourceLabel) +
-                    ctx.ui.theme.fg("muted", "] ") +
-                    cleanFirst,
-                  ctx.ui.theme.fg("muted", "  ┌ ") +
-                    ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) +
-                    ctx.ui.theme.fg("dim", "(伴学生成稍有延迟，空闲时键入 /2-last 即可重新获取)"),
-                ];
-                ctx.ui.setWidget("lingua_hud", fallbackLines, { placement: "aboveEditor" });
-              }
-            }
-          })
-          .catch(() => {
-            if (requestId === currentRequestId && ctx.hasUI) {
-              const cleanFirst = chunks[0].replace(/\r?\n+/g, " ").trim();
-              const fallbackLines = [
-                ctx.ui.theme.fg("muted", "  · ") +
-                  ctx.ui.theme.fg("muted", "[") +
-                  ctx.ui.theme.fg("dim", state.labels.sourceLabel) +
-                  ctx.ui.theme.fg("muted", "] ") +
-                  cleanFirst,
-                ctx.ui.theme.fg("muted", "  ┌ ") +
-                  ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) +
-                  ctx.ui.theme.fg("dim", "(伴学生成稍有延迟，空闲时键入 /2-last 即可重新获取)"),
-              ];
-              ctx.ui.setWidget("lingua_hud", fallbackLines, { placement: "aboveEditor" });
             }
           })
           .finally(() => {

@@ -1913,12 +1913,6 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
     if (state.mode === "original") {
       if (ctx.hasUI) {
         ctx.ui.setStatus("lingua", ctx.ui.theme.fg("accent", "\u21C4 [lingua] polishing..."));
-        const cleanFirstChunk = chunks[0].replace(/\r?\n+/g, " ").trim();
-        const skeletonLines = [
-          ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", state.labels.sourceLabel) + ctx.ui.theme.fg("muted", "] ") + cleanFirstChunk,
-          ctx.ui.theme.fg("muted", "  \u250C ") + ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) + ctx.ui.theme.fg("dim", "\u21C4 generating companion nuances...")
-        ];
-        ctx.ui.setWidget("lingua_hud", skeletonLines, { placement: "aboveEditor" });
       }
       if (chunks.length === 1) {
         translatePrompt(promptToTranslate, {
@@ -1943,24 +1937,6 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
                 result.writtenMeaning
               );
             }
-          } else {
-            if (ctx.hasUI) {
-              const cleanFirst = chunks[0].replace(/\r?\n+/g, " ").trim();
-              const fallbackLines = [
-                ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", state.labels.sourceLabel) + ctx.ui.theme.fg("muted", "] ") + cleanFirst,
-                ctx.ui.theme.fg("muted", "  \u250C ") + ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) + ctx.ui.theme.fg("dim", "(\u4F34\u5B66\u751F\u6210\u7A0D\u6709\u5EF6\u8FDF\uFF0C\u7A7A\u95F2\u65F6\u952E\u5165 /2-last \u5373\u53EF\u91CD\u65B0\u83B7\u53D6)")
-              ];
-              ctx.ui.setWidget("lingua_hud", fallbackLines, { placement: "aboveEditor" });
-            }
-          }
-        }).catch(() => {
-          if (requestId === currentRequestId && ctx.hasUI) {
-            const cleanFirst = chunks[0].replace(/\r?\n+/g, " ").trim();
-            const fallbackLines = [
-              ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", state.labels.sourceLabel) + ctx.ui.theme.fg("muted", "] ") + cleanFirst,
-              ctx.ui.theme.fg("muted", "  \u250C ") + ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) + ctx.ui.theme.fg("dim", "(\u4F34\u5B66\u751F\u6210\u7A0D\u6709\u5EF6\u8FDF\uFF0C\u7A7A\u95F2\u65F6\u952E\u5165 /2-last \u5373\u53EF\u91CD\u65B0\u83B7\u53D6)")
-            ];
-            ctx.ui.setWidget("lingua_hud", fallbackLines, { placement: "aboveEditor" });
           }
         }).finally(() => {
           if (requestId === currentRequestId) {
@@ -1983,24 +1959,6 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
               renderActiveCard(ctx);
               ctx.ui.notify(state.labels.notifyPaging || `[${state.labels.hudTitle}] \u957F\u53E5\u5DF2\u5207\u5206\u591A\u6BB5\uFF0C\u6309 Alt+. \u7FFB\u9875\u6D4F\u89C8`, "info");
             }
-          } else {
-            if (ctx.hasUI) {
-              const cleanFirst = chunks[0].replace(/\r?\n+/g, " ").trim();
-              const fallbackLines = [
-                ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", state.labels.sourceLabel) + ctx.ui.theme.fg("muted", "] ") + cleanFirst,
-                ctx.ui.theme.fg("muted", "  \u250C ") + ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) + ctx.ui.theme.fg("dim", "(\u4F34\u5B66\u751F\u6210\u7A0D\u6709\u5EF6\u8FDF\uFF0C\u7A7A\u95F2\u65F6\u952E\u5165 /2-last \u5373\u53EF\u91CD\u65B0\u83B7\u53D6)")
-              ];
-              ctx.ui.setWidget("lingua_hud", fallbackLines, { placement: "aboveEditor" });
-            }
-          }
-        }).catch(() => {
-          if (requestId === currentRequestId && ctx.hasUI) {
-            const cleanFirst = chunks[0].replace(/\r?\n+/g, " ").trim();
-            const fallbackLines = [
-              ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", state.labels.sourceLabel) + ctx.ui.theme.fg("muted", "] ") + cleanFirst,
-              ctx.ui.theme.fg("muted", "  \u250C ") + ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) + ctx.ui.theme.fg("dim", "(\u4F34\u5B66\u751F\u6210\u7A0D\u6709\u5EF6\u8FDF\uFF0C\u7A7A\u95F2\u65F6\u952E\u5165 /2-last \u5373\u53EF\u91CD\u65B0\u83B7\u53D6)")
-            ];
-            ctx.ui.setWidget("lingua_hud", fallbackLines, { placement: "aboveEditor" });
           }
         }).finally(() => {
           if (requestId === currentRequestId) {
