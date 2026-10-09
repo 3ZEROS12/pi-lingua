@@ -6,7 +6,8 @@
 [![npm version](https://img.shields.io/npm/v/pi-lingual?color=blue)](https://www.npmjs.com/package/pi-lingual)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Built for Pi](https://img.shields.io/badge/Built%20for-Pi%20Coding%20Agent-orange)](https://github.com/earendil-works/pi-coding-agent)
-[![Tests](https://img.shields.io/badge/Tests-44%2F44%20Pass-brightgreen)](tests/engine.test.ts)
+[![Tests](https://img.shields.io/badge/Tests-74%2F74%20Pass%20(100%25)-brightgreen)](tests/engine.test.ts)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Strict%20Zero%20Error-blue)](tsconfig.json)
 
 [English](./README.md) | **简体中文**
 
@@ -18,13 +19,15 @@
 
 ## 现实工程摩擦
 
-在借助终端 AI Coding Agent（Pi、Claude Code、Cursor CLI 等）进行日常结对开发时，以非英语为母语的开发者往往面临三重系统性摩擦：
+在借助终端 AI Coding Agent（Pi、Claude Code、Cursor CLI）进行日常结对开发时，非英语母语开发者常面临以下技术阻碍：
 
-1. **机械字面直译**：通用翻译引擎难以把握软件工程的真实语境。询问午饭安排时，机械翻译给出生硬的 `What to eat?`，而北美工程团队在 Slack 里的真实约饭表达是：`What are we feeling for lunch?`。
-2. **后台静默翻译**：为了所谓的“无感”，部分插件在后台悄悄将输入转换为英文发送给大模型。大模型收到了英文，开发者的终端界面上却空空如也，白白浪费了在日常交互中高频接触地道表达的机会。
-3. **会话历史污染**：侵入式插件直接将英文译文拼接在聊天记录或提示词尾部，导致后续每一轮推理都重复携带冗余文本，轮轮消耗宝贵的上下文窗口，稀释大模型的注意力。
+1. **机械字面直译**：通用翻译工具脱离软件工程真实协作语境。询问午饭安排时，字面直译给出生硬的 `What to eat?`，而北美工程团队在 Slack 里的真实表达是 `What are we feeling for lunch?`。
+2. **终端 CJK 几何撕裂**：东亚字符（CJK）在终端中占据 2 个显示列宽。使用闭合边框（`│ ... │`）包裹多语言文本时，字符宽度测算偏差会导致整行断裂重影，在 Windows Terminal、Alacritty 与 iTerm2 中频发排版错位。
+3. **会话历史 Token 污染**：将英文译文直接拼接在提示词中发送给模型，导致后续每一轮对话都重复携带冗余的翻译文本，消耗上下文窗口并分散模型的推理注意力。
+4. **异步竞态与 Token 偷跑**：连续敲击回车时，前一轮慢速网络请求未完成，返回的数据会直接覆写新卡片；无头请求在后台持续流式接收，浪费数百个推理 Token。
+5. **异常堆栈与诊断信息冲垮上下文**：粘贴大段终端报错、编译器诊断或剪贴板截图路径时，未经脱敏的文本直接撑爆模型调用预算，导致界面杂乱。
 
-`pi-lingual` 在终端输入框上方挂载一个独立的悬浮视窗，实时呈现日常口语俚语与规范技术书面双重语域，且绝不污染大模型的会话历史记录。
+`pi-lingual` 在终端输入框上方挂载确定性的悬浮视窗，实时呈现日常口语俚语与规范技术书面双重语域，且不向会话历史写入额外文本。
 
 ---
 
@@ -40,54 +43,90 @@
 ```
 
 ### 1. 左导轨极简树状视窗（Trifecta Left-Rail Tree Branch）
-在 Windows Terminal、Alacritty 与 iTerm2 中，中日韩（CJK）全角字符极易打破闭合矩形边框的宽度计算，产生严重的断行重影与光标错位。`pi-lingual` 彻底剔除了右侧与底部的闭合边框，改用开放式**左导轨树状分支**：
-* **`  · [Original]`**：完整保留当前输入的原始文本，在第 11 列严格与后续分支对齐，提供清晰的认知锚点。
-* **`  ┌ [Spoken]`**：北美硅谷敏捷团队的真实口语表达（站会沟通、Slack 交流、结对编程、缩写与常用短语动词），末尾附带母语真实语感。
-* **`  ├ [Written]`**：符合现代规范的技术书面表达（RFC 草案、PR 描述、Issue 讨论、架构评审），末尾附带严谨技术语感。
-* **`  └ [Vocab]`**：自适应提取的盲区短语与工程搭配，单行串联呈现。
+变宽 Unicode 字符极易打破矩形闭合边框。`pi-lingual` 舍弃了右侧与底部的闭合边框，改用开放式**左导轨树状分支**（`· ┌ ├ └`）：
+* **`  · [Original]`**：保留当前输入的原始文本，超长时采用悬挂缩进自然折行，在第 11 列与后续分支严格对齐。
+* **`  ┌ [Spoken]`**：北美硅谷团队的敏捷口语表达（站会沟通、Slack 交流、结对编程、缩写与短语动词），末尾附带母语意向语感。
+* **`  ├ [Written]`**：符合技术规范的书面表达（RFC 草案、PR 描述、Issue 讨论、架构评审），末尾附带严谨技术语感。
+* **`  └ [Vocab]`**：提取的关键短语与工程搭配，单行串联呈现。
 
-### 2. 微光短语高亮（Spotlight Phrase Highlighting）
-语感习得依赖于第一时间的视觉聚焦。`pi-lingual` 动态提取重点短语并在双语域句子中进行模式匹配，施加非破坏性 ANSI 下划线（`\x1b[4m...\x1b[24m`）。它在不改变文本实际字符宽度和大小写的前提下，让开发者在 0.1 秒内精准捕捉地道搭配与核心动词。
+### 2. Unicode UAX #11 物理盒模型与排版预算守卫
+宿主终端对悬浮小部件施加了严格的行数限制（Pi 核心会对超过 10 行的小部件执行硬截断并报错）。`pi-lingual` 实现了确定性盒模型排版引擎（`src/layout.ts`）：
+* **UAX #11 视觉列宽测算**：精确计算 CJK 宽字符（2 列）、半角 ASCII（1 列）与零宽 ANSI 控制转义序列（0 列）。
+* **标点行头禁则（Kinsoku Shori）**：严格禁止标点符号（如 `，`、`。`、`！`、`？`、`）`、`]`、`»`）出现在折行行首。
+* **4 级硬预算守卫（Strict $\le 9$ Lines）**：分级降阶算法在数学上保证 HUD 输出严格 $\le 9$ 行，杜绝宿主截断报错。
+* **目标语完整性铁律（Target Language Integrity Invariant）**：视窗空间紧凑时，优先保障口语和写作英文主句（`spoken` 与 `written`）完整展示，母语解释优先内联至括号中，绝不在句子中间拦腰斩断。
+* **重点词汇原子短语截断守卫**：以 `·` 分隔的短语为最小原子单元进行排版。若空间不足，整项截断并以 `· ...` 收尾，杜绝出现 `compression (压缩 ...` 式残缺未闭合括号。
+* **动态语言密度感知浓缩触发器**：CJK 表意文字的信息密度为西文的 2.5 倍。中日韩输入 $\ge 45$ 字符或包含 $\ge 2$ 个分句时，大模型主动输出精炼表达与 `summary` 大标题，消除长句直译导致的行数膨胀。
 
-### 3. 单行胶囊模式（针对多分屏平铺的视野保护）
-在 tmux、WezTerm 或多窗格平铺（3~4 分屏）以及紧凑终端窗口（行数 `< 22`）下，屏幕纵向高度极为珍贵。
+### 3. 微光短语高亮（Spotlight Highlighting）
+语感吸收需要即时的视觉焦点。`pi-lingual` 动态提取重点短语并在双语域句子中进行模式匹配，施加非破坏性 ANSI 下划线（`\x1b[4m...\x1b[24m`）。它在保留字符大小写和列宽指标的前提下，引导视线在 100 毫秒内锁定核心动词与介词搭配。
+
+### 4. 极端分屏单行胶囊模式（Compact Capsule Mode）
+在 tmux、WezTerm 多窗格平铺（3~4 分屏）或窗口高度不足（行数 `< 22`）的环境中，纵向空间十分有限。
 
 <p align="center">
   <img src="assets/capsule-mode.svg" alt="pi-lingual 视窗形态切换" width="840">
 </p>
 
-通过 `/2-compact`（或 `/linguall-compact`）即可一键开启**胶囊模式**，将原本 6 行的树状视窗折叠为极致平铺的单行流：
+键入 `/compact` 或 `/2-compact` 即可一键折叠为**单行胶囊模式**：
 ```text
 zh ⇄ en · [Spoken] This feels over-engineered... │ [Written] Proposed approach introduces unnecessary complexity...
 ```
-在保留双语域核心表达的同时，节省超过 80% 的终端纵向空间，保护代码编辑核心视野。
+节省 80% 以上纵向空间，保护核心代码编辑视野。
 
-### 4. 代码与命令行防护盾牌（0ms 旁路直通）
-终端日常操作充斥着大量 Git 命令、依赖安装与单行代码。对 `git commit -m "fix"` 或 `const x = 1` 触发翻译不仅徒增网络延迟，而且白白浪费模型算力。
+### 5. 报错审查与意图萃取管道（`src/sanitizer.ts`）
+日常提示词常夹杂报错日志、编译器输出与临时文件路径。`pi-lingual` 在请求派发前执行流式提炼：
+* **剪贴板临时图片剥离**：自动剔除 `pi-clipboard-*.png` 等临时文件路径。
+* **多行列表智能折叠**：将连续的项目符号列表（`- `、`* `、`1. `）折叠为 `[N items ...]`，优先展露核心问题，并将完整列表存入 `rawPayload` 供英文模式下发给 AI。
+* **堆栈跟踪与诊断日志折叠**：自动折叠 Node.js / Python 堆栈追踪与多行编译器诊断，保留首行错误摘要。
+* **自然语言英文陈述句识别**：准确识别 $\ge 4$ 个单词的自然语言英文输入，防止陈述句被误拦截。
+* **长文本容量支持**：支持长达 2,500 字符的复杂需求输入。
 
-`pi-lingual` 内置专用的启发式盾牌（`src/shield.ts`），实现 **0ms 延迟、0 Token 消耗**的即时放行：
-* **40+ 终端工具前缀**：`git`、`npm`、`pnpm`、`yarn`、`cargo`、`docker`、`kubectl`、`make`、`python`、`curl` 等；
-* **多语言代码起始语句**：`const`、`function`、`class`、`import`、`def`、`impl`、`SELECT` 等；
-* **数据结构与围栏**：Markdown 代码块、JSON/YAML 结构体以及纯字母标识符；
-* **智能保留自然语言提问**：包含命令名的自然语言提问（如 `git status 为什么报错？`）自动精准识别并放行给翻译引擎。
+### 6. 单调会话状态机与网络协同掐断（`src/fsm.ts`）
+敲击键盘的频率常高于网络往返耗时：
+* **物理 AbortController 掐断**：每次输入生成单调递增的世代令牌，物理掐断前序未完成的 HTTP Socket，消除幽灵卡片与 Token 偷跑。
+* **0ms 界面即时清空**：回车瞬间立即销毁旧卡片，底栏状态实时切换为 `polishing...`，提供确定性的状态反馈。
+* **80ms 错峰微任务**：原文模式下伴学任务延迟 80ms 触发，让出网络套接字，保障主任务首包握手顺畅。
+* **轻量推理脉冲**：显式指定 `reasoning: "low"`，将后台伴学推理收敛为 ~100 Token 快速脉冲，200~300ms 快速完成。
 
-### 5. 零依赖内存 LRU 缓存（0ms 瞬间回显）
-在日常结对编程中，高达 40% 的提示词为高频确认类短语（“继续”、“认同”、“开始吧”、“可以”、“明白”）。
-
-`pi-lingual` 搭载轻量高效的 50 容量会话级 LRU 缓存（`src/cache.ts`）。命中重复输入时，完全跳过大模型调用，**0ms 瞬间浮现伴学卡片**，0 网络请求，0 Token 消耗。
-
-### 6. 语义分块与 9 行绝对安全红线
-宿主终端的小部件普遍存在严格的 10 行折叠截断限制。`pi-lingual` 采用语义驱动的原子分块保障阅读体验：
-* **常规简短输入（<= 90 字符，占日常 90%）**：整句聚合为单张卡片，界面极简干净，**不出现多余的分页快捷键提示**；
-* **长句与复杂段落**：沿自然标点（`。！？；\n` 或 `.!?\n`）进行原子切分，每一页严格完整保留 `[Original]` + `[Spoken]` + `[Written]` + `[Vocab]` 四位一体；
-* **无冲突键盘翻页**：使用 **`Alt+.`**（下一页）与 **`Alt+,`**（上一页）丝滑翻页，不干扰编辑器光标与输入态；
-* **严格安全红线**：整卡渲染严格约束在 `<= 9` 行之内，彻底杜绝宿主截断。
+### 7. 零 Token 命令行护盾与内存 LRU 缓存
+* **代码与命令行防御盾牌（`src/shield.ts`）**：40+ 终端工具前缀（`git`、`npm`、`cargo`、`docker`、`kubectl`、`make`、`python`）、代码关键字（`const`、`function`、`class`、`import`、`def`）与 Markdown 代码块以 **0ms 延迟、0 Token 损耗**直接放行。
+* **50 容量内存 LRU 缓存（`src/cache.ts`）**：高频确认词（“继续”、“认同”、“开始吧”、“可以”、“明白”）命中缓存时 **0ms 瞬间直出卡片**。
 
 ---
 
-## 真实世界软件工程多语种矩阵
+## 开发者工效学与全量命令总线（ADR-0004）
 
-`pi-lingual` 专为全球现代软件工程协同打造，在多语种间对称双向运作：
+`pi-lingual` 注册了一等公民直觉命令，并搭载二级主命令总线调度器。
+
+### 命令总线速查
+| 直觉命令 | 标准全名 | 兼容别名 | 功能说明 |
+| :--- | :--- | :--- | :--- |
+| `/lang <code\|alias>` | `/lingual-lang` | `/2-lang`, `/lingual lang` | 切换母语（支持 `zh`, `ja`, `en`, `es`, `fr`, `de` 及自然语言别名如 `日语`） |
+| `/compact` | `/lingual-compact` | `/2-compact`, `/lingual compact` | 切换单行胶囊模式与全展开树状视窗 |
+| `/last` | `/lingual-last` | `/2-last`, `/lingual last` | 在终端中重新浮现上一条伴学卡片 |
+| `/status` | `/lingual-status` | `/2-status`, `/lingual status` | 查看完整诊断报告、当前模型与 LRU 缓存统计 |
+| `/lingual [sub]` | `/2 [sub]` | `/lingual-mode` | 主命令总线：路由子命令或平滑轮转模式（`original` ➔ `english` ➔ `off`） |
+| `/lingual-model <id>` | `/2-model` | `/lingual model` | 查看或切换轻量伴学模型（`auto` 或指定模型 ID） |
+| `/lingual-agent` | `/2-agent` | `/lingual agent`, `/lingual help` | 查看伴学定制指南 |
+
+### 键盘快捷键（交互式分页）
+长输入切分为多个原子页面时，无需切换光标即可翻页：
+* **`Alt+.`**（`>` 键）：下一页；
+* **`Alt+,`**（`<` 键）：上一页。
+
+### 独立系统 CLI
+在任意 Bash、Zsh 或 PowerShell 中直接使用全局 CLI：
+```bash
+lingual "这个方案有点过度设计了，不如直接用标准库实现"
+2 "メモリリークの可能性があるので、クリーンアップ処理を追加してください"
+```
+
+---
+
+## 全球软件工程多语种矩阵
+
+`pi-lingual` 在各主要开发语言之间对称双向运行：
 
 <p align="center">
   <img src="assets/multilingual-showcase.svg" alt="真实世界软件工程多语种矩阵" width="840">
@@ -102,21 +141,21 @@ zh ⇄ en · [Spoken] This feels over-engineered... │ [Written] Proposed appro
 
 ---
 
-## 配置驱动的母语最高主权
+## 配置驱动的母语最高主权与国际化
 
-切换伴学母语无需修改任何源码，无需重新编译，更无需重启终端。
+切换伴学母语无需修改源码，也不需要重新编译：
 
-### 即时无缝切换
-在任意正在运行的 Pi 会话中直接键入 `/2-lang [code]`（或 `/linguall-lang [code]`）：
+### 运行时即时切换
 ```bash
-/2-lang ja   # 秒切日语母语伴学
-/2-lang en   # 秒切英语母语伴学（面向学习其他语言的英文开发者）
-/2-lang zh   # 恢复中文母语伴学
+/lang ja     # 切换日语母语伴学 (日本語)
+/lang en     # 切换英语母语伴学 (面向以英语为母语学习其他语言的开发者)
+/lang es     # 切换西班牙语母语伴学 (Español)
+/lang de     # 切换德语母语伴学 (Deutsch)
+/lang zh     # 恢复中文母语伴学 (简体中文)
 ```
-*当前官方支持：`zh`、`ja`、`en`、`es`, `fr`, `de`。*
 
 ### 零残留持久化
-用户配置持久化保存在用户目录的 `~/.pi/agent/settings.json`（`"pi-lingual"` 节点下）：
+配置持久化存储在 `~/.pi/agent/settings.json`：
 ```json
 {
   "pi-lingual": {
@@ -125,32 +164,31 @@ zh ⇄ en · [Spoken] This feels over-engineered... │ [Written] Proposed appro
   }
 }
 ```
-* **抵御版本覆盖**：后续执行 `pi install npm:pi-lingual` 升级插件时，个人偏好稳如磐石；
-* **母语绝对主权**：当切换为英语或日语时，插件界面彻底清除中文残留，所有命令描述、状态指示与系统通知均自动呈现为 Language A 的原生地道文本；
-* **零残留回滚**：当配置项恢复默认值时，物理移除对应键，绝不向配置文件写入无用脏数据。
+* **版本更新无损继承**：执行 `pi install npm:pi-lingual` 升级插件时，个人偏好稳固保留；
+* **零中文残留**：切换为非中文母语时，插件界面彻底清除中文提示，命令描述、状态栏与通知全部采用目标语言；
+* **English Pivot 统一兜底**：系统底层兜底机制统一采用中立的英语表达，杜绝文本泄漏。
 
 ---
 
 ## 零配置原生模型执行与算力解耦
 
-`pi-lingual` 直接运行在 Pi 宿主进程的大模型调度总线之上，无需订阅用户额外购买或配置 API Key：
+`pi-lingual` 直接运行在 Pi 宿主的大模型总线之上，无需订阅用户单独购买 API Key：
 
 ### 1. 默认：继承 Pi 宿主会话模型（零配置，开箱即用）
-* **原理**：调用 `ctx.modelRegistry.streamSimple()` 直接复用当前终端会话已经认证的模型凭据；
-* **优势**：0 配置，0 额外账单，0 密钥泄露风险。安装后回车即可体验。
+调用 `ctx.modelRegistry.streamSimple()` 复用终端当前会话的已认证凭证，无额外账单，无密钥泄露风险。
 
 ### 2. 算力解耦（保护昂贵的高阶推理配额）
-当会话主模型为 Claude 3.5 Sonnet 或 o1 等高阶昂贵模型时，为了避免伴学翻译白白消耗主模型的按次/每分钟调用配额，可一键挂载轻量伴学模型：
+当主会话使用 Claude 3.5 Sonnet 或 o1 等高阶模型时，为了避免伴学分析消耗主模型的调用频次配额，可挂载轻量模型独立处理：
 ```bash
-/linguall-model gemini-3.8-flash
+/lingual-model gemini-2.5-flash
 ```
-或随时重置为自动跟随：
+随时重置为自动跟随主会话：
 ```bash
-/linguall-model auto
+/lingual-model auto
 ```
 
-### 3. 可选：本地 0 成本离线模型（Ollama · 0 云端消耗）
-如需在完全离线或敏感环境运行，可在本地启动 Ollama 并运行轻量 3B 模型（如 `qwen2.5:3b`），在 `~/.pi/agent/lingual.json` 中配置：
+### 3. 本地离线模型（Ollama · 零云端消耗）
+在离线或代码保密环境中，可在本地启动 Ollama 运行轻量 3B 模型（如 `qwen2.5:3b`），在 `~/.pi/agent/lingual.json` 中配置：
 ```json
 {
   "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
@@ -160,37 +198,11 @@ zh ⇄ en · [Spoken] This feels over-engineered... │ [Written] Proposed appro
 
 ---
 
-## 完整命令与快捷键速查表 (全面标准化为 `/linguall`)
-
-### 终端会话内交互命令
-| 标准命令 | 兼容别名 | 功能说明 |
-| :--- | :--- | :--- |
-| `/linguall [mode]` | `/linguall-mode`, `/2`, `/lingual`, `/translate` | 切换或指定模式：`/linguall [original\|english\|off]` |
-| `/linguall-lang <lang>` | `/2-lang`, `/linguall-lang` | 秒切伴学母语（支持 `zh`, `ja`, `en`, `es`, `fr`, `de`） |
-| `/linguall-compact` | `/2-compact`, `/linguall-compact` | 切换单行胶囊模式与完整树状视窗 |
-| `/linguall-model <id>` | `/2-model`, `/linguall-model` | 查看或切换轻量伴学模型（`auto` 或指定模型 ID） |
-| `/linguall-status` | `/2-status`, `/linguall-status` | 查看完整系统健康诊断、语言流向与 LRU 缓存统计 |
-| `/linguall-last` | `/2-last`, `/linguall-last` | 在终端中重新浮现上一条伴学卡片 |
-| `/linguall-agent` | `/2-agent`, `/linguall-agent` | 查看伴学定制与母语切换指南 |
-
-### 键盘快捷键（伴学卡片浮现时）
-* **`Alt+.`** (`>` 键)：切换到下一个语义分块卡片；
-* **`Alt+,`** (`<` 键)：切换到上一个语义分块卡片。
-
-### 独立系统 CLI
-在任何 Bash、Zsh 或 PowerShell 中直接使用全局 CLI：
-```bash
-lingual "这个方案有点过度设计了，不如直接用标准库实现"
-2 "内存占用过高，排查一下是否有未释放的连接池句柄"
-```
-
----
-
-## 安装与快速上手
+## 安装与工程验证
 
 ### 作为 Pi 扩展安装
 ```bash
-# 推荐：直接通过 npm 安装
+# 推荐：直接通过 npm 安装官方包
 pi install npm:pi-lingual
 
 # 或从 GitHub 安装
@@ -202,8 +214,8 @@ pi install git:github.com/3ZEROS12/pi-lingua
 git clone https://github.com/3ZEROS12/pi-lingua.git
 cd pi-lingua
 npm install
-npm test            # 44/44 套件全部通过
-npm run typecheck   # 0 TypeScript 错误
+npm test            # 74/74 套件全部通过 (100% Green)
+npm run typecheck   # 0 TypeScript 编译错误
 ```
 
 ---

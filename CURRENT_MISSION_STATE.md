@@ -1,8 +1,8 @@
 # `pi-lingual` 工程实施状态报告 (Mission State Ledger)
 
-**Baseline Version**: `v0.3.0` (SemVer Frozen per Architectural Decision)  
+**Baseline Version**: `v0.3.1` (Official Release · SemVer Compliant)  
 **Workspace Root**: `D:/Workspace/projects/pi-lingua`  
-**Execution Status**: Final End-to-End Audit & Complete Hardening Completed  
+**Execution Status**: v0.3.1 Industrial Rebuild & Documentation Alignment Completed  
 **Test Suite Health**: **74 / 74 PASS (100% Green)**  
 **Fleet Pre-Flight**: **Passed: 1 | Failed: 0**  
 **Host Mount**: Direct link to local repository in `~/.pi/agent/settings.json`
