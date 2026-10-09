@@ -58,7 +58,7 @@
 
 通过 `/2-compact`（或 `/lingua-compact`）即可一键开启**胶囊模式**，将原本 6 行的树状视窗折叠为极致平铺的单行流：
 ```text
-⇄ [two ⇄ 二] · [Spoken] This feels over-engineered... │ [Written] Proposed approach introduces unnecessary complexity...
+zh ⇄ en · [Spoken] This feels over-engineered... │ [Written] Proposed approach introduces unnecessary complexity...
 ```
 在保留双语域核心表达的同时，节省超过 80% 的终端纵向空间，保护代码编辑核心视野。
 

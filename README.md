@@ -58,7 +58,7 @@ When working in 3–4 pane tiling layouts (tmux, WezTerm, iTerm2 splits) or comp
 
 Toggle **Capsule Mode** with `/2-compact` (or `/lingua-compact`) to collapse the multi-line tree HUD into an ultra-dense, strictly single-line horizontal stream:
 ```text
-⇄ [two ⇄ 二] · [Spoken] This feels over-engineered... │ [Written] Proposed approach introduces unnecessary complexity...
+zh ⇄ en · [Spoken] This feels over-engineered... │ [Written] Proposed approach introduces unnecessary complexity...
 ```
 This saves over 80% vertical space while keeping translation feedback accessible.
 

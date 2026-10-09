@@ -10,9 +10,9 @@ test("Primary Language Sovereignty - Japanese (ja) leaves ZERO Chinese in UI and
   assert.equal(jaLabels.slot2Label, "文面");
   assert.equal(jaLabels.vocabLabel, "単語");
   assert.equal(jaLabels.sourceLabel, "原文");
-  assert.equal(jaLabels.statusOriginal, "⇄ [二 ⇄ two] 原文");
-  assert.equal(jaLabels.statusEnglish, "⇄ [二 ⇄ two] 英語");
-  assert.equal(jaLabels.statusOff, "⇄ [二 ⇄ two]: オフ");
+  assert.equal(jaLabels.statusOriginal, "ja ⇄ en");
+  assert.equal(jaLabels.statusEnglish, "ja ⇄ en");
+  assert.equal(jaLabels.statusOff, "ja ⇄ en: off");
 
   // Notifications
   assert.ok(jaLabels.notifyOriginal?.includes("【原文モード】に切り替えました"));
@@ -45,9 +45,9 @@ test("Primary Language Sovereignty - English (en) leaves ZERO Chinese in UI and 
   assert.equal(enLabels.slot2Label, "Written");
   assert.equal(enLabels.vocabLabel, "Vocab");
   assert.equal(enLabels.sourceLabel, "Source");
-  assert.equal(enLabels.statusOriginal, "⇄ [two ⇄ 二] Original");
-  assert.equal(enLabels.statusEnglish, "⇄ [two ⇄ 二] English");
-  assert.equal(enLabels.statusOff, "⇄ [two ⇄ 二]: Off");
+  assert.equal(enLabels.statusOriginal, "en ⇄ ja");
+  assert.equal(enLabels.statusEnglish, "en ⇄ ja");
+  assert.equal(enLabels.statusOff, "en ⇄ ja: off");
 
   // Status report has zero Chinese characters (excluding the cross-language totem "two ⇄ 二")
   const report = formatStatusReport(enLabels, {

@@ -127,15 +127,15 @@ let totalExpectedPages = 1;
 
 function updateFooter(ctx: ExtensionContext) {
   if (!ctx.hasUI) return;
+  // 标准化底栏标签为纯净极简的 A ⇄ B (例如 zh ⇄ en)，彻底剔除多余的第二元素模式词
+  const pair = state.labels.statusOriginal || `${state.sourceLang} ⇄ en`;
   switch (state.mode) {
     case "original":
-      ctx.ui.setStatus("lingua", ctx.ui.theme.fg("accent", state.labels.statusOriginal));
-      break;
     case "english":
-      ctx.ui.setStatus("lingua", ctx.ui.theme.fg("accent", state.labels.statusEnglish));
+      ctx.ui.setStatus("lingua", ctx.ui.theme.fg("accent", pair));
       break;
     case "off":
-      ctx.ui.setStatus("lingua", ctx.ui.theme.fg("muted", state.labels.statusOff));
+      ctx.ui.setStatus("lingua", ctx.ui.theme.fg("muted", `${pair}: off`));
       break;
   }
 }

@@ -72,7 +72,7 @@
     <!-- Single line capsule box -->
     <rect x="45" y="294" width="790" height="30" rx="4" fill="#232a2e" stroke="#343f44" stroke-width="1" />
     <text x="58" y="314">
-      <tspan fill="#7fbbb3" font-weight="bold">⇄ [two ⇄ 二] </tspan>
+      <tspan fill="#7fbbb3" font-weight="bold">zh ⇄ en </tspan>
       <tspan fill="#859289">· </tspan>
       <tspan fill="#a7c080" font-weight="bold">[Spoken] </tspan>
       <tspan fill="#e5c07b">This feels a bit over-engineered... </tspan>
