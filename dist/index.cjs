@@ -813,7 +813,24 @@ Output: ${JSON.stringify({
 
 [LONG INPUT CONDENSATION DIRECTIVE]:
 The user's input text is long (>90 chars). DO NOT translate verbatim line by line with wordy padding.
-Synthesize the core technical intent into concise, punchy spoken and written expressions (strictly under 25 words each) so that the translation fits cleanly on a single terminal HUD card without information bloat.` : "";
+First, distill and synthesize the core architectural/technical intent or question into a concise headline ("summary") in native ${spec.name} (strictly under 20 words).
+Then, translate that distilled intent into concise, punchy spoken and written expressions in ${targetName} (strictly under 25 words each) so that the translation fits cleanly on a single terminal HUD card without information bloat.` : "";
+  const jsonFormatHint = isLongInput ? `Strict JSON format:
+{
+  "summary": "Concise core intent/question in native ${spec.name} (under 20 words)",
+  "spoken": "...",
+  "spoken_meaning": "...",
+  "written": "...",
+  "written_meaning": "...",
+  "vocab": "..."
+}` : `Strict JSON format:
+{
+  "spoken": "...",
+  "spoken_meaning": "...",
+  "written": "...",
+  "written_meaning": "...",
+  "vocab": "..."
+}`;
   return `You are an elite bilingual developer language coach and senior software architect.
 Task:
 Translate the user's message from native ${spec.name} (language A) into TWO distinct authentic ${targetName} registers (language B), and provide the exact back-translation/nuance in native ${spec.name} for each register:
@@ -830,14 +847,7 @@ ${condensationDirective}
 [GOLDEN FEW-SHOT ANCHORS]:
 ${anchorText}
 
-Strict JSON format:
-{
-  "spoken": "...",
-  "spoken_meaning": "...",
-  "written": "...",
-  "written_meaning": "...",
-  "vocab": "..."
-}
+${jsonFormatHint}
 Output valid JSON ONLY. Never output markdown code fences, backticks, quotes, or explanations.`;
 }
 
@@ -1312,7 +1322,13 @@ function renderCardLayout(card, labels, options = {}) {
     lines.push(...formatTreeBranch("\u2514", " ", labels.vocabLabel, card.vocab, decMuted, decMuted, decMuted, decDim, maxCols));
   }
   if (lines.length > maxLines) {
-    const clampedSourceLines = sourceLines.length > 2 ? sourceLines.slice(0, 2) : sourceLines;
+    let clampedSourceLines = sourceLines;
+    if (sourceLines.length > 2) {
+      clampedSourceLines = [
+        sourceLines[0],
+        truncateVisual(sourceLines[1] + "...", maxCols)
+      ];
+    }
     const spInline = card.spokenMeaning ? `${card.spoken} (${card.spokenMeaning})` : card.spoken;
     const rawSpLines = formatTreeBranch(branch1Char, cont1Char, labels.slot1Label, spInline, decMuted, decAccent, decMuted, (s) => s, maxCols);
     let rawWrLines = [];
@@ -1518,13 +1534,15 @@ function parseLlmResponse(raw) {
     const written = (parsed.written || parsed.academic || parsed.slot2 || "").trim();
     const writtenMeaning = (parsed.written_meaning || parsed.writtenMeaning || "").trim();
     const vocab = typeof parsed.vocab === "string" ? parsed.vocab.trim() : "";
+    const summary = typeof (parsed.summary || parsed.core_intent || parsed.coreIntent) === "string" ? (parsed.summary || parsed.core_intent || parsed.coreIntent).trim() : "";
     if (spoken) {
       return {
         spoken,
         spokenMeaning: spokenMeaning || void 0,
         written: written || void 0,
         writtenMeaning: writtenMeaning || void 0,
-        vocab: vocab || void 0
+        vocab: vocab || void 0,
+        summary: summary || void 0
       };
     }
     return null;
@@ -1643,15 +1661,17 @@ async function translatePrompt(text, userConfig = {}) {
     const slot2Label = labels.slot2Label || labels.writtenLabel || "Written";
     const vocabLabel = labels.vocabLabel || "Vocab";
     const sourceLabel = labels.sourceLabel || "Source";
+    const effectiveSourceText = isLongInput && payload.summary && payload.summary.trim() ? payload.summary.trim() : trimmed;
     const result = {
       spoken: payload.spoken,
       spokenMeaning: payload.spokenMeaning,
       written: payload.written || "",
       writtenMeaning: payload.writtenMeaning,
       vocab: payload.vocab,
-      sourceText: trimmed,
+      summary: payload.summary,
+      sourceText: effectiveSourceText,
       annotated: formatTerminalAnnotation(
-        trimmed,
+        effectiveSourceText,
         payload.spoken,
         payload.written,
         payload.vocab,
@@ -1682,6 +1702,7 @@ var TARGETED_CLIPBOARD_PATH_REGEX = /(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?pi-
 var LEADING_TARGETED_CLIPBOARD_REGEX = /^(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png|\/(?:[^\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png)\s*/i;
 var STACK_LINE_REGEX = /^\s*(?:at\s+(?:[\w$.<>]+|[^\s]+)\s*\(.*:\d+:\d+\)|at\s+.*:\d+:\d+|File\s+".*", line \d+, in\s+.*|goroutine \d+ \[.*\]:|Caused by:.*|^\s*\d+:\s+0x[0-9a-f]+)/;
 var COMPILER_DIAGNOSTIC_REGEX = /^(?:[a-zA-Z]:[\\\/]|\.{0,2}[\\\/]|[a-zA-Z0-9_\-\.]+)[^:\r\n]+:\d+:\d+:\s*(?:error|warning|fatal error|note):/i;
+var LIST_ITEM_REGEX = /^\s*(?:[-*•]|\d+[\.、)])\s+/;
 function sanitizePromptForTranslation(raw) {
   const trimmed = raw.trim();
   if (!trimmed) {
@@ -1724,15 +1745,30 @@ function sanitizePromptForTranslation(raw) {
   const resultLines = [];
   let inStackBlock = false;
   let inDiagnosticBlock = false;
+  const currentListItems = [];
+  const collapsedListBlocks = [];
+  const flushListItems = () => {
+    if (currentListItems.length >= 2) {
+      hasCollapsed = true;
+      resultLines.push(`[${currentListItems.length} items ...]`);
+      collapsedListBlocks.push(currentListItems.join("\n"));
+      currentListItems.length = 0;
+    } else if (currentListItems.length === 1) {
+      resultLines.push(currentListItems[0]);
+      currentListItems.length = 0;
+    }
+  };
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const lineTrim = line.trim();
     if (!lineTrim) {
+      flushListItems();
       inStackBlock = false;
       inDiagnosticBlock = false;
       continue;
     }
     if (STACK_LINE_REGEX.test(lineTrim) || lineTrim.startsWith("Traceback (most recent call last):")) {
+      flushListItems();
       hasCollapsed = true;
       if (!inStackBlock) {
         resultLines.push("[... stack trace ...]");
@@ -1743,6 +1779,7 @@ function sanitizePromptForTranslation(raw) {
       inStackBlock = false;
     }
     if (COMPILER_DIAGNOSTIC_REGEX.test(lineTrim)) {
+      flushListItems();
       hasCollapsed = true;
       if (!inDiagnosticBlock) {
         resultLines.push(lineTrim);
@@ -1754,21 +1791,29 @@ function sanitizePromptForTranslation(raw) {
       inDiagnosticBlock = false;
     }
     if (/^npm ERR!/i.test(lineTrim)) {
+      flushListItems();
       hasCollapsed = true;
       if (!resultLines[resultLines.length - 1]?.includes("npm ERR! [...]")) {
         resultLines.push("npm ERR! [...]");
       }
       continue;
     }
+    if (LIST_ITEM_REGEX.test(lineTrim)) {
+      currentListItems.push(line);
+      continue;
+    } else {
+      flushListItems();
+    }
     resultLines.push(line);
   }
+  flushListItems();
   const distilledText = resultLines.join(" ").replace(/\s+/g, " ").trim();
-  const withoutPlaceholders = distilledText.replace(/\[\.\.\.[^\]]*\]/g, "").replace(/[a-zA-Z0-9_\-\.\/\\:]+/g, "").trim();
+  const withoutPlaceholders = distilledText.replace(/\[\.\.\.[^\]]*\]|\[\d+\s*items\s*\.\.\.\]/g, "").replace(/[a-zA-Z0-9_\-\.\/\\:]+/g, "").trim();
   const hasCJK = isNonEnglish(distilledText);
   const hasQuestionKeywords = /(?:为什么|怎么|如何|帮我|排查|优化|修改|修复|为何|报错|审查|看下|explain|why|how|please|help|could you|fix|should|what|inspect)/i.test(distilledText);
   const isPureDiagnosticOutput = /^(?:[a-zA-Z0-9_\-\.\/\\:]+\s*-\s*error\s+[a-zA-Z0-9]+|error(?:\s+TS\d+|:)|warning:)/i.test(distilledText) && !hasQuestionKeywords;
   const isPureErrorOrDiagnostic = isPureDiagnosticOutput || /^Error:\s*[\w\s:]*\[\.\.\.\s*stack trace\s*\.\.\.\]/i.test(distilledText) && !hasQuestionKeywords;
-  const cleanEnglishWords = distilledText.replace(/\[\.\.\.[^\]]*\]|\[code[^\]]*\]/gi, " ").trim();
+  const cleanEnglishWords = distilledText.replace(/\[\.\.\.[^\]]*\]|\[code[^\]]*\]|\[\d+\s*items\s*\.\.\.\]/gi, " ").trim();
   const words = cleanEnglishWords.match(/\b[a-zA-Z]{2,}\b/g) || [];
   const hasEnglishSentence = !isPureErrorOrDiagnostic && words.length >= 4 && !distilledText.startsWith("Error:");
   const hasNaturalLanguage = (hasCJK || hasQuestionKeywords || hasEnglishSentence || withoutPlaceholders.length > 5) && !isPureErrorOrDiagnostic;
@@ -1787,6 +1832,9 @@ function sanitizePromptForTranslation(raw) {
     );
     if (stackLines.length > 0 && !codeMatch) {
       payloadParts.push(stackLines.join("\n"));
+    }
+    if (collapsedListBlocks.length > 0) {
+      payloadParts.push(collapsedListBlocks.join("\n\n"));
     }
   }
   if (payloadParts.length > 0) {

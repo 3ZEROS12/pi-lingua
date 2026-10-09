@@ -23,6 +23,9 @@ const STACK_LINE_REGEX = /^\s*(?:at\s+(?:[\w$.<>]+|[^\s]+)\s*\(.*:\d+:\d+\)|at\s
 // 编译器多行诊断格式 (TS / Rustc / GCC / Python)
 const COMPILER_DIAGNOSTIC_REGEX = /^(?:[a-zA-Z]:[\\\/]|\.{0,2}[\\\/]|[a-zA-Z0-9_\-\.]+)[^:\r\n]+:\d+:\d+:\s*(?:error|warning|fatal error|note):/i;
 
+// 常见多行列表项特征正则 (支持 - * • 1. 2. 等项目符号)
+const LIST_ITEM_REGEX = /^\s*(?:[-*•]|\d+[\.、)])\s+/;
+
 export interface SanitizedPromptResult {
   /** 审查折叠后用于翻译与分句的紧凑意图文本 */
   distilledText: string;
@@ -85,11 +88,25 @@ export function sanitizePromptForTranslation(raw: string): SanitizedPromptResult
     return "[code ...]";
   });
 
-  // 3. 按行审查与堆栈折叠
+  // 3. 按行审查与堆栈/报错/列表折叠
   const lines = text.split(/\r?\n/);
   const resultLines: string[] = [];
   let inStackBlock = false;
   let inDiagnosticBlock = false;
+  const currentListItems: string[] = [];
+  const collapsedListBlocks: string[] = [];
+
+  const flushListItems = () => {
+    if (currentListItems.length >= 2) {
+      hasCollapsed = true;
+      resultLines.push(`[${currentListItems.length} items ...]`);
+      collapsedListBlocks.push(currentListItems.join("\n"));
+      currentListItems.length = 0;
+    } else if (currentListItems.length === 1) {
+      resultLines.push(currentListItems[0]);
+      currentListItems.length = 0;
+    }
+  };
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -97,6 +114,7 @@ export function sanitizePromptForTranslation(raw: string): SanitizedPromptResult
 
     // 空行直接跳过或保留单个
     if (!lineTrim) {
+      flushListItems();
       inStackBlock = false;
       inDiagnosticBlock = false;
       continue;
@@ -104,6 +122,7 @@ export function sanitizePromptForTranslation(raw: string): SanitizedPromptResult
 
     // A. 判定是否为堆栈追踪行 (at Function..., File "...", line...)
     if (STACK_LINE_REGEX.test(lineTrim) || lineTrim.startsWith("Traceback (most recent call last):")) {
+      flushListItems();
       hasCollapsed = true;
       if (!inStackBlock) {
         resultLines.push("[... stack trace ...]");
@@ -116,6 +135,7 @@ export function sanitizePromptForTranslation(raw: string): SanitizedPromptResult
 
     // B. 判定是否为编译器连续报错 (如 src/index.ts:12:4: error: ...)
     if (COMPILER_DIAGNOSTIC_REGEX.test(lineTrim)) {
+      flushListItems();
       hasCollapsed = true;
       if (!inDiagnosticBlock) {
         // 保留首行核心报错摘要
@@ -130,6 +150,7 @@ export function sanitizePromptForTranslation(raw: string): SanitizedPromptResult
 
     // C. 常见 npm ERR! 连续堆叠折叠
     if (/^npm ERR!/i.test(lineTrim)) {
+      flushListItems();
       hasCollapsed = true;
       if (!resultLines[resultLines.length - 1]?.includes("npm ERR! [...]")) {
         resultLines.push("npm ERR! [...]");
@@ -137,9 +158,19 @@ export function sanitizePromptForTranslation(raw: string): SanitizedPromptResult
       continue;
     }
 
+    // D. 项目列表项折叠 (连续 2 条及以上列表项折叠)
+    if (LIST_ITEM_REGEX.test(lineTrim)) {
+      currentListItems.push(line);
+      continue;
+    } else {
+      flushListItems();
+    }
+
     // 正常文本行保留
     resultLines.push(line);
   }
+
+  flushListItems();
 
   // 合并折叠后的紧凑文本
   const distilledText = resultLines.join(" ").replace(/\s+/g, " ").trim();
@@ -147,7 +178,7 @@ export function sanitizePromptForTranslation(raw: string): SanitizedPromptResult
   // 4. 判定是否包含人类自然语言意图
   // 如果整段文本只剩下纯报错占位符、纯英文符号、纯文件名，而没有任何自然语言表达：
   const withoutPlaceholders = distilledText
-    .replace(/\[\.\.\.[^\]]*\]/g, "")
+    .replace(/\[\.\.\.[^\]]*\]|\[\d+\s*items\s*\.\.\.\]/g, "")
     .replace(/[a-zA-Z0-9_\-\.\/\\:]+/g, "")
     .trim();
 
@@ -164,7 +195,7 @@ export function sanitizePromptForTranslation(raw: string): SanitizedPromptResult
     (/^Error:\s*[\w\s:]*\[\.\.\.\s*stack trace\s*\.\.\.\]/i.test(distilledText) && !hasQuestionKeywords);
 
   // 自然语言英语句子判定：在非纯堆栈场景下，包含由空格分隔的标准英文自然词汇 >= 4 个 (确保英文陈述句被准确识别)
-  const cleanEnglishWords = distilledText.replace(/\[\.\.\.[^\]]*\]|\[code[^\]]*\]/gi, " ").trim();
+  const cleanEnglishWords = distilledText.replace(/\[\.\.\.[^\]]*\]|\[code[^\]]*\]|\[\d+\s*items\s*\.\.\.\]/gi, " ").trim();
   const words = cleanEnglishWords.match(/\b[a-zA-Z]{2,}\b/g) || [];
   const hasEnglishSentence = !isPureErrorOrDiagnostic && words.length >= 4 && !distilledText.startsWith("Error:");
 
@@ -186,6 +217,9 @@ export function sanitizePromptForTranslation(raw: string): SanitizedPromptResult
     );
     if (stackLines.length > 0 && !codeMatch) {
       payloadParts.push(stackLines.join("\n"));
+    }
+    if (collapsedListBlocks.length > 0) {
+      payloadParts.push(collapsedListBlocks.join("\n\n"));
     }
   }
   if (payloadParts.length > 0) {

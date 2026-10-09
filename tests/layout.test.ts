@@ -121,3 +121,20 @@ test("renderCardLayout - target language integrity: no dangling open parentheses
   assert.ok(fullRendered.includes("Git and GitHub."), "Spoken sentence must end cleanly");
   assert.ok(fullRendered.includes("quite a surprise to me."), "Written sentence must end cleanly");
 });
+
+test("renderCardLayout - clamps multi-line source text to max 2 lines with clean visual ellipsis", () => {
+  const labels = resolveLabelsForLang("zh");
+  const card: LingualResult = {
+    sourceText: "黄仁勋身上有一种罕见的矛盾共存： - 他既有底层蓝领的粗砺与抗打击能力（不怕脏活、不怕被嘲笑、不端架子）； - 又有硬核工程师的严密逻辑与技术终局洞察（坚信物理法则与计算范式跃迁）； - 同时还具备德州扑克顶级选手的战略决绝（看准趋势敢把全部身家推到牌桌中央）。这些是他成功的根本吗？他的学业呢？大学学的什么专业，后来深造了吗？到底什么经历真的对他的事业起到了帮助",
+    spoken: "Jensen blends blue-collar grit, hardcore tech vision, and high-stakes conviction.",
+    written: "Evaluating Jensen Huang's success drivers: blue-collar resilience and EE background.",
+    vocab: "blue-collar grit · tech vision",
+    annotated: "",
+  };
+
+  const lines = renderCardLayout(card, labels, { maxCols: 80, maxLines: 9 });
+  // Find lines starting with source bullet or indent
+  const sourceLines = lines.filter(l => l.includes("· [原文]") || l.startsWith("          "));
+  assert.ok(sourceLines.length <= 2, "Source text must be bounded to max 2 lines");
+  assert.ok(sourceLines[sourceLines.length - 1].endsWith("..."), "The final source line must end with clean visual ellipsis '...'");
+});

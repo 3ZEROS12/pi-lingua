@@ -98,7 +98,8 @@ export interface LingualResult {
   written: string;          // Slot 2 target expression
   writtenMeaning?: string;  // Slot 2 exact nuance/meaning in native language A
   vocab?: string;           // Vocab/idiom highlights
-  sourceText: string;       // Original source text in language A
+  sourceText: string;       // Original source text in language A (or distilled intent headline)
+  summary?: string;         // Distilled core intent / question title in language A for long inputs
   annotated: string;
 }
 export type LinguaResult = LingualResult;
@@ -109,4 +110,5 @@ export interface TranslationPayload {
   written?: string;
   writtenMeaning?: string;
   vocab?: string;
+  summary?: string;
 }

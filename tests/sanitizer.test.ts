@@ -160,3 +160,19 @@ test("sanitizePromptForTranslation - correctly recognizes declarative English se
   assert.ok(res.distilledText.includes("The user's question indicates a request"));
   assert.ok(res.distilledText.includes("situational awareness"));
 });
+
+test("sanitizePromptForTranslation - folds multi-line bullet lists into concise [items ...] and preserves trailing questions", () => {
+  const promptWithList = `黄仁勋身上有一种罕见的矛盾共存：
+ - 他既有底层蓝领的粗砺与抗打击能力（不怕脏活、不怕被嘲笑、不端架子）；
+ - 又有硬核工程师的严密逻辑与技术终局洞察（坚信物理法则与计算范式跃迁）；
+ - 同时还具备德州扑克顶级选手的战略决绝（看准趋势敢把全部身家推到牌桌中央）。
+这些是他成功的根本吗？他的学业呢？大学学的什么专业，后来深造了吗？到底什么经历真的对他的事业起到了帮助`;
+
+  const res = sanitizePromptForTranslation(promptWithList);
+  assert.equal(res.hasNaturalLanguage, true);
+  assert.equal(res.hasCollapsedContent, true, "Must mark hasCollapsedContent as true when folding lists");
+  assert.ok(res.distilledText.includes("[3 items ...]"), "Must fold 3 bullet items into [3 items ...]");
+  assert.ok(res.distilledText.includes("黄仁勋身上有一种罕见的矛盾共存"), "Must preserve preamble");
+  assert.ok(res.distilledText.includes("这些是他成功的根本吗？"), "Must preserve trailing questions");
+  assert.ok(res.rawPayload?.includes("不怕脏活"), "Must capture full list in rawPayload for AI reasoning");
+});

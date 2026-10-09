@@ -104,6 +104,22 @@ test("parseLlmResponse - supports proficiency-adaptive vocab with multiple (3+) 
   assert.equal(items.length, 4, "Must preserve all 4 extracted collocations without arbitrary 1-2 capping");
 });
 
+test("parseLlmResponse - parses distilled summary headline for long inputs when present", () => {
+  const payload = JSON.stringify({
+    summary: "探讨黄仁勋的草莽韧性与EE学业背景是否为成功根本",
+    spoken: "Jensen blends blue-collar grit, hardcore tech vision, and high-stakes conviction.",
+    spoken_meaning: "黄仁勋融合了蓝领韧性、硬核技术洞察与战略魄力",
+    written: "Evaluating Jensen Huang's success drivers: blue-collar resilience and EE background.",
+    written_meaning: "系统评估黄仁勋的成功驱动要素：蓝领韧性与其电子工程学术背景",
+    vocab: "blue-collar grit · tech vision",
+  });
+
+  const res = parseLlmResponse(payload);
+  assert.ok(res);
+  assert.equal(res.summary, "探讨黄仁勋的草莽韧性与EE学业背景是否为成功根本");
+  assert.ok(res.spoken.includes("Jensen blends"));
+});
+
 test("formatTerminalAnnotation - formats with source text anchor, native nuance, and Trifecta Left-Rail Tree Branch", () => {
   // 1. Dual slots + nuance meanings + vocab (Two-tier structure: B on main branch, A nuance on sub-rail)
   const full = formatTerminalAnnotation(

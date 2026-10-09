@@ -82,6 +82,7 @@ interface LingualResult {
     writtenMeaning?: string;
     vocab?: string;
     sourceText: string;
+    summary?: string;
     annotated: string;
 }
 type LinguaResult = LingualResult;
@@ -91,6 +92,7 @@ interface TranslationPayload {
     written?: string;
     writtenMeaning?: string;
     vocab?: string;
+    summary?: string;
 }
 
 /**

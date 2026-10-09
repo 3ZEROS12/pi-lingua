@@ -3,7 +3,7 @@
 **Baseline Version**: `v0.3.0` (SemVer Frozen per Architectural Decision)  
 **Workspace Root**: `D:/Workspace/projects/pi-lingua`  
 **Execution Status**: Final End-to-End Audit & Complete Hardening Completed  
-**Test Suite Health**: **68 / 68 PASS (100% Green)**  
+**Test Suite Health**: **71 / 71 PASS (100% Green)**  
 **Fleet Pre-Flight**: **Passed: 1 | Failed: 0**  
 **Host Mount**: Direct link to local repository in `~/.pi/agent/settings.json`
 
@@ -78,6 +78,18 @@
     3. Tier 3: 若全量内联超出预算，**优先确保纯正目标语英文（`spoken` 与 `written`）100% 完整无缺**，并在此基础上选择性容纳能放下的语感；
     4. Tier 4: 在极端窄屏（$< 60$ 列）预算耗尽时，末行强制采用视觉宽度省略号 `truncateVisual(line, maxCols)` 优雅收尾，彻底杜绝孤立断句与未闭合的悬挂左括号 `(`。
 
+### 11. 粘贴列表智能折叠与双重总结兜底 (Pasted List Folding & Dual-Layer Intent Condensation)
+- **发现场景**：用户在真实会话 (`01a1206d-6753-7422-838f-850bab9b75ff`) 中粘贴 3 条破折号列表笔记 + 尾部核心提问（黄仁勋经历），终端上浮现出上下割裂：
+  * `[原文]` 未能折叠长列表，被 2 行硬预算截断在“德州扑克顶”，真正关心的核心提问完全丢失，且末尾无省略号；
+  * `[口语]` 与 `[写作]` 却已由大模型高度精炼总结成技术英文，导致“上方半截粗糙原文，下方精炼英文”的不对称认知割裂。
+- **第一性原理彻底根治**：
+  * **客户端智能列表折叠（`sanitizer.ts`）**：
+    识别连续多行项目列表符号（`- `, `* `, `• `, `1. ` 等），自动将长列表折叠为 `[${count} items ...]`，优先展露前导引文与后置核心疑问句，并将完整列表存入 `rawPayload` 确保英文模式深度推理无上下文损耗；
+  * **原文锚点合规视觉省略号（`layout.ts` & `extension.ts`）**：
+    当原文超出 2 行预算时，第 2 行严格采用 `truncateVisual(sourceLines[1] + "...", maxCols)` 加上合规省略号 `...`，彻底杜绝“德州扑克顶”式的生硬断字；
+  * **大模型意图大标题双保险（`prompts.ts`, `types.ts`, `engine.ts`）**：
+    长输入（$>90$ 字符）时恢复大模型输出 `<20` 字的 `"summary"` 核心意图大标题，若生成成功优先作为极简新闻大标题展示，与下方的精炼英文 100% 意图对齐；若生成失败则无缝平滑回退至客户端折叠提炼结果。
+
 ---
 
 ## 🧪 物理执行与验证数据 (Physical Proof)
@@ -91,17 +103,20 @@
 ✔ extension command matrix - registers standardized lingual command suite
 ✔ standalone /lang and language normalization - switches languages and handles pairs & aliases
 ✔ master command dispatcher - routes subcommands in /lingual and /2 smoothly
+✔ parseLlmResponse - parses distilled summary headline for long inputs when present [NEW]
 ✔ renderCardLayout - renders tree branch for normal inputs within 9 lines
 ✔ renderCardLayout - guarantees output <= 9 lines on long multi-clause inputs with fallback
 ✔ renderCardLayout - target language integrity: no dangling open parentheses or severed sentences
+✔ renderCardLayout - clamps multi-line source text to max 2 lines with clean visual ellipsis [NEW]
+✔ sanitizePromptForTranslation - folds multi-line bullet lists into concise [items ...] and preserves trailing questions [NEW]
 ✔ Bulletproof Tiered Hard Budget Guard - guarantees lines.length <= 8 on extreme long inputs and narrow columns
 ✔ sanitizePromptForTranslation - correctly recognizes declarative English sentences without question keywords
 ...
-ℹ tests 68
+ℹ tests 71
 ℹ suites 0
-ℹ pass 68
+ℹ pass 71
 ℹ fail 0
-ℹ duration_ms 31821.7375
+ℹ duration_ms 31973.8748
 
 🧪 Fleet Physical Pre-Flight: Passed: 1 | Failed: 0
 ```

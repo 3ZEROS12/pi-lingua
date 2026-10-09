@@ -482,8 +482,14 @@ export function renderCardLayout(
 
   // 行数守卫与盒模型约束求解 (坚持左导轨树状架构，绝不粗暴降级为单行胶囊)
   if (lines.length > maxLines) {
-    // 约束 Tier 1: 原文最多展示 2 行，防止长原文占用过多预算
-    const clampedSourceLines = sourceLines.length > 2 ? sourceLines.slice(0, 2) : sourceLines;
+    // 约束 Tier 1: 原文最多展示 2 行，防止长原文占用过多预算；超过 2 行时末行严格附带合规省略号
+    let clampedSourceLines = sourceLines;
+    if (sourceLines.length > 2) {
+      clampedSourceLines = [
+        sourceLines[0],
+        truncateVisual(sourceLines[1] + "...", maxCols),
+      ];
+    }
 
     // 约束 Tier 2: 将母语语感内联入括号，收缩纵向子导轨高度
     const spInline = card.spokenMeaning ? `${card.spoken} (${card.spokenMeaning})` : card.spoken;

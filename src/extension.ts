@@ -275,8 +275,14 @@ function renderHudWidget(
   const HARD_MAX_LINES = 9;
 
   if (lines.length > HARD_MAX_LINES) {
-    // 约束 Tier 1: 原文最多展示 2 行，防止长原文占用过多预算
-    const clampedSourceLines = sourceLines.length > 2 ? sourceLines.slice(0, 2) : sourceLines;
+    // 约束 Tier 1: 原文最多展示 2 行，防止长原文占用过多预算；超过 2 行时末行严格附带合规省略号
+    let clampedSourceLines = sourceLines;
+    if (sourceLines.length > 2) {
+      clampedSourceLines = [
+        sourceLines[0],
+        truncateVisual(sourceLines[1] + "...", maxCols),
+      ];
+    }
 
     // 约束 Tier 2: 将母语语感内联入括号，收缩纵向子导轨高度
     const spInline = spokenMeaning ? `${spoken} (${spokenMeaning})` : spoken;
