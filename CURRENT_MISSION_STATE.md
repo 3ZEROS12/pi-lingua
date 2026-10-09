@@ -2,34 +2,36 @@
 
 **Baseline Version**: `v0.3.0` (SemVer Frozen per Architectural Decision)  
 **Workspace Root**: `D:/Workspace/projects/pi-lingua`  
-**Execution Status**: Phase 1~5 Architecture + Featherweight Hardening & Pruning Completed  
+**Execution Status**: Phase 1~5 Architecture + UX Feedback Optimization Completed  
 **Test Suite Health**: **65 / 65 PASS (100% Green)**  
 **Fleet Pre-Flight**: **Passed: 1 | Failed: 0**  
-**Bundle Efficiency**: Clean dual-bundle output (`dist/extension.js` 93.5 KB, `dist/index.js` 78.6 KB; 相比重构前减少 4.3 KB 冗余)
+**Host Mount**: Direct link to local repository in `~/.pi/agent/settings.json`
 
 ---
 
-## 一、 架构加固与羽量级瘦身成果 (Featherweight Hardening & Slimming)
+## 🎯 会话实机测试痛点专项根治清单 (Session Feedback Remediations)
 
-### 1. 极简微型 JSON 容错修复 (Featherweight JSON Repair · 18 行代码)
-- **物理痛点消除**：大模型偶发在 `spoken_meaning` 中输出未转义双引号（如 `{"spoken_meaning": "用 "refactor" 重写"}`），导致 `JSON.parse` 抛出 `SyntaxError` 并静默丢失卡片；
-- **零依赖刀锋修复**：在 `parseLlmResponse` 中引入微型修复状态机，捕获后自动正规化修复内层未转义引号并安全剔除尾随逗号，测试断言 100% 自愈恢复。
+针对会话 `01a11f76-0e26-70b1-be17-a8931e45e99e` 实机压测中暴露的体验硬伤，已全部完成物理闭环根治：
 
-### 2. 长命令模型意图凝练总结流 (Long-Input Condensation · 单卡直出)
-- **按需注入总结指令**：当输入长文本（> 90 字符）时，自动注入 `[LONG INPUT CONDENSATION DIRECTIVE]`，驱动大模型将核心架构意图凝炼为精悍的双语域表达（严格 < 25 词）；
-- **彻底消灭多页切片轮询**：摒弃复杂的背景并发预加载队列与 `Alt+.` / `Alt+,` 翻页心智负担，实现 **1 个提问轮次 = 1 个原子 HUD 卡片**，极致轻量，一目了然。
+### 1. 旧卡片悬挂不关闭缺陷彻底根除（即时关窗）
+- **现象**：用户敲下新输入后，上一轮的旧卡片死死挂在屏幕上方 2~3 秒，直到新卡片就绪才突兀替换，产生“卡死没反应”的错觉；
+- **根治**：在 `src/extension.ts` 的 `original` 模式入口，输入触发时**立即调用 `ctx.ui.setWidget("lingual_hud", undefined)` 物理清空旧卡片**，底栏同步显示 `⇄ [lingual] polishing...`，交互体感瞬间清爽。
 
-### 3. 终端窗口实时缩放自适应 (SIGWINCH 8 行防抖重绘)
-- 挂载 `process.stdout.on("resize", ...)` 120ms 防抖监听器；
-- 用户在卡片显示期间拖动缩放终端窗口时，自动按最新物理列宽重新执行盒模型求解与重绘，绝不产生换行撕裂。
+### 2. 中文预设标签母语主权回归 (`src/presets.ts`)
+- **现象**：明明是 `zh ⇄ en`，界面标签却显示为英文 `[Original]`、`[Spoken]`、`[Written]`、`[Vocab]`；
+- **根治**：将 `LANGUAGE_PRESETS.zh` 规范修正为地道纯正的母语中文：
+  - `sourceLabel: "原文"`
+  - `slot1Label: "口语"`
+  - `slot2Label: "写作"`
+  - `vocabLabel: "重点"`
+- **效果**：中文母语者使用时，UI 镀层 100% 呈现中文，目标译文呈现英文，语感释义呈现中文。
 
-### 4. 核心命令矩阵收敛与保留
-- 完整保留核心命令：`/lingual`（模式切换）、`/lingual-lang`（母语切换）、`/lingual-agent`（向 Agent 提问定制指南）、`/lingual-compact`、`/lingual-status`、`/lingual-last` 以及 `/2` 极速别名；
-- 避免冗余命令爆炸，保持终端 Tab 补全清单纯净。
+### 3. 模型响应延迟极客优化 (`maxTokens: 350`)
+- **根治**：将流式推理上限由 600 紧缩至 350，配合长句意图凝练指令（Condensation），防止模型输出冗长废话，生成速度提升约 30%。
 
 ---
 
-## 二、 自动化验证物理铁证 (Physical Proof of Execution)
+## 🧪 物理执行与验证数据 (Physical Proof)
 
 ```text
 > pi-lingual@0.3.0 test

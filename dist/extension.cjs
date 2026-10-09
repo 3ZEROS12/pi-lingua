@@ -290,10 +290,10 @@ var import_node_os = __toESM(require("os"), 1);
 // src/presets.ts
 var LANGUAGE_PRESETS = {
   zh: {
-    slot1Label: "Spoken",
-    slot2Label: "Written",
-    vocabLabel: "Vocab",
-    sourceLabel: "Original",
+    slot1Label: "\u53E3\u8BED",
+    slot2Label: "\u5199\u4F5C",
+    vocabLabel: "\u91CD\u70B9",
+    sourceLabel: "\u539F\u6587",
     hudTitle: "zh \u21C4 en",
     statusOriginal: "zh \u21C4 en",
     statusEnglish: "zh \u21C4 en",
@@ -2033,7 +2033,7 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
           },
           {
             reasoning: "off",
-            maxTokens: 600
+            maxTokens: 350
           }
         );
         const timeoutPromise = new Promise(
@@ -2075,6 +2075,7 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
     session.initPagination(1);
     if (state.mode === "original") {
       if (ctx.hasUI) {
+        ctx.ui.setWidget("lingual_hud", void 0);
         ctx.ui.setStatus("lingual", ctx.ui.theme.fg("accent", "\u21C4 [lingual] polishing..."));
       }
       translatePrompt(promptToTranslate, {

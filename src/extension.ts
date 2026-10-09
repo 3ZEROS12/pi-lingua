@@ -645,7 +645,7 @@ export default function (pi: ExtensionAPI) {
           },
           {
             reasoning: "off",
-            maxTokens: 600,
+            maxTokens: 350,
           } as any
         );
 
@@ -714,6 +714,8 @@ export default function (pi: ExtensionAPI) {
     // 【原文模式】(original · 默认)：彻底非阻塞 (0ms 立即放行原始输入)，后台异步微任务渲染卡片视窗
     if (state.mode === "original") {
       if (ctx.hasUI) {
+        // 立即物理销毁上一轮的旧卡片，清爽等待新卡片，绝不悬挂陈旧内容导致卡死错觉
+        ctx.ui.setWidget("lingual_hud", undefined);
         ctx.ui.setStatus("lingual", ctx.ui.theme.fg("accent", "⇄ [lingual] polishing..."));
       }
 

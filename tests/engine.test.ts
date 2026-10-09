@@ -198,10 +198,10 @@ test("translatePrompt - supports custom completion callback (Pi native ModelRegi
   assert.equal(res.written, "Acknowledged. Let's proceed with the implementation.");
   assert.equal(res.writtenMeaning, "确认赞同，着手推进具体实施");
   assert.equal(res.vocab, "on board with (赞成/支持) · dive in (立刻着手/开搞)");
-  assert.ok(res.annotated.includes("· [Original] 认同，开始吧"));
-  assert.ok(res.annotated.includes("┌ [Spoken]"));
-  assert.ok(res.annotated.includes("├ [Written]"));
-  assert.ok(res.annotated.includes("└ [Vocab]"));
+  assert.ok(res.annotated.includes("· [原文] 认同，开始吧"));
+  assert.ok(res.annotated.includes("┌ [口语]"));
+  assert.ok(res.annotated.includes("├ [写作]"));
+  assert.ok(res.annotated.includes("└ [重点]"));
 });
 
 test("translatePrompt - live integration test against local gateway if configured", async () => {

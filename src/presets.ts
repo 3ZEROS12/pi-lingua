@@ -6,10 +6,10 @@ import type { LingualI18nLabels } from "./types.js";
  */
 export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
   zh: {
-    slot1Label: "Spoken",
-    slot2Label: "Written",
-    vocabLabel: "Vocab",
-    sourceLabel: "Original",
+    slot1Label: "口语",
+    slot2Label: "写作",
+    vocabLabel: "重点",
+    sourceLabel: "原文",
     hudTitle: "zh ⇄ en",
     statusOriginal: "zh ⇄ en",
     statusEnglish: "zh ⇄ en",

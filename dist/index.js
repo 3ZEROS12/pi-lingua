@@ -1,10 +1,10 @@
 // src/presets.ts
 var LANGUAGE_PRESETS = {
   zh: {
-    slot1Label: "Spoken",
-    slot2Label: "Written",
-    vocabLabel: "Vocab",
-    sourceLabel: "Original",
+    slot1Label: "\u53E3\u8BED",
+    slot2Label: "\u5199\u4F5C",
+    vocabLabel: "\u91CD\u70B9",
+    sourceLabel: "\u539F\u6587",
     hudTitle: "zh \u21C4 en",
     statusOriginal: "zh \u21C4 en",
     statusEnglish: "zh \u21C4 en",
