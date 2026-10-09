@@ -1023,8 +1023,11 @@ var globalLingualCache = new LingualLruCache(50);
 var cachedUserConfig = null;
 var lastConfigCheckTime = 0;
 var CONFIG_CACHE_TTL_MS = 2e3;
+function isTestEnvironment() {
+  return process.env.NODE_ENV === "test" || process.env.NODE_TEST_CONTEXT !== void 0 || process.execArgv.some((a) => a.startsWith("--test") || a === "--test") || process.argv.some((a) => a.includes(".test.") || a.includes("test")) || process.env.npm_lifecycle_event === "test";
+}
 function loadUserLingualConfig() {
-  if (process.env.NODE_ENV === "test" || process.execArgv.includes("--test") || process.argv.includes("--test")) {
+  if (isTestEnvironment()) {
     return {};
   }
   const now = Date.now();
@@ -1227,10 +1230,11 @@ async function translatePrompt(text, userConfig = {}) {
     }
     const payload = parseLlmResponse(content);
     if (!payload || !payload.spoken) return null;
-    const slot1Label = cfg.labels?.slot1Label || cfg.labels?.spokenLabel || "Spoken";
-    const slot2Label = cfg.labels?.slot2Label || cfg.labels?.writtenLabel || "Written";
-    const vocabLabel = cfg.labels?.vocabLabel || "Vocab";
-    const sourceLabel = cfg.labels?.sourceLabel || "Original";
+    const labels = resolveLabelsForLang(cfg.sourceLang || "zh", cfg.labels);
+    const slot1Label = labels.slot1Label || labels.spokenLabel || "\u53E3\u8BED";
+    const slot2Label = labels.slot2Label || labels.writtenLabel || "\u5199\u4F5C";
+    const vocabLabel = labels.vocabLabel || "\u91CD\u70B9";
+    const sourceLabel = labels.sourceLabel || "\u539F\u6587";
     const result = {
       spoken: payload.spoken,
       spokenMeaning: payload.spokenMeaning,
@@ -1529,18 +1533,23 @@ function sanitizePromptForTranslation(raw) {
 }
 
 // src/extension.ts
-var initialDiskConfig = loadUserLingualConfig();
+function isTestEnvironment2() {
+  return process.env.NODE_ENV === "test" || process.env.NODE_TEST_CONTEXT !== void 0 || process.execArgv.some((a) => a.startsWith("--test") || a === "--test") || process.argv.some((a) => a.includes(".test.") || a.includes("test")) || process.env.npm_lifecycle_event === "test";
+}
+var initialDiskConfig = isTestEnvironment2() ? {} : loadUserLingualConfig();
 var initialSourceLang = initialDiskConfig.sourceLang || "zh";
+var initialTargetLang = initialDiskConfig.targetLang || (initialSourceLang === "en" ? "ja" : "en");
 var initialLabels = resolveLabelsForLang(initialSourceLang, initialDiskConfig.labels);
 var state = {
   mode: initialDiskConfig.mode || "original",
   compact: Boolean(initialDiskConfig.compact),
   sourceLang: initialSourceLang,
+  targetLang: initialTargetLang,
   selectedModel: initialDiskConfig.selectedModel || "auto",
   labels: initialLabels
 };
 function saveUserLingualConfig(patch) {
-  if (process.env.NODE_ENV === "test" || process.execArgv.includes("--test") || process.argv.includes("--test")) {
+  if (isTestEnvironment2()) {
     return;
   }
   try {
@@ -1602,7 +1611,7 @@ var session = new LingualSessionController();
 var lastContext = null;
 function updateFooter(ctx) {
   if (!ctx.hasUI) return;
-  const pair = state.labels.statusOriginal || `${state.sourceLang} \u21C4 en`;
+  const pair = `${state.sourceLang} \u21C4 ${state.targetLang}`;
   switch (state.mode) {
     case "original":
     case "english":
@@ -1781,31 +1790,6 @@ function extension_default(pi) {
       ctx.ui.notify(state.labels.notifyOriginal || `[${state.labels.hudTitle}] \u5DF2\u5207\u6362\u81F3\u3010\u539F\u6587\u6A21\u5F0F\u3011\uFF1A\u8F93\u5165\u4FDD\u6301\u7EAF\u51C0\u6BCD\u8BED\uFF0C\u4E0A\u65B9 HUD \u6D6E\u73B0\u4F34\u5B66\u89C6\u7A97`, "info");
     }
   };
-  pi.registerCommand("lingual", {
-    description: state.labels.cmdDescMode || "\u5207\u6362\u6216\u8BBE\u7F6E\u4F34\u5B66\u6A21\u5F0F: /lingual [original|english|off]",
-    handler: setModeHandler
-  });
-  pi.registerCommand("lingual-mode", {
-    description: state.labels.cmdDescMode || "\u8BBE\u7F6E\u4F34\u5B66\u6A21\u5F0F: /lingual-mode <original|english|off>",
-    handler: setModeHandler
-  });
-  pi.registerCommand("lingual", {
-    description: state.labels.cmdDescMode || "\u5207\u6362\u4F34\u5B66\u6A21\u5F0F (\u522B\u540D)",
-    handler: setModeHandler
-  });
-  pi.registerCommand("2", {
-    description: state.labels.cmdDescMode || "\u5207\u6362\u4F34\u5B66\u6A21\u5F0F (\u522B\u540D)",
-    handler: setModeHandler
-  });
-  pi.registerCommand("lingual-agent", {
-    description: state.labels.cmdDescAgent || "\u67E5\u770B\u4F34\u5B66\u5B9A\u5236\u4E0E\u6BCD\u8BED\u5207\u6362\u6307\u5357: /lingual-agent",
-    handler: async (_args, ctx) => {
-      ctx.ui.notify(
-        state.labels.notifyAgentHelp || "\u{1F4A1} \u5207\u6362\u6BCD\u8BED\uFF1F\u76F4\u63A5\u8FD0\u884C /lingual-lang <zh|ja|en|es|fr|de> \u5373\u53EF\u5B9E\u65F6\u5207\u6362\u5E76\u6301\u4E45\u5316\uFF1B\u82E5\u9700\u5B9A\u5236\u7279\u6B8A\u98CE\u683C\uFF0C\u53EF\u76F4\u63A5\u5411 Agent \u63CF\u8FF0\u4F60\u7684\u5B9A\u5236\u504F\u597D\u3002",
-        "info"
-      );
-    }
-  });
   const setModelHandler = async (args, ctx) => {
     const trimmed = args.trim();
     const followSessionDesc = state.labels.modelFollowSession || "\u8DDF\u968F\u4F1A\u8BDD";
@@ -1823,57 +1807,56 @@ function extension_default(pi) {
     const switchedMsg = `[${state.labels.hudTitle}] ` + switchTemplate.replace("{model}", trimmed);
     ctx.ui.notify(switchedMsg, "info");
   };
-  pi.registerCommand("lingual-model", {
-    description: state.labels.cmdDescModel || "\u67E5\u770B\u6216\u5207\u6362\u4F34\u5B66\u6A21\u578B: /lingual-model [model-id|auto]",
-    handler: setModelHandler
-  });
-  pi.registerCommand("2-model", {
-    description: state.labels.cmdDescModel || "\u67E5\u770B\u6216\u5207\u6362\u4F34\u5B66\u6A21\u578B (\u522B\u540D)",
-    handler: setModelHandler
-  });
+  function normalizeLangCode(input) {
+    const s = input.trim().toLowerCase().replace(/[-_].*$/, "");
+    if (s === "zh" || s === "cn" || s === "chinese" || s === "\u4E2D\u6587") return "zh";
+    if (s === "ja" || s === "jp" || s === "japanese" || s === "\u65E5\u672C\u8A9E" || s === "\u65E5\u6587" || s === "\u65E5\u8BED") return "ja";
+    if (s === "en" || s === "eng" || s === "english" || s === "\u82F1\u8BED" || s === "\u82F1\u6587") return "en";
+    if (s === "es" || s === "spanish" || s === "espa\xF1ol" || s === "\u897F\u8BED" || s === "\u897F\u73ED\u7259\u8BED") return "es";
+    if (s === "fr" || s === "french" || s === "fran\xE7ais" || s === "\u6CD5\u8BED" || s === "\u6CD5\u6587") return "fr";
+    if (s === "de" || s === "german" || s === "deutsch" || s === "\u5FB7\u8BED" || s === "\u5FB7\u6587") return "de";
+    return s;
+  }
   const switchLangHandler = async (args, ctx) => {
     const trimmed = args.trim().toLowerCase();
     if (!trimmed) {
       const langList = [
-        "\u2022 zh (\u4E2D\u6587)",
-        "\u2022 ja (\u65E5\u672C\u8A9E)",
-        "\u2022 en (English)",
-        "\u2022 es (Espa\xF1ol)",
-        "\u2022 fr (Fran\xE7ais)",
-        "\u2022 de (Deutsch)"
+        "\u2022 zh (\u4E2D\u6587 \u2794 \u82F1\u6587)",
+        "\u2022 ja (\u65E5\u672C\u8A9E \u2794 \u82F1\u8A9E)",
+        "\u2022 en (English \u2794 Japanese)",
+        "\u2022 es (Espa\xF1ol \u2794 English)",
+        "\u2022 fr (Fran\xE7ais \u2794 English)",
+        "\u2022 de (Deutsch \u2794 English)"
       ].join("\n");
       ctx.ui.notify(
-        `[${state.labels.hudTitle}] ${state.labels.statusReportFlow || "Flow"}: [${state.sourceLang} \u2794 en]
+        `[${state.sourceLang} \u21C4 ${state.targetLang}] ${state.labels.statusReportFlow || "Flow"}: [${state.sourceLang} \u2794 ${state.targetLang}]
 ${langList}
-Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
+\u7528\u6CD5: /lang <zh|ja|en|es|fr|de> [target] (\u5982 /lang ja \u6216 /lang zh ja)`,
         "info"
       );
       return;
     }
-    if (!LANGUAGE_PRESETS[trimmed]) {
+    const parts = trimmed.split(/\s*->\s*|\s*➔\s*|\s+to\s+|\s+/).filter(Boolean);
+    const newSource = normalizeLangCode(parts[0]);
+    const newTarget = parts.length > 1 ? normalizeLangCode(parts[1]) : newSource === "en" ? "ja" : "en";
+    if (!LANGUAGE_PRESETS[newSource]) {
       ctx.ui.notify(
         state.labels.notifyLangInvalid || "Invalid language code. Supported: zh, ja, en, es, fr, de",
         "warning"
       );
       return;
     }
-    state.sourceLang = trimmed;
-    state.labels = resolveLabelsForLang(trimmed);
-    saveUserLingualConfig({ sourceLang: trimmed });
+    state.sourceLang = newSource;
+    state.targetLang = newTarget;
+    state.labels = resolveLabelsForLang(newSource);
+    saveUserLingualConfig({ sourceLang: newSource, targetLang: newTarget });
     session.reset();
     globalLingualCache.clear();
     updateFooter(ctx);
     const template = state.labels.notifyLangSwitched || "Native language switched to: {lang}";
-    ctx.ui.notify(`[${state.labels.hudTitle}] ` + template.replace("{lang}", trimmed), "info");
+    const flowText = `${newSource} \u21C4 ${newTarget}`;
+    ctx.ui.notify(`[${flowText}] ` + template.replace("{lang}", flowText), "info");
   };
-  pi.registerCommand("lingual-lang", {
-    description: state.labels.cmdDescLang || "\u5207\u6362\u4F34\u5B66\u6BCD\u8BED (\u522B\u540D)",
-    handler: switchLangHandler
-  });
-  pi.registerCommand("2-lang", {
-    description: state.labels.cmdDescLang || "\u6781\u901F\u5207\u6362\u4F34\u5B66\u6BCD\u8BED (\u522B\u540D): /2-lang <lang>",
-    handler: switchLangHandler
-  });
   const toggleCompactHandler = async (_args, ctx) => {
     state.compact = !state.compact;
     saveUserLingualConfig({ compact: state.compact });
@@ -1894,35 +1877,19 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
       );
     }
   };
-  pi.registerCommand("lingual-compact", {
-    description: state.labels.cmdDescCompact || "\u5207\u6362\u5355\u884C\u80F6\u56CA\u6A21\u5F0F (\u522B\u540D)",
-    handler: toggleCompactHandler
-  });
-  pi.registerCommand("2-compact", {
-    description: state.labels.cmdDescCompact || "\u6781\u901F\u5207\u6362\u5355\u884C\u80F6\u56CA\u6A21\u5F0F (\u522B\u540D): /2-compact",
-    handler: toggleCompactHandler
-  });
   const showStatusHandler = async (_args, ctx) => {
     const followDesc = state.labels.modelFollowSession || "\u8DDF\u968F\u4F1A\u8BDD";
     const activeModel = state.selectedModel === "auto" ? ctx.model ? `auto (${followDesc}: ${ctx.model.provider}/${ctx.model.id})` : "auto" : state.selectedModel || "auto";
     const statusMsg = formatStatusReport(state.labels, {
       mode: state.mode,
       sourceLang: state.sourceLang,
-      targetLang: "en",
+      targetLang: state.targetLang,
       activeModel,
       layout: state.compact ? "capsule" : "tree",
       cacheStats: globalLingualCache.getStats()
     });
     ctx.ui.notify(statusMsg, "info");
   };
-  pi.registerCommand("lingual-status", {
-    description: state.labels.cmdDescStatus || "\u67E5\u770B\u4F34\u5B66\u63D2\u4EF6\u5F53\u524D\u72B6\u6001\u62A5\u544A\u4E0E\u6A21\u578B\u8BCA\u65AD: /lingual-status",
-    handler: showStatusHandler
-  });
-  pi.registerCommand("2-status", {
-    description: state.labels.cmdDescStatus || "\u67E5\u770B\u4F34\u5B66\u63D2\u4EF6\u5F53\u524D\u72B6\u6001 (\u522B\u540D)",
-    handler: showStatusHandler
-  });
   const showLastHandler = async (_args, ctx) => {
     if (session.getReadyPages().length > 0) {
       renderActiveCard(ctx);
@@ -1945,6 +1912,123 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
     );
     ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] \u5DF2\u91CD\u65B0\u663E\u793A\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247`, "info");
   };
+  const masterCommandHandler = async (args, ctx) => {
+    const trimmed = args?.trim();
+    if (!trimmed) {
+      await setModeHandler("", ctx);
+      return;
+    }
+    const lower = trimmed.toLowerCase();
+    const spaceIndex = lower.indexOf(" ");
+    const sub = spaceIndex === -1 ? lower : lower.slice(0, spaceIndex);
+    const subArgs = spaceIndex === -1 ? "" : trimmed.slice(spaceIndex + 1).trim();
+    if (sub === "lang" || sub === "language") {
+      await switchLangHandler(subArgs, ctx);
+      return;
+    }
+    if (sub === "model") {
+      await setModelHandler(subArgs, ctx);
+      return;
+    }
+    if (sub === "compact" || sub === "capsule" || sub === "layout") {
+      await toggleCompactHandler(subArgs, ctx);
+      return;
+    }
+    if (sub === "status" || sub === "info" || sub === "report") {
+      await showStatusHandler(subArgs, ctx);
+      return;
+    }
+    if (sub === "last" || sub === "prev" || sub === "history") {
+      await showLastHandler(subArgs, ctx);
+      return;
+    }
+    if (sub === "agent" || sub === "help" || sub === "?") {
+      ctx.ui.notify(
+        state.labels.notifyAgentHelp || "\u{1F4A1} \u5207\u6362\u6BCD\u8BED\uFF1F\u76F4\u63A5\u8FD0\u884C /lang <zh|ja|en|es|fr|de> \u5373\u53EF\u5B9E\u65F6\u5207\u6362\u5E76\u6301\u4E45\u5316\uFF1B\u82E5\u9700\u5B9A\u5236\u7279\u6B8A\u98CE\u683C\uFF0C\u53EF\u76F4\u63A5\u5411 Agent \u63CF\u8FF0\u4F60\u7684\u5B9A\u5236\u504F\u597D\u3002",
+        "info"
+      );
+      return;
+    }
+    if (sub === "mode" || sub === "original" || sub === "english" || sub === "off" || sub === "orig" || sub === "disable" || sub === "stop") {
+      await setModeHandler(sub === "mode" ? subArgs : trimmed, ctx);
+      return;
+    }
+    const possibleLang = normalizeLangCode(sub);
+    if (LANGUAGE_PRESETS[possibleLang]) {
+      await switchLangHandler(trimmed, ctx);
+      return;
+    }
+    await setModeHandler(trimmed, ctx);
+  };
+  pi.registerCommand("lingual", {
+    description: state.labels.cmdDescMode || "\u5207\u6362\u6216\u7BA1\u7406\u4F34\u5B66: /lingual [lang|model|compact|status|original|english|off]",
+    handler: masterCommandHandler
+  });
+  pi.registerCommand("2", {
+    description: state.labels.cmdDescMode || "\u4F34\u5B66\u6781\u901F\u603B\u7EBF (\u522B\u540D): /2 [lang|model|compact|status|original|english|off]",
+    handler: masterCommandHandler
+  });
+  pi.registerCommand("lingual-mode", {
+    description: state.labels.cmdDescMode || "\u8BBE\u7F6E\u4F34\u5B66\u6A21\u5F0F: /lingual-mode <original|english|off>",
+    handler: setModeHandler
+  });
+  pi.registerCommand("lang", {
+    description: state.labels.cmdDescLang || "\u5207\u6362\u4F34\u5B66\u8BED\u8A00: /lang <zh|ja|en|es|fr|de> [target]",
+    handler: switchLangHandler
+  });
+  pi.registerCommand("lingual-lang", {
+    description: state.labels.cmdDescLang || "\u5207\u6362\u4F34\u5B66\u8BED\u8A00 (\u522B\u540D): /lingual-lang <zh|ja|en|es|fr|de>",
+    handler: switchLangHandler
+  });
+  pi.registerCommand("2-lang", {
+    description: state.labels.cmdDescLang || "\u6781\u901F\u5207\u6362\u4F34\u5B66\u6BCD\u8BED (\u522B\u540D): /2-lang <lang>",
+    handler: switchLangHandler
+  });
+  pi.registerCommand("compact", {
+    description: state.labels.cmdDescCompact || "\u5207\u6362\u5355\u884C\u80F6\u56CA\u4E0E\u5B8C\u6574\u6811\u72B6\u56FE: /compact",
+    handler: toggleCompactHandler
+  });
+  pi.registerCommand("lingual-compact", {
+    description: state.labels.cmdDescCompact || "\u5207\u6362\u5355\u884C\u80F6\u56CA\u6A21\u5F0F (\u522B\u540D)",
+    handler: toggleCompactHandler
+  });
+  pi.registerCommand("2-compact", {
+    description: state.labels.cmdDescCompact || "\u6781\u901F\u5207\u6362\u5355\u884C\u80F6\u56CA\u6A21\u5F0F (\u522B\u540D): /2-compact",
+    handler: toggleCompactHandler
+  });
+  pi.registerCommand("lingual-model", {
+    description: state.labels.cmdDescModel || "\u67E5\u770B\u6216\u5207\u6362\u4F34\u5B66\u6A21\u578B: /lingual-model [model-id|auto]",
+    handler: setModelHandler
+  });
+  pi.registerCommand("2-model", {
+    description: state.labels.cmdDescModel || "\u67E5\u770B\u6216\u5207\u6362\u4F34\u5B66\u6A21\u578B (\u522B\u540D)",
+    handler: setModelHandler
+  });
+  pi.registerCommand("lingual-status", {
+    description: state.labels.cmdDescStatus || "\u67E5\u770B\u4F34\u5B66\u63D2\u4EF6\u5F53\u524D\u72B6\u6001\u62A5\u544A\u4E0E\u6A21\u578B\u8BCA\u65AD: /lingual-status",
+    handler: showStatusHandler
+  });
+  pi.registerCommand("2-status", {
+    description: state.labels.cmdDescStatus || "\u67E5\u770B\u4F34\u5B66\u63D2\u4EF6\u5F53\u524D\u72B6\u6001 (\u522B\u540D)",
+    handler: showStatusHandler
+  });
+  pi.registerCommand("lingual-last", {
+    description: state.labels.cmdDescLast || "\u91CD\u65B0\u56DE\u770B\u6216\u91CD\u73B0\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247: /lingual-last",
+    handler: showLastHandler
+  });
+  pi.registerCommand("2-last", {
+    description: state.labels.cmdDescLast || "\u56DE\u770B\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247 (\u522B\u540D)",
+    handler: showLastHandler
+  });
+  pi.registerCommand("lingual-agent", {
+    description: state.labels.cmdDescAgent || "\u67E5\u770B\u4F34\u5B66\u5B9A\u5236\u4E0E\u6BCD\u8BED\u5207\u6362\u6307\u5357: /lingual-agent",
+    handler: async (_args, ctx) => {
+      ctx.ui.notify(
+        state.labels.notifyAgentHelp || "\u{1F4A1} \u5207\u6362\u6BCD\u8BED\uFF1F\u76F4\u63A5\u8FD0\u884C /lang <zh|ja|en|es|fr|de> \u5373\u53EF\u5B9E\u65F6\u5207\u6362\u5E76\u6301\u4E45\u5316\uFF1B\u82E5\u9700\u5B9A\u5236\u7279\u6B8A\u98CE\u683C\uFF0C\u53EF\u76F4\u63A5\u5411 Agent \u63CF\u8FF0\u4F60\u7684\u5B9A\u5236\u504F\u597D\u3002",
+        "info"
+      );
+    }
+  });
   pi.registerCommand("lingual-last", {
     description: state.labels.cmdDescLast || "\u91CD\u65B0\u56DE\u770B\u6216\u91CD\u73B0\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247: /lingual-last",
     handler: showLastHandler
@@ -2049,6 +2133,7 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
         }
         translatePrompt(promptToTranslate, {
           sourceLang: state.sourceLang,
+          targetLang: state.targetLang,
           labels: state.labels,
           complete: completer,
           signal
@@ -2089,6 +2174,7 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
     try {
       const result = await translatePrompt(promptToTranslate, {
         sourceLang: state.sourceLang,
+        targetLang: state.targetLang,
         labels: state.labels,
         complete: completer,
         signal

@@ -45,6 +45,16 @@ export function invalidateUserConfigCache(): void {
   lastConfigCheckTime = 0;
 }
 
+function isTestEnvironment(): boolean {
+  return (
+    process.env.NODE_ENV === "test" ||
+    process.env.NODE_TEST_CONTEXT !== undefined ||
+    process.execArgv.some((a) => a.startsWith("--test") || a === "--test") ||
+    process.argv.some((a) => a.includes(".test.") || a.includes("test")) ||
+    process.env.npm_lifecycle_event === "test"
+  );
+}
+
 /**
  * Load user configuration from:
  * 1. ~/.pi/agent/settings.json (under "pi-lingual" block)
@@ -54,7 +64,7 @@ export function invalidateUserConfigCache(): void {
  */
 export function loadUserLingualConfig(): Partial<LingualConfig> {
   // 测试沙箱隔离：自动化测试期间不读取宿主机个人配置，防止环境脏数据干扰断言
-  if (process.env.NODE_ENV === "test" || process.execArgv.includes("--test") || process.argv.includes("--test")) {
+  if (isTestEnvironment()) {
     return {};
   }
 
@@ -408,10 +418,11 @@ export async function translatePrompt(
     const payload = parseLlmResponse(content);
     if (!payload || !payload.spoken) return null;
 
-    const slot1Label = cfg.labels?.slot1Label || cfg.labels?.spokenLabel || "Spoken";
-    const slot2Label = cfg.labels?.slot2Label || cfg.labels?.writtenLabel || "Written";
-    const vocabLabel = cfg.labels?.vocabLabel || "Vocab";
-    const sourceLabel = cfg.labels?.sourceLabel || "Original";
+    const labels = resolveLabelsForLang(cfg.sourceLang || "zh", cfg.labels);
+    const slot1Label = labels.slot1Label || labels.spokenLabel || "口语";
+    const slot2Label = labels.slot2Label || labels.writtenLabel || "写作";
+    const vocabLabel = labels.vocabLabel || "重点";
+    const sourceLabel = labels.sourceLabel || "原文";
 
     const result: LingualResult = {
       spoken: payload.spoken,

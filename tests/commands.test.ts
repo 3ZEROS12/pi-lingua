@@ -27,10 +27,17 @@ test("extension command matrix - registers standardized lingual command suite", 
   assert.ok(registeredCommands["lingual-last"], "Must register /lingual-last");
   assert.ok(registeredCommands["lingual-agent"], "Must register /lingual-agent");
 
+  // Standalone intuitive developer commands
+  assert.ok(registeredCommands["lang"], "Must register standalone /lang");
+  assert.ok(registeredCommands["compact"], "Must register standalone /compact");
+
   // Compatibility aliases
   assert.ok(registeredCommands["2"], "Must retain /2 alias");
   assert.ok(registeredCommands["2-lang"], "Must retain /2-lang alias");
   assert.ok(registeredCommands["2-compact"], "Must retain /2-compact alias");
+  assert.ok(registeredCommands["2-model"], "Must retain /2-model alias");
+  assert.ok(registeredCommands["2-status"], "Must retain /2-status alias");
+  assert.ok(registeredCommands["2-last"], "Must retain /2-last alias");
 });
 
 test("extension /lingual - supports explicit mode arguments and cycle fallback", async () => {
@@ -101,15 +108,23 @@ test("extension /lingual-compact - toggles capsule and tree layout with notifica
   // Toggle on
   await registeredCommands["lingual-compact"].handler("", mockCtx);
   assert.ok(notifications.length > 0);
-  assert.ok(notifications[notifications.length - 1].includes("胶囊") || notifications[notifications.length - 1].includes("Capsule"));
+  assert.ok(
+    notifications[notifications.length - 1].includes("胶囊") ||
+    notifications[notifications.length - 1].includes("Capsule") ||
+    notifications[notifications.length - 1].includes("カプセル")
+  );
 
   // Toggle off
   await registeredCommands["2-compact"].handler("", mockCtx);
   assert.ok(notifications.length > 1);
-  assert.ok(notifications[notifications.length - 1].includes("树状") || notifications[notifications.length - 1].includes("tree"));
+  assert.ok(
+    notifications[notifications.length - 1].includes("树状") ||
+    notifications[notifications.length - 1].includes("tree") ||
+    notifications[notifications.length - 1].includes("ツリー")
+  );
 });
 
-test("extension /lingual-lang - switches native language and notifies in target language", async () => {
+test("standalone /lang and language normalization - switches languages and handles pairs & aliases", async () => {
   const registeredCommands: Record<string, any> = {};
   const mockPi: any = {
     on() {},
@@ -131,22 +146,95 @@ test("extension /lingual-lang - switches native language and notifies in target 
     },
   };
 
-  // 1. Switch to Japanese
-  await registeredCommands["lingual-lang"].handler("ja", mockCtx);
-  assert.ok(notifications.length > 0);
+  // 1. Direct /lang ja
+  await registeredCommands["lang"].handler("ja", mockCtx);
   assert.ok(notifications[notifications.length - 1].includes("ja"));
 
-  // 2. Invalid language code triggers warning
-  await registeredCommands["lingual-lang"].handler("xx", mockCtx);
-  assert.ok(notifications.length > 1);
+  // 2. Natural language alias: /lang japanese
+  await registeredCommands["lang"].handler("japanese", mockCtx);
+  assert.ok(notifications[notifications.length - 1].includes("ja"));
 
-  // 3. No argument displays available languages
-  await registeredCommands["lingual-lang"].handler("", mockCtx);
+  // 3. CJK alias: /lang 日语
+  await registeredCommands["lang"].handler("日语", mockCtx);
+  assert.ok(notifications[notifications.length - 1].includes("ja"));
+
+  // 4. Language pair: /lang zh ja
+  await registeredCommands["lang"].handler("zh ja", mockCtx);
+  assert.ok(notifications[notifications.length - 1].includes("zh ⇄ ja"));
+
+  // 5. Standalone /compact command
+  await registeredCommands["compact"].handler("", mockCtx);
+  assert.ok(
+    notifications[notifications.length - 1].includes("胶囊") ||
+    notifications[notifications.length - 1].includes("Capsule") ||
+    notifications[notifications.length - 1].includes("カプセル")
+  );
+
+  // Teardown: Restore to zh ➔ en and tree layout
+  await registeredCommands["lang"].handler("zh", mockCtx);
+  await registeredCommands["compact"].handler("", mockCtx);
+});
+
+test("master command dispatcher - routes subcommands in /lingual and /2 smoothly", async () => {
+  const registeredCommands: Record<string, any> = {};
+  const mockPi: any = {
+    on() {},
+    registerCommand(name: string, def: any) {
+      registeredCommands[name] = def;
+    },
+    registerShortcut() {},
+  };
+
+  extensionFactory(mockPi);
+
+  const notifications: string[] = [];
+  const mockCtx: any = {
+    ui: {
+      notify(msg: string) {
+        notifications.push(msg);
+      },
+      setStatus() {},
+    },
+  };
+
+  // 1. Subcommand: /lingual lang ja
+  await registeredCommands["lingual"].handler("lang ja", mockCtx);
+  assert.ok(notifications[notifications.length - 1].includes("ja"));
+
+  // 2. Subcommand on alias: /2 lang zh
+  await registeredCommands["2"].handler("lang zh", mockCtx);
   assert.ok(notifications[notifications.length - 1].includes("zh"));
+
+  // 3. Direct language code: /lingual ja
+  await registeredCommands["lingual"].handler("ja", mockCtx);
   assert.ok(notifications[notifications.length - 1].includes("ja"));
 
-  // 4. Teardown: Restore state back to Chinese for subsequent test isolation
-  await registeredCommands["lingual-lang"].handler("zh", mockCtx);
+  // 4. Subcommand: /lingual compact
+  await registeredCommands["lingual"].handler("compact", mockCtx);
+  assert.ok(
+    notifications[notifications.length - 1].includes("胶囊") ||
+    notifications[notifications.length - 1].includes("Capsule") ||
+    notifications[notifications.length - 1].includes("カプセル")
+  );
+
+  // 5. Subcommand: /2 compact (toggle back)
+  await registeredCommands["2"].handler("compact", mockCtx);
+  assert.ok(
+    notifications[notifications.length - 1].includes("树状") ||
+    notifications[notifications.length - 1].includes("tree") ||
+    notifications[notifications.length - 1].includes("ツリー")
+  );
+
+  // 6. Subcommand: /lingual status
+  await registeredCommands["lingual"].handler("status", mockCtx);
+  assert.ok(
+    notifications[notifications.length - 1].includes("报告") ||
+    notifications[notifications.length - 1].includes("Status") ||
+    notifications[notifications.length - 1].includes("ステータス")
+  );
+
+  // Teardown: Restore to zh
+  await registeredCommands["lingual"].handler("lang zh", mockCtx);
 });
 
 test("formatStatusReport - includes in-memory cache statistics and hit rate", () => {

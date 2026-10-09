@@ -1274,8 +1274,11 @@ function invalidateUserConfigCache() {
   cachedUserConfig = null;
   lastConfigCheckTime = 0;
 }
+function isTestEnvironment() {
+  return process.env.NODE_ENV === "test" || process.env.NODE_TEST_CONTEXT !== void 0 || process.execArgv.some((a) => a.startsWith("--test") || a === "--test") || process.argv.some((a) => a.includes(".test.") || a.includes("test")) || process.env.npm_lifecycle_event === "test";
+}
 function loadUserLingualConfig() {
-  if (process.env.NODE_ENV === "test" || process.execArgv.includes("--test") || process.argv.includes("--test")) {
+  if (isTestEnvironment()) {
     return {};
   }
   const now = Date.now();
@@ -1520,10 +1523,11 @@ async function translatePrompt(text, userConfig = {}) {
     }
     const payload = parseLlmResponse(content);
     if (!payload || !payload.spoken) return null;
-    const slot1Label = cfg.labels?.slot1Label || cfg.labels?.spokenLabel || "Spoken";
-    const slot2Label = cfg.labels?.slot2Label || cfg.labels?.writtenLabel || "Written";
-    const vocabLabel = cfg.labels?.vocabLabel || "Vocab";
-    const sourceLabel = cfg.labels?.sourceLabel || "Original";
+    const labels = resolveLabelsForLang(cfg.sourceLang || "zh", cfg.labels);
+    const slot1Label = labels.slot1Label || labels.spokenLabel || "\u53E3\u8BED";
+    const slot2Label = labels.slot2Label || labels.writtenLabel || "\u5199\u4F5C";
+    const vocabLabel = labels.vocabLabel || "\u91CD\u70B9";
+    const sourceLabel = labels.sourceLabel || "\u539F\u6587";
     const result = {
       spoken: payload.spoken,
       spokenMeaning: payload.spokenMeaning,

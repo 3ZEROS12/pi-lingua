@@ -2,28 +2,51 @@
 
 **Baseline Version**: `v0.3.0` (SemVer Frozen per Architectural Decision)  
 **Workspace Root**: `D:/Workspace/projects/pi-lingua`  
-**Execution Status**: Phase 1~5 Architecture + Concurrency & Speed Optimization Completed  
-**Test Suite Health**: **65 / 65 PASS (100% Green)**  
+**Execution Status**: Phase 1~5 Architecture + Concurrency & Speed Optimization + Command Matrix Refactor Completed  
+**Test Suite Health**: **66 / 66 PASS (100% Green)**  
 **Fleet Pre-Flight**: **Passed: 1 | Failed: 0**  
 **Host Mount**: Direct link to local repository in `~/.pi/agent/settings.json`
 
 ---
 
-## ⚡ 并发排队与速度专项优化成果 (Concurrency & Speed Optimizations)
+## 🛠️ 命令路由与语言切换系统根治专项成果 (Command Matrix & Language Switching Architecture)
 
-针对双请求并发网关排队导致的“出卡片慢、等主回复完了才弹窗”问题，已全量落地 3 项时序与提示词级性能优化：
+针对用户在交互式测试中发现的“某些命令不起作用，例如 lang 无法切换语言”问题，完成深度根因溯源并全量落地五重工业级根治：
 
-### 1. 80ms 微任务时序错峰 (Micro-Tick Staggering)
-- **痛点根除**：原代码在用户回车的第 0ms 同时发起主任务请求与伴学请求，导致两路 HTTP 请求在 Antigravity 网关发生连接池排队与互斥踩踏；
-- **时序优化**：在 `original` 模式下引入 80ms 极轻微延迟（`setTimeout(..., 80)`），先让 Pi 主会话把包含海量历史上下文的请求头发出去，伴学请求紧随其后接入，**完美避开网关并发锁，整体端到端出卡片时间物理缩短 1~1.5 秒**。
+### 1. 独立直觉命令首登宿主 (`/lang` 与 `/compact`)
+- **痛点根除**：原先仅注册了 `/lingual-lang` 与 `/2-lang`，开发者直觉输入的 `/lang` 或 `/lang ja` 会被 Pi 宿主判定为未知命令；
+- **直觉支持**：正式将 `/lang`（以及 `/compact`）注册为一等公民命令，同时保留 `/lingual-lang`、`/2-lang`、`/lingual-compact`、`/2-compact` 全家桶别名。
 
-### 2. 提示词高密度瘦身 (Compact Few-Shot Prompt · 削减 40% 输入 Token)
-- **体积压缩**：将 `src/prompts.ts` 中原本多行缩进的大体积 Few-Shot JSON 压缩为高密度单行结构，保持 100% 原汁原味的雅思双模规则与代码盾牌；
-- **提速收益**：将系统提示词预填充（Prompt Prefill）体积从 ~700 Tokens 压缩到 ~380 Tokens，上游大模型的首字延迟（TTFT）物理减半。
+### 2. 主命令总线子命令智能路由 (`/lingual` 与 `/2`)
+- **痛点根除**：原先 `/lingual` 和 `/2` 的处理函数 `setModeHandler` 仅检测 `english`/`original`/`off`，当用户输入 `/lingual lang ja`、`/2 lang ja` 或 `/lingual compact` 时，参数被视作未知模式，导致直接执行三态轮转（切模式），完全吞掉了语言切换诉求；
+- **智能调度**：重构 `masterCommandHandler` 总线分发层，严格支持：
+  * `/lingual lang [code]` / `/2 lang [code]` ➔ 路由至语言切换
+  * `/lingual model [id]` / `/2 model [id]` ➔ 路由至模型切换
+  * `/lingual compact` / `/2 compact` ➔ 路由至胶囊/树状布局切换
+  * `/lingual status` / `/2 status` ➔ 路由至状态诊断报告
+  * `/lingual last` / `/2 last` ➔ 路由至上一张卡片回显
+  * `/lingual agent` / `/2 agent` ➔ 路由至伴学定制向导
+  * `/lingual ja` / `/2 ja` ➔ 直通语言切换
+  * `/lingual [english|original|off]` ➔ 直通模式切换
+  * `/lingual` / `/2`（无参数） ➔ 平滑三态循环轮转 (`original` ➔ `english` ➔ `off` ➔ `original`)。
 
-### 3. 思考强度精准校准 (`reasoning: "low"`)
-- **策略对齐**：根据操作者要求，将流式推理配置由硬卡 `"off"` 调整为 **`"low"`**；
-- **质效兼备**：为具备推理能力的模型（如 Gemini 3.8 / Claude Reasoning）提供约 50~100 Tokens 的极速思考空间（仅需 200~300ms），既杜绝了 `max` 模式长达 15 秒的严重卡顿，又保证了雅思 Band 8.0 语感生成的准确性与鲁棒性。
+### 3. 多源自然语言代码归一化 (Natural Language Alias Normalization)
+- **多形式容错**：编写 `normalizeLangCode` 模块，全面支持自然语言别名与区域代码：
+  * `japanese`, `jp`, `日语`, `日文`, `日本語` ➔ 自动归一为 `ja`
+  * `chinese`, `cn`, `zh-cn`, `中文` ➔ 自动归一为 `zh`
+  * `english`, `eng`, `英语`, `英文` ➔ 自动归一为 `en`
+  * `spanish`, `西语`, `西班牙语` ➔ 自动归一为 `es`
+  * `french`, `法语`, `法文` ➔ 自动归一为 `fr`
+  * `german`, `德语`, `德文` ➔ 自动归一为 `de`
+- **语言对语法支持**：支持输入语言对，如 `/lang zh ja`、`/lang zh->en`、`/lang zh ➔ ja`，精准更新 `sourceLang` 与 `targetLang`。
+
+### 4. 语言流向双向状态闭环 (`targetLang` 状态联动)
+- **闭环补全**：在 `ExtensionState` 中新增 `targetLang` 状态字段与持久化落盘，并在调用 `translatePrompt` 时同步透传 `targetLang`，彻底杜绝母语为英语时发生 `en ➔ en` 同语言直译死循环；
+- **状态栏动态更新**：底栏指示器动态显示为当前实际流向（如 `zh ⇄ en`、`ja ⇄ en`、`zh ⇄ ja`、`en ⇄ ja`）。
+
+### 5. 测试沙箱隔离升级与宿主配置保护 (`isTestEnvironment`)
+- **环境隔离**：使用多源探测（`NODE_TEST_CONTEXT`、`execArgv` 中的 `--test-*`、`process.argv`）彻底隔离测试环境与宿主机配置，杜绝宿主机中的个人偏好污染自动化测试断言；
+- **标签主权兜底**：在 `src/engine.ts` 中针对未显式传入 `labels` 的场景引入 `resolveLabelsForLang` 兜底，坚守【母语最高统治权】。
 
 ---
 
@@ -49,7 +72,8 @@
 ✔ extension command matrix - registers standardized lingual command suite
 ✔ extension /lingual - supports explicit mode arguments and cycle fallback
 ✔ extension /lingual-compact - toggles capsule and tree layout with notification
-✔ extension /lingual-lang - switches native language and notifies in target language
+✔ standalone /lang and language normalization - switches languages and handles pairs & aliases
+✔ master command dispatcher - routes subcommands in /lingual and /2 smoothly
 ✔ formatStatusReport - includes in-memory cache statistics and hit rate
 ✔ extension paging - non-translating inputs fully clear pagination pool to prevent ghost resurrection
 ✔ isNonEnglish - correctly identifies natural language scripts and ignores emojis & typography
@@ -99,8 +123,8 @@
 ✔ getVisualWidth - handles ANSI escapes, CJK, and ASCII accurately
 ✔ formatTreeBranch - aligns wrapped text with hanging indent strictly behind heading
 
-ℹ tests 65
+ℹ tests 66
 ℹ suites 0
-ℹ pass 65
+ℹ pass 66
 ℹ fail 0
 ```
