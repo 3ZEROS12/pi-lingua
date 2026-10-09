@@ -11,21 +11,18 @@
 [English](./README.md) | **简体中文**
 
 <p align="center">
-  <img src="assets/multilingual-showcase.svg" alt="pi-lingual 全球多语种权威原典实机展台" width="840">
-</p>
-<p align="center">
-  <em>▲ 真实实机原典伴学矩阵：中文和合本「吃什么？」、英文 KJV 创世之光、西文雷纳-瓦莱拉、德文路德圣经架构隐喻</em>
+  <img src="assets/hero.svg" alt="pi-lingual 终端伴学视窗交互实录" width="840">
 </p>
 
 ---
 
 ## 现实工程摩擦
 
-开发者每天在终端向 Coding Agent 输入上百条提示词。现有的翻译工具往往带来以下妥协：
+在借助终端 AI Coding Agent（Pi、Claude Code、Cursor CLI 等）进行日常结对开发时，以非英语为母语的开发者往往面临三重系统性摩擦：
 
-* **机械字面直译**：遇到生活与工程口语时语义失真。询问午饭安排时，通用翻译通常给出干瘪的 `What to eat?`；而北美工程团队在 Slack 里的真实约饭表达是：`What are we feeling for lunch?`。
-* **后台静默翻译**：为了所谓“无感”，插件在后台悄悄将输入转成英文发给大模型。大模型收到了英文，开发者屏幕上却空空如也，白白浪费了高频接触地道表达的机会。
-* **侵入式气泡拼接**：部分插件直接把英文译文追加到用户发言下方，不仅干扰阅读，更让会话历史充斥着冗余文本，轮轮消耗宝贵的上下文窗口。
+1. **机械字面直译**：通用翻译引擎难以把握软件工程的真实语境。询问午饭安排时，机械翻译给出生硬的 `What to eat?`，而北美工程团队在 Slack 里的真实约饭表达是：`What are we feeling for lunch?`。
+2. **后台静默翻译**：为了所谓的“无感”，部分插件在后台悄悄将输入转换为英文发送给大模型。大模型收到了英文，开发者的终端界面上却空空如也，白白浪费了在日常交互中高频接触地道表达的机会。
+3. **会话历史污染**：侵入式插件直接将英文译文拼接在聊天记录或提示词尾部，导致后续每一轮推理都重复携带冗余文本，轮轮消耗宝贵的上下文窗口，稀释大模型的注意力。
 
 `pi-lingual` 在终端输入框上方挂载一个独立的悬浮视窗，实时呈现日常口语俚语与规范技术书面双重语域，且绝不污染大模型的会话历史记录。
 
@@ -33,247 +30,184 @@
 
 ## 核心架构与物理机制
 
-<p align="center">
-  <img src="assets/hero.svg" alt="pi-lingual 终端伴学视窗交互实录" width="840">
-</p>
-
 ```text
-  · 原文   吃什么？
-  ┌ [口语] What are we feeling for lunch? (中午整点啥好吃的？)
-  ├ [写作] Please specify your catering preferences for the upcoming session. (请明确下阶段会议的用餐偏好。)
-  └ [重点] feel like (想要/倾向于) · specify (明确列出) · catering preferences (餐饮偏好)
+  · [Original] 这个方案有点过度设计了，不如直接用标准库实现
+  ┌ [Spoken]   This feels a bit over-engineered; we'd be much better off sticking with the standard library.
+  │            (感觉有点过度设计了，用标准库划算得多)
+  ├ [Written]  The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.
+  │            (该方案引入了不必要的复杂度，建议优先采用原生标准库实现)
+  └ [Vocab]    over-engineered (过度工程化) · be better off (更合适) · stick with (沿用) · leverage (利用)
 ```
 
 ### 1. 左导轨极简树状视窗（Trifecta Left-Rail Tree Branch）
-在 Windows Terminal、Alacritty 与 iTerm2 中，中日韩（CJK）全角字符极易打破闭合矩形边框的宽度计算，产生严重的断行与重影。`pi-lingual` 彻底剔除了右侧与底部的闭合边框，改用开放式左导轨树状分支：
-* ` · 原文`：完整保留当前输入的原始文本，提供清晰的认知锚点。
-* ` ┌ [口语]`：北美硅谷敏捷团队的真实口语表达（站会沟通、Slack 交流、结对编程、缩写与常用短语动词），末尾附带母语真实语感。
-* ` ├ [写作]`：符合现代规范的技术书面表达（RFC 草案、PR 描述、Issue 讨论、架构评审），末尾附带严谨技术语感。
-* ` └ [重点]`：自适应提取的盲区短语与工程搭配，单行串联呈现。
+在 Windows Terminal、Alacritty 与 iTerm2 中，中日韩（CJK）全角字符极易打破闭合矩形边框的宽度计算，产生严重的断行重影与光标错位。`pi-lingual` 彻底剔除了右侧与底部的闭合边框，改用开放式**左导轨树状分支**：
+* **`  · [Original]`**：完整保留当前输入的原始文本，在第 11 列严格与后续分支对齐，提供清晰的认知锚点。
+* **`  ┌ [Spoken]`**：北美硅谷敏捷团队的真实口语表达（站会沟通、Slack 交流、结对编程、缩写与常用短语动词），末尾附带母语真实语感。
+* **`  ├ [Written]`**：符合现代规范的技术书面表达（RFC 草案、PR 描述、Issue 讨论、架构评审），末尾附带严谨技术语感。
+* **`  └ [Vocab]`**：自适应提取的盲区短语与工程搭配，单行串联呈现。
 
-### 2. 会话与上下文绝对纯净隔离（Zero Context Pollution）
-插件利用 Pi 的扩展拦截机制，确保本地存储与模型会话历史不受任何多余文本干扰：
-* **原文模式（`original`，默认）**：用户敲击回车后，原始输入以 0ms 延迟直接放行交由大模型处理，翻译任务在后台异步执行。落盘的会话记录中仅保留纯净母语，绝不在上下文内拼接英文译文。
-* **英文模式（`english`）**：插件等待翻译引擎返回后，仅提取其中的规范技术书面英文发送给大模型，括号内的母语释义物理剥离，驱动大模型以全英文上下文展开深度代码推理。
-* **关闭模式（`off`）**：完全静默直通，跳过一切翻译逻辑。
+### 2. 微光短语高亮（Spotlight Phrase Highlighting）
+语感习得依赖于第一时间的视觉聚焦。`pi-lingual` 动态提取重点短语并在双语域句子中进行模式匹配，施加非破坏性 ANSI 下划线（`\x1b[4m...\x1b[24m`）。它在不改变文本实际字符宽度和大小写的前提下，让开发者在 0.1 秒内精准捕捉地道搭配与核心动词。
 
-### 3. 自适应词汇提取与单行紧凑流（Inline Stream）
-死板固定“1~2个词”的规则，要么会遗漏关键短语，要么会提取过于简单的基础单词。`pi-lingual` 根据目标语言掌握水平动态评估：当输入内容涉及进阶开发者容易混淆的短语动词、介词固定搭配或架构术语时，引擎会自适应将其全部提取。
-
-为了保护终端内珍贵的纵向可视面积，所有重点词汇均在单行内以 ` · ` 拼接：
-```text
-over-engineered (过度工程化) · be better off (采用……更为合适) · stick with (坚持沿用)
-```
-视窗严禁向下折行堆叠词典式解释，确保终端代码编辑区域不被挤压变形。
-
-### 4. 饱和命令与 CLI 覆盖矩阵
-切换模式、管理语言或查询翻译均支持最小击键操作：
-* **Pi 终端会话内**：
-  * `/2`、`/lingua`、`/lingual`、`/translate`：循环切换运行模式（`原文 ➔ 英文 ➔ 关`）；
-  * `/2-lang [lang]` 或 `/lingua-lang [lang]`：秒切母语 A（支持 `zh`、`ja`、`en`、`es`、`fr`、`de`，自动持久化至全局配置）；
-  * `/lingua-model [id|auto]`：查询或解耦切换伴学专有模型；
-  * `/lingua-status`：查看完整系统健康诊断、语言流向与 LRU 缓存命中率；
-  * `/2-last` 或 `/lingua-last`：原地重现上一条伴学卡片。
-* **状态栏实时指示**：终端底部状态栏常驻当前运行状态，如 `⇄ [二 ⇄ two] 原文`，切换时即时响应。
-* **系统全局 CLI**：支持通过 `lingua`、`lingual`、`translate`、`lg`、`2` 等别名在任意 Shell 中快速查询：
-  ```bash
-  2 "这个方案有点过度设计了，不如直接用标准库实现"
-  ```
-
----
-
-## 终端实录体验
-
-### 确认方案并推进
-```text
-> 认同，开始吧
-```
-```text
-  · [原文]   认同，开始吧
-  ┌ [口语] Totally on board with that — let's dive right in. (完全赞同，咱们直接开搞)
-  ├ [写作] Acknowledged. Let's proceed with the implementation. (确认赞同，着手推进具体实施)
-  └ [重点] on board with (赞同/支持) · dive in (立刻着手)
-```
-
-### 讨论架构折衷
-```text
-> 这个方案有点过度设计了，不如直接用标准库实现
-```
-```text
-  · [原文]   这个方案有点过度设计了，不如直接用标准库实现
-  ┌ [口语] This feels a bit over-engineered; we'd be much better off just sticking with the standard library. (感觉有点过度设计了，用标准库划算得多)
-  ├ [写作] The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred. (该方案引入了不必要的复杂度，建议优先采用原生标准库实现)
-  └ [重点] over-engineered (过度工程化) · be better off (做某事更合适) · stick with (坚持使用) · leverage (利用/借助)
-```
-
-### 高频单步推进
-```text
-> 继续
-```
-```text
-  · [原文]   继续
-  ┌ [口语] Let's keep going. (继续往下搞)
-  ├ [写作] Proceed with the next steps. (推进后续步骤)
-  └ [重点] keep going (继续推进) · proceed with (着手推进)
-```
-
----
-
-## 全球对称多语种实机展台
-
-`pi-lingual` 支持跨语种对称运行。无论是国际开发者通过英文学习中文、日文、西班牙文，还是欧洲工程师在法德语境下协作，均可获得同等水准的口语与技术书面双模对照。
+### 3. 单行胶囊模式（针对多分屏平铺的视野保护）
+在 tmux、WezTerm 或多窗格平铺（3~4 分屏）以及紧凑终端窗口（行数 `< 22`）下，屏幕纵向高度极为珍贵。
 
 <p align="center">
-  <img src="assets/multilingual-showcase.svg" alt="全球多语种对称实机展台" width="840">
+  <img src="assets/capsule-mode.svg" alt="pi-lingual 视窗形态切换" width="840">
 </p>
 
-### 8 组跨语种权威原典实测矩阵
+通过 `/2-compact`（或 `/lingua-compact`）即可一键开启**胶囊模式**，将原本 6 行的树状视窗折叠为极致平铺的单行流：
+```text
+⇄ [two ⇄ 二] · [Spoken] This feels over-engineered... │ [Written] Proposed approach introduces unnecessary complexity...
+```
+在保留双语域核心表达的同时，节省超过 80% 的终端纵向空间，保护代码编辑核心视野。
 
-| 语言流向 | 地区原典版本 (Source Tradition) | 输入文本 (Input) | 敏捷口语 [口语] | 技术书面 [写作] |
+### 4. 代码与命令行防护盾牌（0ms 旁路直通）
+终端日常操作充斥着大量 Git 命令、依赖安装与单行代码。对 `git commit -m "fix"` 或 `const x = 1` 触发翻译不仅徒增网络延迟，而且白白浪费模型算力。
+
+`pi-lingual` 内置专用的启发式盾牌（`src/shield.ts`），实现 **0ms 延迟、0 Token 消耗**的即时放行：
+* **40+ 终端工具前缀**：`git`、`npm`、`pnpm`、`yarn`、`cargo`、`docker`、`kubectl`、`make`、`python`、`curl` 等；
+* **多语言代码起始语句**：`const`、`function`、`class`、`import`、`def`、`impl`、`SELECT` 等；
+* **数据结构与围栏**：Markdown 代码块、JSON/YAML 结构体以及纯字母标识符；
+* **智能保留自然语言提问**：包含命令名的自然语言提问（如 `git status 为什么报错？`）自动精准识别并放行给翻译引擎。
+
+### 5. 零依赖内存 LRU 缓存（0ms 瞬间回显）
+在日常结对编程中，高达 40% 的提示词为高频确认类短语（“继续”、“认同”、“开始吧”、“可以”、“明白”）。
+
+`pi-lingual` 搭载轻量高效的 50 容量会话级 LRU 缓存（`src/cache.ts`）。命中重复输入时，完全跳过大模型调用，**0ms 瞬间浮现伴学卡片**，0 网络请求，0 Token 消耗。
+
+### 6. 语义分块与 9 行绝对安全红线
+宿主终端的小部件普遍存在严格的 10 行折叠截断限制。`pi-lingual` 采用语义驱动的原子分块保障阅读体验：
+* **常规简短输入（<= 90 字符，占日常 90%）**：整句聚合为单张卡片，界面极简干净，**不出现多余的分页快捷键提示**；
+* **长句与复杂段落**：沿自然标点（`。！？；\n` 或 `.!?\n`）进行原子切分，每一页严格完整保留 `[Original]` + `[Spoken]` + `[Written]` + `[Vocab]` 四位一体；
+* **无冲突键盘翻页**：使用 **`Alt+.`**（下一页）与 **`Alt+,`**（上一页）丝滑翻页，不干扰编辑器光标与输入态；
+* **严格安全红线**：整卡渲染严格约束在 `<= 9` 行之内，彻底杜绝宿主截断。
+
+---
+
+## 真实世界软件工程多语种矩阵
+
+`pi-lingual` 专为全球现代软件工程协同打造，在多语种间对称双向运作：
+
+<p align="center">
+  <img src="assets/multilingual-showcase.svg" alt="真实世界软件工程多语种矩阵" width="840">
+</p>
+
+| 语言流向 | 真实工程协作场景 | 原始输入 | [Spoken] 敏捷口语语域 | [Written] 规范技术书面语域 |
 | :--- | :--- | :--- | :--- | :--- |
-| **🇨🇳 zh ➔ 🇺🇸 en** | **中文 · 和合本 (CUV)**<br>*(马太福音 6:31 / 程序员日常)* | `吃什么？` | `What are we feeling for lunch?`<br>*(Slack 团队约饭地道俚语)* | `Please specify your catering preferences...`<br>*(正式会议餐饮登记)* |
-| **🇺🇸 en ➔ 🇨🇳 zh** | **English · King James (KJV)**<br>*(创世记 1:1, 1:3)* | `In the beginning God created the heaven and the earth...` | `最开始的时候，上帝创造了天地。上帝说了句“要有光”，立马就有了光。` | `起初，神创造天地。神说：“要有光”，就有了光。`<br>*(规范技术译本)* |
-| **🇪🇸 es ➔ 🇺🇸 en** | **Español · Reina-Valera (RVR 1960)**<br>*(约翰福音 3:16)* | `Porque de tal manera amó Dios al mundo...` | `God loved the world so much that He gave His one and only Son...` | `For God so loved the world that He gave His only begotten Son...` |
-| **🇺🇸 en ➔ 🇪🇸 es** | **English · NIV**<br>*(马太福音 10:34)* | `Do not suppose that I have come to bring peace...` | `Ni crean que vine a traer paz a la tierra. No vine a traer paz, sino espada.` | `No se debe suponer que he venido a traer paz... No he venido a instaurar la paz...` |
-| **🇯🇵 ja ➔ 🇺🇸 en** | **日本語 · 新共同訳**<br>*(马太福音 7:7)* | `求めなさい。そうすれば、与えられる...` | `Just ask, and you'll receive; look for it, and you'll find it...` | `Ask, and it will be given to you; seek, and you will find...` |
-| **🇺🇸 en ➔ 🇯🇵 ja** | **English · ESV**<br>*(哥林多前书 13:4)* | `Love is patient and kind; love does not envy...` | `愛ってさ、辛抱強くて思いやりがあるんだよね。人を妬んだり自慢したりもしないし...` | `愛は忍耐強く、また情け深い。愛は嫉妬せず、誇ることもなく、驕り高ぶらない。` |
-| **🇫🇷 fr ➔ 🇺🇸 en** | **Français · Louis Segond (LSG 1910)**<br>*(诗篇 23:4)* | `Quand je marche dans la vallée de l'ombre de la mort...` | `Even when I walk through the valley of the shadow of death...` | `Even though I walk through the valley of the shadow of death, I will fear no evil...` |
-| **🇩🇪 de ➔ 🇺🇸 en** | **Deutsch · Lutherbibel (LUT 2017)**<br>*(传道书 1:2, 1:9)* | `Es ist alles ganz eitel. Es geschieht nichts Neues unter der Sonne.` | `Honestly, it all feels like spinning our wheels. There's really nothing new under the sun...` | `This initiative yields negligible substantive value; it merely re-implements established paradigms...` |
+| **🇨🇳 zh ➔ 🇺🇸 en** | **架构设计评审**<br>*(技术折衷讨论)* | `这个方案有点过度设计了，不如直接用标准库实现` | `This feels a bit over-engineered; we'd be much better off just sticking with the standard library.` | `The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.` |
+| **🇯🇵 ja ➔ 🇺🇸 en** | **底层系统工程**<br>*(资源释放与内存优化)* | `メモリリークの可能性があるので、クリーンアップ処理を追加してください` | `There might be a memory leak here, so let's make sure we toss in some cleanup logic.` | `To prevent potential memory leaks, please incorporate explicit cleanup and resource disposal routines.` |
+| **🇪🇸 es ➔ 🇺🇸 en** | **代码审查 (CR)**<br>*(Git 原子提交拆分)* | `El PR es demasiado grande, sugiero dividirlo en dos cambios atómicos` | `This PR is huge — how about we split it into a couple of bite-sized PRs instead?` | `The PR scope is excessively broad; decomposing it into two discrete, atomic commits is advised.` |
+| **🇩🇪 de ➔ 🇺🇸 en** | **分布式系统设计**<br>*(API 接口幂等性)* | `Wir müssen sicherstellen, dass diese Schnittstelle idempotent ist` | `We've gotta make sure this endpoint is strictly idempotent so duplicate requests don't bite us.` | `It is imperative to guarantee strict idempotency for this API endpoint to prevent duplicate mutations.` |
 
 ---
 
-## AI-Native 自主定制协议
+## 配置驱动的母语最高主权
 
-项目根目录的 `AGENTS.md` 固化了自主定制协议。调整语言对或优化学习风格时，无需手动查阅配置手册或修改 TypeScript 代码。
+切换伴学母语无需修改任何源码，无需重新编译，更无需重启终端。
 
-在 Pi、Cursor 或 Claude Code 中打开本项目时，直接以自然语言提出需求：
-> *“我想把这个伴学插件定制为学习日文 / 专攻技术 RFC 风格。”*
-
-智能体将全自动完成以下配置流程：
-
-1. **四维母语访谈**：智能体使用你的母语主动发起访谈，确认输入母语与目标语言（A ➔ B）、当前能力基准与测试目标、垂直工程领域、语域侧重。
-2. **母语 A 最高统治权**：切换为新语言对（如英文 ➔ 日文）时，智能体将插件的所有状态名称（`Original`、`English`、`Off`）、UI 标签与系统通知完整替换为母语 A 的地道表达，清除旧语种残留。
-3. **自适应词汇提示词校准**：根据你的技术方向与能力基准，动态改写 `src/engine.ts` 中的 Few-shot 样例与词汇抽取策略。
-4. **编译与物理校验**：自动运行 `npm test` 与 `npm run build`，完成类型校验与测试套件验证。
-
-> **⚠️ Node.js ESM 进程级缓存关键警示**：  
-> 由于 Node.js 运行时对 ESM 模块进行内存级常驻缓存，在当前终端中执行 `/reload` 无法卸载已加载的扩展。**完成定制与构建后，必须彻底退出终端并重新运行 `pi`，新编译的模块方可物理生效。**
-
----
-
-## 安装与使用
-
-### 安装为 Pi Coding Agent 插件
+### 即时无缝切换
+在任意正在运行的 Pi 会话中直接键入 `/2-lang [code]`（或 `/lingua-lang [code]`）：
 ```bash
-# 从本地仓库直接安装
-pi install D:/Workspace/projects/pi-lingua
-
-# 或从 npm 仓库安装
-pi install npm:pi-lingual
+/2-lang ja   # 秒切日语母语伴学
+/2-lang en   # 秒切英语母语伴学（面向学习其他语言的英文开发者）
+/2-lang zh   # 恢复中文母语伴学
 ```
+*当前官方支持：`zh`、`ja`、`en`、`es`, `fr`, `de`。*
 
-### 作为独立 CLI 运行
-在终端中直接查询地道技术表达：
-```bash
-# 支持任意已注册命令别名：lingua、lingual、translate、lg、2
-lingua "这几个接口需要做幂等性校验"
-2 "内存占用过高，排查一下是否有未释放的句柄"
-```
-
----
-
-## 🤖 零配置模型驱动与三阶模型方案 (Model Sovereignty for Plan Subscribers)
-
-`pi-lingual` 全面采用 **Pi 宿主原生进程内模型调度 (In-Process Model Engine)**，特别针对纯 Plan 订阅用户（Claude Pro、ChatGPT Plus、GitHub Copilot 会员）消除单独购买 Token Key 的负担：
-
-### 1. 核心默认：Pi 原生免 Key 直连 (Zero-Config by Default · 推荐)
-* **适用人群**：拥有 Pi 会话权限的纯 Plan 订阅开发者，无需单独购买任何 API Key；
-* **工作机理**：直接通过 `ctx.modelRegistry.streamSimple()` 自动复用当前会话正在使用的模型与认证凭据；
-* **优劣权衡**：
-  * **优势**：0 配置、0 门槛、0 密钥泄露风险，安装后敲回车立即生效；
-  * **解耦支持**：可运行 `/lingua-model <model-id>`（例如 `/lingua-model gemini-3.8-flash` 或 `/lingua-model auto`）将伴学指定给轻量模型，主会话负责重度代码逻辑。
-
-### 2. 可选进阶：本地 0 成本离线模型 (Local Ollama · 真正零额度消耗)
-* **适用人群**：心疼云端对话次数配额、希望日常高频伴学彻底不耗费任何订阅次数的开发者；
-* **工作机理**：本地运行 Ollama 并在后台挂载 2~3B 轻量模型（如 `qwen2.5:3b` 或 `llama3.2:3b`），在 `~/.pi/agent/lingua.json` 中配置：
-  ```json
-  {
-    "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
-    "model": "qwen2.5:3b"
+### 零残留持久化
+用户配置持久化保存在用户目录的 `~/.pi/agent/settings.json`（`"pi-lingual"` 节点下）：
+```json
+{
+  "pi-lingual": {
+    "sourceLang": "ja",
+    "compact": false
   }
-  ```
-* **优劣权衡**：
-  * **优势**：100% 免费、0 云端网络请求、0 订阅配额扣减、完全私密离线；
-  * **代价**：需本地运行 Ollama 并占用约 2GB 显存/内存。
-
-### 3. 可选扩展：外部自建网关 / 独立 API Key (BYOK)
-* **适用人群**：团队私有代理部署或独立拥有 OpenAI/Anthravity 商业 API 密钥的工程师；
-* **工作机理**：通过环境变量或 `~/.pi/agent/lingua.json` 显式声明：
-  ```bash
-  export LINGUA_ENDPOINT="https://api.openai.com/v1/chat/completions"
-  export LINGUA_API_KEY="sk-..."
-  export LINGUA_MODEL="gpt-4o-mini"
-  ```
-* **优劣权衡**：
-  * **优势**：独立于 Pi 会话环境，在外部独立 Shell（CLI）中也能直接调用；
-  * **代价**：需自行维护 Token Key 账单与网络连通性。
+}
+```
+* **抵御版本覆盖**：后续执行 `pi install npm:pi-lingual` 升级插件时，个人偏好稳如磐石；
+* **母语绝对主权**：当切换为英语或日语时，插件界面彻底清除中文残留，所有命令描述、状态指示与系统通知均自动呈现为 Language A 的原生地道文本；
+* **零残留回滚**：当配置项恢复默认值时，物理移除对应键，绝不向配置文件写入无用脏数据。
 
 ---
 
-## 📄 长句切分与分页保障 (Semantic Chunking & Pagination)
+## 零配置原生模型执行与算力解耦
 
-为了严格遵守终端人体工程学并突破宿主 10 行物理截断墙，`pi-lingual` 执行**原子完备切分保底机制**：
-* **日常短句（90% 场景）**：单卡全量呈现，保持极简纯粹，**绝不出现任何多余的快捷键提示**；
-* **超长多句段落（突破行数预算）**：
-  * 自动沿自然标点（`。！？；\n`）将段落拆解为独立的意群切片；
-  * **每一页均完整包含【本段原文】+【槽位1 口语】+【槽位2 写作】+【槽位3 重点】，每页保持结构独立完整，绝不跨页割裂**；
-  * 首段 200ms 极速呈现，角标极其克制地标注 `[1/2 ⌥.]`，按 **`Alt+.`** (`>`) / **`Alt+,`** (`<`) 丝滑翻页，告别断行截断！
+`pi-lingual` 直接运行在 Pi 宿主进程的大模型调度总线之上，无需订阅用户额外购买或配置 API Key：
+
+### 1. 默认：继承 Pi 宿主会话模型（零配置，开箱即用）
+* **原理**：调用 `ctx.modelRegistry.streamSimple()` 直接复用当前终端会话已经认证的模型凭据；
+* **优势**：0 配置，0 额外账单，0 密钥泄露风险。安装后回车即可体验。
+
+### 2. 算力解耦（保护昂贵的高阶推理配额）
+当会话主模型为 Claude 3.5 Sonnet 或 o1 等高阶昂贵模型时，为了避免伴学翻译白白消耗主模型的按次/每分钟调用配额，可一键挂载轻量伴学模型：
+```bash
+/lingua-model gemini-3.8-flash
+```
+或随时重置为自动跟随：
+```bash
+/lingua-model auto
+```
+
+### 3. 可选：本地 0 成本离线模型（Ollama · 0 云端消耗）
+如需在完全离线或敏感环境运行，可在本地启动 Ollama 并运行轻量 3B 模型（如 `qwen2.5:3b`），在 `~/.pi/agent/lingua.json` 中配置：
+```json
+{
+  "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
+  "model": "qwen2.5:3b"
+}
+```
 
 ---
 
-## ⚡ v0.2.0 核心性能与交互革新 (What's New in v0.2.0)
+## 完整命令与快捷键速查表
 
-| 核心特性 | 运作机制与物理收益 | 触发操作 |
+### 终端会话内交互命令
+| 命令 | 常用别名 | 功能说明 |
 | :--- | :--- | :--- |
-| **🔍 重点短语反光瞄准镜** | 自动提取重点词组并在主干句子中施加 **ANSI 下划线视觉瞄准**，眼动 0.1s 锁定搭配骨架 | 自动生效 (无感) |
-| **💊 极端分屏单行胶囊** | 为 3~4 多分屏极客打造，将 6 行树状卡片折叠为 **严格 1 行的高密度流**，保护垂直视野 | `/2-compact` 或 `/lingua-compact` |
-| **🛡️ 纯代码与 CLI 防御盾** | 0ms 智能特征嗅探纯 Shell 指令（`git`、`npm`、`cargo` 等）与代码块，自动放行，**0 Token 损耗**；包含“为什么/报错/？”等技术提问时智能穿透放行 | 自动生效 (无感) |
-| **⚡ 0 依赖内存 LRU 缓存** | 针对“继续”、“认同”、“开始吧”、“可以”等高频确认指令，基于 50 容量内存链表实现 **0ms 极速直出**，零外部模型请求 | 自动生效 (无感) |
-| **🌐 多语言秒切与免魔改** | 彻底废除在用户本地修改源码的脆弱做法，输入指令即刻切换母语 A，自动写入 `settings.json`，**跨 npm 升级无损继承** | `/2-lang [zh\|ja\|en\|es\|fr\|de]` |
-| **🤖 伴学模型独立解耦** | 将轻量伴学模型与会话主推理模型解耦，支持绑定低成本模型独立运行 | `/lingua-model [id\|auto]` |
-| **📊 全景健康诊断报告** | 实时显示当前运行模式、语言流向、模型状态以及 **LRU 缓存命中率与容量** | `/lingua-status` 或 `/2-status` |
-| **📐 像素级对齐与 9 行硬顶** | 首行统一为 `  · [原文] `，与后续分支严格在第 11 列对齐；自适应折叠严守 9 行硬预算，100% 免疫宿主 10 行截断 | 自动生效 (无感) |
+| `/2` | `/lingua`, `/lingual`, `/translate` | 循环切换运行模式：`[原文] ➔ [英文] ➔ [关]` |
+| `/2-lang <lang>` | `/lingua-lang`, `/lingual-lang` | 秒切伴学母语（支持 `zh`, `ja`, `en`, `es`, `fr`, `de`） |
+| `/2-compact` | `/lingua-compact` | 切换单行胶囊模式与完整树状视窗 |
+| `/2-model <id>` | `/lingua-model` | 查看或切换轻量伴学模型（`auto` 或指定模型 ID） |
+| `/2-status` | `/lingua-status` | 查看完整系统健康诊断、语言流向与 LRU 缓存统计 |
+| `/2-last` | `/lingua-last` | 在终端中重新浮现上一条伴学卡片 |
+| `/2-agent` | `/lingua-agent` | 查看伴学定制与母语切换指南 |
+
+### 键盘快捷键（伴学卡片浮现时）
+* **`Alt+.`** (`>` 键)：切换到下一个语义分块卡片；
+* **`Alt+,`** (`<` 键)：切换到上一个语义分块卡片。
+
+### 独立系统 CLI
+在任何 Bash、Zsh 或 PowerShell 中直接使用全局 CLI：
+```bash
+2 "这个方案有点过度设计了，不如直接用标准库实现"
+lingua "内存占用过高，排查一下是否有未释放的连接池句柄"
+```
 
 ---
 
-## 发行三部曲指引
+## 安装与快速上手
 
-### 1. 推送到 GitHub
+### 作为 Pi 扩展安装
 ```bash
-git init
-git add .
-git commit -m "feat: release pi-lingual v0.2.0 with Code Shield, LRU Cache, and /2-lang"
-git branch -M main
-git remote add origin https://github.com/3ZEROS12/pi-lingua.git
-git push -u origin main
-```
-
-### 2. 发布到 npm
-```bash
-npm run build
-npm test
-npm publish --access public
-```
-
-### 3. 挂载到 Pi 生态扩展库
-```bash
-# 个人全局安装验证
+# 推荐：直接通过 npm 安装
 pi install npm:pi-lingual
+
+# 或从 GitHub 安装
+pi install git:github.com/3ZEROS12/pi-lingua
 ```
-向官方 [pi-coding-agent](https://github.com/earendil-works/pi-coding-agent) 仓库提交 PR，在 `packages.md` 中登记 `pi-lingual`。
+
+### 本地开发与验证
+```bash
+git clone https://github.com/3ZEROS12/pi-lingua.git
+cd pi-lingua
+npm install
+npm test            # 35/35 套件全部通过
+npm run typecheck   # 0 TypeScript 错误
+```
 
 ---
 
-## 开源协议
+## 许可证
 
 MIT © [Jason Song](https://github.com/3ZEROS12)

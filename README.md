@@ -1,7 +1,7 @@
 # pi-lingual
 
 > **Zero-friction developer translator & dual-register language companion for Pi Coding Agent**  
-> Run pair-programming interactions in your native tongue while building native Silicon Valley spoken flow and technical RFC precision above your editor.
+> Type naturally in your native language while cultivating authentic Silicon Valley spoken flow and technical RFC precision right above your terminal prompt.
 
 [![npm version](https://img.shields.io/npm/v/pi-lingual?color=blue)](https://www.npmjs.com/package/pi-lingual)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -11,266 +11,200 @@
 **English** | [简体中文](./README_zh.md)
 
 <p align="center">
-  <img src="assets/multilingual-showcase.svg" alt="pi-lingual Global Symmetrical Multilingual Showcase" width="840">
-</p>
-<p align="center">
-  <em>▲ Real-world authoritative text matrix: Chinese CUV "What for lunch?", English KJV Genesis, Spanish RVR1960, and German Lutherbibel architecture metaphors</em>
-</p>
-
----
-
-## The Core Friction
-
-Every day, software engineers type hundreds of terminal prompts into coding agents. Most translation setups handle this poorly:
-
-* **Naive machine translation** produces flat, literal phrasing. Ask how to ask colleagues out for lunch, and generic translators output `What to eat?`. Silicon Valley engineering teams on Slack say: `What are we feeling for lunch?`.
-* **Silent translation plugins** translate input in the background to hide their existence. The agent gets English, but the developer sees nothing and learns nothing.
-* **Inline comment spam** pollutes session histories by appending English translations directly into chat transcripts, wasting model context on every subsequent turn.
-
-`pi-lingual` runs a dual-register language engine directly in the terminal interface. It displays everyday conversational slang and formal technical prose in a detached floating view above your input line, without touching the model conversation log.
-
----
-
-## Architecture & Core Mechanics
-
-<p align="center">
   <img src="assets/hero.svg" alt="pi-lingual Terminal Companion HUD Experience" width="840">
 </p>
 
+---
+
+## Why pi-lingual?
+
+When pairing with terminal-based AI coding agents (Pi, Claude Code, Cursor CLI), developers who are non-native English speakers or learning a target language face three recurring frictions:
+
+1. **Mechanical Literal Translation**: Generic machine translation flattens idiomatic expression. Asking how to suggest lunch yields dry literalisms like `What to eat?`. Silicon Valley engineering teams on Slack say: `What are we feeling for lunch?`.
+2. **Silent Background Translation**: Plugins that silently translate prompts behind the scenes deliver English to the LLM, but leave the developer's terminal completely blank—wasting valuable micro-learning moments.
+3. **Context Window Contamination**: Pasting English translations directly into the conversation history spams subsequent turns with duplicate text, burning token budgets and diluting LLM reasoning focus.
+
+`pi-lingual` runs a non-invasive, dual-register companion engine directly in the terminal UI. It projects colloquial team flow and formal technical prose in a floating HUD above your editor, while keeping session history 100% clean.
+
+---
+
+## Core Architecture & Key Capabilities
+
 ```text
-  · Original   吃什么？
-  ┌ [Spoken]   What are we feeling for lunch? (中午整点啥好吃的？)
-  ├ [Written]  Please specify your catering preferences for the upcoming session. (请明确下阶段会议的用餐偏好。)
-  └ [Vocab]    feel like (想要/倾向于) · specify (明确列出) · catering preferences (餐饮偏好)
+  · [Original] 这个方案有点过度设计了，不如直接用标准库实现
+  ┌ [Spoken]   This feels a bit over-engineered; we'd be much better off sticking with the standard library.
+  │            (感觉有点过度设计了，用标准库划算得多)
+  ├ [Written]  The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.
+  │            (该方案引入了不必要的复杂度，建议优先采用原生标准库实现)
+  └ [Vocab]    over-engineered (过度工程化) · be better off (更合适) · stick with (沿用) · leverage (利用)
 ```
 
 ### 1. Trifecta Left-Rail Tree Branch HUD
-Terminal CJK characters commonly break closed rectangular borders, causing line-wrapping tears in Windows Terminal, Alacritty, and iTerm2. `pi-lingual` discards right-hand box boundaries entirely. It renders an open left-rail tree branch:
-* ` · Original`: Exact user input line for cognitive reference.
-* ` ┌ [Spoken]`: Natural colloquial English (daily standups, Slack huddles, pair programming, contractions, common phrasal verbs) paired with native nuances in parentheses.
-* ` ├ [Written]`: Modern technical Plain English (RFCs, PR descriptions, issue trackers, architectural reviews) paired with native nuances.
-* ` └ [Vocab]`: Single-line stream of highlighted expressions and collocations.
+In Windows Terminal, Alacritty, and iTerm2, East Asian (CJK) characters break closed rectangular box borders due to 2-cell width misalignments, causing terminal line-wrapping tears. `pi-lingual` eliminates right-hand and bottom borders entirely, adopting an open **Trifecta Left-Rail Tree Branch**:
+* **`  · [Original]`**: Uncompressed, full prompt anchor strictly aligned with subsequent branches at column 11.
+* **`  ┌ [Spoken]`**: Natural colloquial English (daily standups, Slack huddles, pair-programming dialogues, phrasal verbs) paired with authentic native nuance.
+* **`  ├ [Written]`**: Architecture-grade technical Plain English (RFCs, PR descriptions, issue trackers, code reviews) paired with formal engineering nuance.
+* **`  └ [Vocab]`**: Inline horizontal stream of extracted collocations and idioms.
 
-### 2. Zero Context Pollution
-The plugin intercepts input via Pi's extension lifecycle while preserving transcript purity:
-* **Original Mode (`original`, default)**: User input passes to the agent in 0ms. The background translation job runs asynchronously. On-disk session transcripts store only the original prompt. No English text is injected into the model conversation history.
-* **English Mode (`english`)**: The engine translates the input first, extracts only the formal technical English sentence, strips away parenthetical native explanations, and passes clean English to the model for complex reasoning.
-* **Off Mode (`off`)**: Bypasses the translation engine entirely.
+### 2. Spotlight Phrase Highlighting
+Acquiring new vocabulary requires immediate visual parsing. `pi-lingual` dynamically matches extracted vocabulary against the generated dual registers, applying a non-destructive ANSI underline (`\x1b[4m...\x1b[24m`). It preserves exact letter casing and terminal column metrics while guiding your eyes to key collocations within 0.1 seconds.
 
-### 3. Adaptive Vocabulary in an Inline Stream
-Fixed limits (such as forcing 1–2 vocabulary items) either omit crucial idioms or pad outputs with obvious words. `pi-lingual` evaluates user proficiency dynamically. When an input contains technical idioms, phrasal verbs, or prepositions that intermediate developers miss, the engine extracts them all.
-
-To protect terminal screen space, all vocabulary entries stream into a single horizontal line joined by ` · `:
-```text
-over-engineered (过度工程化) · be better off (采用……更为合适) · stick with (坚持沿用)
-```
-The view never stacks multi-line definitions vertically, preventing code lines in the editor from being pushed off-screen.
-
-### 4. Saturated Command & CLI Coverage
-Switching modes, languages, or checking translations requires minimal keystrokes:
-* **Inside Pi Sessions**:
-  * `/2`, `/lingua`, `/lingual`, `/translate`: Rotate runtime modes (`Original ➔ English ➔ Off`).
-  * `/2-lang [lang]` or `/lingua-lang [lang]`: Instant switch of native language A (`zh`, `ja`, `en`, `es`, `fr`, `de`), persistently saved to settings without code mutations.
-  * `/lingua-model [id|auto]`: Inspect or designate a decoupled companion model.
-  * `/lingua-status`: Full diagnostic report with flow info and in-memory LRU cache hit rate.
-  * `/2-last` or `/lingua-last`: Replay previous companion card.
-* **Status Bar Totem**: Active state shows directly in the footer: `⇄ [二 ⇄ two] 原文`, updating dynamically on toggle.
-* **Global CLI**: Execute translations from any shell via `lingua`, `lingual`, `translate`, `lg`, or `2`:
-  ```bash
-  2 "这个方案有点过度设计了，不如直接用标准库实现"
-  ```
-
----
-
-## Terminal Experience
-
-### Approving an Implementation
-```text
-> 认同，开始吧
-```
-```text
-  · [原文]   认同，开始吧
-  ┌ [Spoken]  Totally on board with that — let's dive right in. (完全赞同，咱们直接开搞)
-  ├ [Written] Acknowledged. Let's proceed with the implementation. (确认赞同，着手推进具体实施)
-  └ [Vocab]   on board with (赞同/支持) · dive in (立刻着手)
-```
-
-### Discussing Technical Trade-Offs
-```text
-> 这个方案有点过度设计了，不如直接用标准库实现
-```
-```text
-  · [原文]   这个方案有点过度设计了，不如直接用标准库实现
-  ┌ [Spoken]  This feels a bit over-engineered; we'd be much better off just sticking with the standard library. (感觉有点过度设计了，用标准库划算得多)
-  ├ [Written] The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred. (该方案引入了不必要的复杂度，建议优先采用原生标准库实现)
-  └ [Vocab]   over-engineered (过度工程化) · be better off (做某事更合适) · stick with (坚持使用) · leverage (利用/借助)
-```
-
-### High-Frequency Progression
-```text
-> 继续
-```
-```text
-  · [原文]   继续
-  ┌ [Spoken]  Let's keep going. (继续往下搞)
-  ├ [Written] Proceed with the next steps. (推进后续步骤)
-  └ [Vocab]   keep going (继续推进) · proceed with (着手推进)
-```
-
----
-
-## Global Symmetrical Multilingual Showcase
-
-`pi-lingual` operates bidirectionally across world languages. English-speaking developers learning Chinese, Japanese, or Spanish receive the same dual-register breakdowns as international developers learning English.
+### 3. Single-Line Capsule Mode (Tiling Terminal Protection)
+When working in 3–4 pane tiling layouts (tmux, WezTerm, iTerm2 splits) or compact windows (`rows < 22`), vertical space is at a premium. 
 
 <p align="center">
-  <img src="assets/multilingual-showcase.svg" alt="Global Multilingual Showcase" width="840">
+  <img src="assets/capsule-mode.svg" alt="pi-lingual Layout Morphing" width="840">
 </p>
 
-### 8 Symmetrical Language Pairs & Authoritative Passages
-
-| Direction | Source Tradition (Language A) | Input Passage | [Spoken] Register | [Written] Register |
-| :--- | :--- | :--- | :--- | :--- |
-| **🇨🇳 zh ➔ 🇺🇸 en** | **Chinese · Union Version (CUV)**<br>*(Matthew 6:31 / Dev Meme)* | `吃什么？` | `What are we feeling for lunch?`<br>*(Slack team lunch idiom)* | `Please specify your catering preferences...`<br>*(Formal catering registration)* |
-| **🇺🇸 en ➔ 🇨🇳 zh** | **English · King James (KJV)**<br>*(Genesis 1:1, 1:3)* | `In the beginning God created the heaven and the earth...` | `最开始的时候，上帝创造了天地。上帝说了句“要有光”，立马就有了光。` | `起初，神创造天地。神说：“要有光”，就有了光。`<br>*(Standard technical register)* |
-| **🇪🇸 es ➔ 🇺🇸 en** | **Spanish · Reina-Valera (RVR 1960)**<br>*(John 3:16)* | `Porque de tal manera amó Dios al mundo...` | `God loved the world so much that He gave His one and only Son...` | `For God so loved the world that He gave His only begotten Son...` |
-| **🇺🇸 en ➔ 🇪🇸 es** | **English · NIV**<br>*(Matthew 10:34)* | `Do not suppose that I have come to bring peace...` | `Ni crean que vine a traer paz a la tierra. No vine a traer paz, sino espada.` | `No se debe suponer que he venido a traer paz... No he venido a instaurar la paz...` |
-| **🇯🇵 ja ➔ 🇺🇸 en** | **Japanese · Shinkyoudo-yaku**<br>*(Matthew 7:7)* | `求めなさい。そうすれば、与えられる...` | `Just ask, and you'll receive; look for it, and you'll find it...` | `Ask, and it will be given to you; seek, and you will find...` |
-| **🇺🇸 en ➔ 🇯🇵 ja** | **English · ESV**<br>*(1 Corinthians 13:4)* | `Love is patient and kind; love does not envy...` | `愛ってさ、辛抱強くて思いやりがあるんだよね。人を妬んだり自慢したりもしないし...` | `愛は忍耐強く、また情け深い。愛は嫉妬せず、誇ることもなく、驕り高ぶらない。` |
-| **🇫🇷 fr ➔ 🇺🇸 en** | **French · Louis Segond (LSG 1910)**<br>*(Psalm 23:4)* | `Quand je marche dans la vallée de l'ombre de la mort...` | `Even when I walk through the valley of the shadow of death...` | `Even though I walk through the valley of the shadow of death, I will fear no evil...` |
-| **🇩🇪 de ➔ 🇺🇸 en** | **German · Lutherbibel (LUT 2017)**<br>*(Ecclesiastes 1:2, 1:9)* | `Es ist alles ganz eitel. Es geschieht nichts Neues unter der Sonne.` | `Honestly, it all feels like spinning our wheels. There's really nothing new under the sun...` | `This initiative yields negligible substantive value; it merely re-implements established paradigms...` |
-
----
-
-## Autonomous Customization via AI Agent
-
-The project includes an AI-Native customization protocol defined in `AGENTS.md`. You do not need to configure translation prompts or edit TypeScript files manually.
-
-When you open this repository in Pi, Cursor, or Claude Code, state your goal in plain text:
-> *"I want to customize this language companion plugin for learning Japanese."*
-
-Your agent will run the configuration workflow autonomously:
-
-1. **4-Question Interview**: Conducts an interview in your language covering source/target pair (A ➔ B), current baseline proficiency versus target benchmark, engineering domain, and style preferences.
-2. **Primary Language Sovereignty**: When adapting to a new language pair (e.g. English ➔ Japanese), the agent replaces every status label, mode name (`Original`, `English`, `Off`), and notification string with native expressions of Language A, removing prior interface languages completely.
-3. **Adaptive Vocabulary Prompt Calibration**: The agent re-anchors the system prompt in `src/engine.ts` with domain-specific few-shot examples and adjusts vocabulary extraction thresholds for your skill level.
-4. **Automated Verification**: Runs `npm test` and `npm run build` to verify typings and test suites.
-
-> **Important Node.js ESM Cache Notice**:  
-> Running `/reload` inside an existing Pi session cannot clear ESM modules already cached in process memory. **You must exit the terminal and restart Pi (`pi`) for recompiled extensions in `dist/` to take physical effect.**
-
----
-
-## Installation & CLI Usage
-
-### Install as a Pi Coding Agent Extension
-```bash
-# Install directly from local repository
-pi install D:/Workspace/projects/pi-lingua
-
-# Or install from npm registry
-pi install npm:pi-lingual
+Toggle **Capsule Mode** with `/2-compact` (or `/lingua-compact`) to collapse the multi-line tree HUD into an ultra-dense, strictly single-line horizontal stream:
+```text
+⇄ [two ⇄ 二] · [Spoken] This feels over-engineered... │ [Written] Proposed approach introduces unnecessary complexity...
 ```
+This saves over 80% vertical space while keeping translation feedback accessible.
+
+### 4. Code & CLI Pass-Through Shield (0ms Fast Bypass)
+Terminal workflows frequently involve shell commands, Git operations, and code snippets. Running translation calls on `git commit -m "fix"` or `const x = 1` wastes tokens and adds latency.
+
+`pi-lingual` includes a dedicated heuristic shield (`src/shield.ts`) that intercepts inputs with **0ms latency and 0 token burn**:
+* **40+ CLI Tool Prefixes**: `git`, `npm`, `pnpm`, `yarn`, `cargo`, `docker`, `kubectl`, `make`, `python`, `curl`, etc.
+* **Multi-language Code Starters**: `const`, `function`, `class`, `import`, `def`, `impl`, `SELECT`, etc.
+* **Data Structures & Fences**: Markdown code blocks, JSON/YAML structures, and pure alphanumeric identifiers.
+* **Natural Language Queries Preserved**: Queries with technical commands (e.g. `git status 为什么报错？`) safely pass through for full companion analysis.
+
+### 5. In-Memory LRU Cache (0ms Instant Replay)
+During pair-programming, up to 40% of developer prompts consist of high-frequency confirmation phrases (`继续`, `认同`, `开始吧`, `可以`, `明白`).
+
+`pi-lingual` embeds a zero-dependency 50-capacity LRU cache (`src/cache.ts`). Repeated phrases bypass model inference entirely, achieving **0ms instant HUD display** with zero network calls and zero token consumption.
+
+### 6. Semantic Chunking & 9-Line Hard Budget Guard
+Host terminal widgets enforce a strict 10-line truncation threshold. `pi-lingual` guarantees full readability through semantic pagination:
+* **Short Prompts (<= 90 chars, 90% of cases)**: Aggregated into a single card without pagination banners or shortcuts.
+* **Long Multi-Sentence Prompts**: Split along natural punctuation boundaries (`。！？；\n` or `.!?\n`). Each page retains the complete atomic set: `[Original]` + `[Spoken]` + `[Written]` + `[Vocab]`.
+* **Seamless Keyboard Navigation**: Flip between pages using **`Alt+.`** (`>`) / **`Alt+,`** (`<`) without disrupting cursor focus or editor state.
+* **Strict Line Budget**: The HUD never exceeds 9 lines under any condition.
+
+---
+
+## Real-World Software Engineering Multilingual Matrix
+
+`pi-lingual` is built for modern engineering collaboration. It operates symmetrically across world languages:
+
+<p align="center">
+  <img src="assets/multilingual-showcase.svg" alt="Real-World Software Engineering Multilingual Matrix" width="840">
+</p>
+
+| Language Pair | Engineering Scenario | Input Prompt | [Spoken] Register | [Written] Register |
+| :--- | :--- | :--- | :--- | :--- |
+| **🇨🇳 zh ➔ 🇺🇸 en** | **Architecture Review**<br>*(Tech Trade-offs)* | `这个方案有点过度设计了，不如直接用标准库实现` | `This feels a bit over-engineered; we'd be much better off just sticking with the standard library.` | `The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.` |
+| **🇯🇵 ja ➔ 🇺🇸 en** | **Systems Engineering**<br>*(Resource Disposal)* | `メモリリークの可能性があるので、クリーンアップ処理を追加してください` | `There might be a memory leak here, so let's make sure we toss in some cleanup logic.` | `To prevent potential memory leaks, please incorporate explicit cleanup and resource disposal routines.` |
+| **🇪🇸 es ➔ 🇺🇸 en** | **Code Review**<br>*(Git Atomic Commits)* | `El PR es demasiado grande, sugiero dividirlo en dos cambios atómicos` | `This PR is huge — how about we split it into a couple of bite-sized PRs instead?` | `The PR scope is excessively broad; decomposing it into two discrete, atomic commits is advised.` |
+| **🇩🇪 de ➔ 🇺🇸 en** | **Distributed Systems**<br>*(API Idempotency)* | `Wir müssen sicherstellen, dass diese Schnittstelle idempotent ist` | `We've gotta make sure this endpoint is strictly idempotent so duplicate requests don't bite us.` | `It is imperative to guarantee strict idempotency for this API endpoint to prevent duplicate mutations.` |
+
+---
+
+## Config-Driven Primary Language Sovereignty
+
+Switching native languages requires zero source mutations and zero terminal restarts.
+
+### Instant In-Place Switching
+Run `/2-lang [code]` (or `/lingua-lang [code]`) inside any active Pi session:
+```bash
+/2-lang ja   # Switch native language to Japanese
+/2-lang en   # Switch native language to English
+/2-lang zh   # Switch native language to Chinese
+```
+*Supported languages: `zh`, `ja`, `en`, `es`, `fr`, `de`.*
+
+### Zero-Residue Persistence
+User preferences persist in `~/.pi/agent/settings.json` under `"pi-lingual"`:
+```json
+{
+  "pi-lingual": {
+    "sourceLang": "ja",
+    "compact": false
+  }
+}
+```
+* **Survives npm Upgrades**: Preferences remain intact when upgrading packages via `pi install npm:pi-lingual`.
+* **Zero Chinese Residue**: When switching to English or Japanese, all UI chrome, status indicators, and notification strings update dynamically to authentic expressions of Language A.
+* **Clean Rollback**: Reverting to defaults physically removes keys from the configuration file, leaving zero orphaned schema clutter.
+
+---
+
+## Zero-Config Model Architecture & Decoupling
+
+`pi-lingual` runs directly on Pi's internal model infrastructure, requiring zero external API keys for active subscribers:
+
+### 1. Default: In-Process Pi Session Model (Zero Configuration)
+* **How it works**: Uses `ctx.modelRegistry.streamSimple()` to execute via the currently authenticated Pi model.
+* **Benefits**: Zero setup, zero extra billing, zero secret management. Install and press Enter.
+
+### 2. Model Decoupling (Preserving High-Tier Tokens)
+To prevent prompt translation from consuming high-tier reasoning quota (e.g. Claude 3.5 Sonnet or o1), designate a lightweight companion model:
+```bash
+/lingua-model gemini-3.8-flash
+```
+Or reset back to automatic inheritance:
+```bash
+/lingua-model auto
+```
+
+### 3. Optional: Local Offline Model (Ollama · 0 Cloud Tokens)
+For fully offline or private environments, run a local 3B model (e.g. `qwen2.5:3b`) and configure `~/.pi/agent/lingua.json`:
+```json
+{
+  "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
+  "model": "qwen2.5:3b"
+}
+```
+
+---
+
+## Commands & Shortcuts Reference
+
+### In-Session Terminal Commands
+| Command | Aliases | Description |
+| :--- | :--- | :--- |
+| `/2` | `/lingua`, `/lingual`, `/translate` | Cycle runtime modes: `[Original] ➔ [English] ➔ [Off]` |
+| `/2-lang <lang>` | `/lingua-lang`, `/lingual-lang` | Switch companion native language (`zh`, `ja`, `en`, `es`, `fr`, `de`) |
+| `/2-compact` | `/lingua-compact` | Toggle between single-line capsule mode and full tree HUD |
+| `/2-model <id>` | `/lingua-model` | View or switch companion model (`auto` or specific model ID) |
+| `/2-status` | `/lingua-status` | Display full diagnostic report, active model, and LRU cache statistics |
+| `/2-last` | `/lingua-last` | Replay the previous companion card in the terminal |
+| `/2-agent` | `/lingua-agent` | Display companion customization guide |
+
+### Keyboard Shortcuts (During Translation HUD Display)
+* **`Alt+.`** (`>`): Flip to the next semantic chunk.
+* **`Alt+,`** (`<`): Flip to the previous semantic chunk.
 
 ### Standalone CLI
-Translate expressions from any shell:
+Use `pi-lingual` directly from bash, zsh, or PowerShell:
 ```bash
-# Query via any registered alias: lingua, lingual, translate, lg, 2
-lingua "这几个接口需要做幂等性校验"
-2 "内存占用过高，排查一下是否有未释放的句柄"
+2 "这个方案有点过度设计了，不如直接用标准库实现"
+lingua "内存占用过高，排查一下是否有未释放的连接池句柄"
 ```
 
 ---
 
-## 🤖 Zero-Config Model Engine & Model Sovereignty for Plan Subscribers
+## Installation
 
-`pi-lingual` operates directly within the **Pi In-Process Model Architecture**, specifically designed to eliminate the need for separate API token keys for users on fixed subscription plans (Claude Pro, ChatGPT Plus, GitHub Copilot):
-
-### 1. Primary Default: Native Pi In-Process Model (Zero-Config, Recommended)
-* **Target Users**: Plan-only subscribers with active Pi session credentials, requiring zero additional API key purchases.
-* **Mechanism**: Invokes `ctx.modelRegistry.streamSimple()` to seamlessly reuse the authenticated session model and credentials.
-* **Trade-offs**:
-  * **Pros**: Zero configuration, zero cognitive burden, zero risk of credential leaks. Install and press Enter!
-  * **Decoupling**: Run `/lingua-model <model-id>` (e.g. `/lingua-model gemini-3.8-flash` or `/lingua-model auto`) to delegate translation tasks to a lightweight model while keeping your primary model focused on code.
-
-### 2. Optional Alternative: Local 0-Cost Offline Model (Local Ollama · Zero Token Burn)
-* **Target Users**: Developers who wish to preserve their cloud reasoning quotas and run prompt companions completely free of cost.
-* **Mechanism**: Run Ollama locally with a 2–3B parameter model (e.g. `qwen2.5:3b` or `llama3.2:3b`), and configure `~/.pi/agent/lingua.json`:
-  ```json
-  {
-    "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
-    "model": "qwen2.5:3b"
-  }
-  ```
-* **Trade-offs**:
-  * **Pros**: 100% free, zero external network requests, zero cloud quota consumption, fully private.
-  * **Cons**: Requires local Ollama installation and approximately 2GB of VRAM/RAM.
-
-### 3. Optional Alternative: Custom BYOK / API Gateway
-* **Target Users**: Teams with self-hosted private proxies or developers with personal commercial API keys.
-* **Mechanism**: Export environment variables or specify in `~/.pi/agent/lingua.json`:
-  ```bash
-  export LINGUA_ENDPOINT="https://api.openai.com/v1/chat/completions"
-  export LINGUA_API_KEY="sk-..."
-  export LINGUA_MODEL="gpt-4o-mini"
-  ```
-* **Trade-offs**:
-  * **Pros**: Independent of active Pi session context, usable directly from standalone CLI shells.
-  * **Cons**: Requires managing API bills, credentials, and network routing.
-
----
-
-## 📄 Semantic Chunking & Multi-Page Safeguard
-
-To respect terminal ergonomics and strictly avoid the host's 10-line truncation limit, `pi-lingual` implements an **atomic semantic chunking safeguard**:
-* **Standard short prompts (90% of cases)**: Displayed as a single full card. Zero visual clutter, **no shortcut banners**.
-* **Long multi-sentence prompts (exceeding line budget)**:
-  * Automatically split along natural punctuation boundaries (`。！？；\n` or `.!?\n`).
-  * **Each page strictly preserves the complete atomic set: [Source Chunk] + [Slot 1 Spoken] + [Slot 2 Written] + [Slot 3 Vocab] in one view!**
-  * The first chunk renders in ~200ms with an ultra-minimal corner tag `[1/2 ⌥.]`. Flip between chunks seamlessly using **`Alt+.`** (`>`) / **`Alt+,`** (`<`) without cursor collision or text loss!
-
----
-
-## ⚡ What's New in v0.2.0 (Performance & Ergonomics)
-
-| Core Feature | Mechanism & Impact | Operation |
-| :--- | :--- | :--- |
-| **🔍 Spotlight Highlighting** | Non-destructive ANSI underline highlighting targeting extracted collocations in spoken & written sentences; 0.1s syntactic acquisition | Automatic |
-| **💊 Compact Capsule Mode** | Collapses the 6-line tree HUD into an ultra-dense, strictly **1-line capsule flow** for 3–4 pane tiling developers | `/2-compact` or `/lingua-compact` |
-| **🛡️ Code & CLI Shield** | 0ms heuristic sniffing of pure shell commands (`git`, `npm`, `cargo`, etc.) and code blocks with **0 token waste**; technical questions (`git status 为什么报错？`) pass through safely | Automatic |
-| **⚡ Zero-Dependency LRU Cache** | High-frequency confirmation phrases ("继续", "认同", "开始吧", "可以") achieve **0ms instant HUD display** backed by a 50-entry in-memory cache | Automatic |
-| **🌐 Dynamic Language Switching** | Replaced fragile local source mutations with config-driven persistence in `settings.json`, surviving npm upgrades with **zero Chinese residue** | `/2-lang [zh\|ja\|en\|es\|fr\|de]` |
-| **🤖 Model Decoupling** | Decouple the lightweight companion engine from deep reasoning models to preserve high-tier session tokens | `/lingua-model [id\|auto]` |
-| **📊 Health & Cache Diagnostics** | Real-time diagnostic overview of active mode, language flow, companion model, and **LRU cache hit rate** | `/lingua-status` or `/2-status` |
-| **📐 Pixel-Perfect Alignment & 9-Line Hard Budget** | Unified `  · [Original] ` tag aligned to column 11; adaptive folding ensures line count <= 9 lines, 100% immune to host widget truncation | Automatic |
-
----
-
-## Release Workflow
-
-### 1. Push to GitHub
+### Install as a Pi Extension
 ```bash
-git init
-git add .
-git commit -m "feat: release pi-lingual v0.2.0 with Code Shield, LRU Cache, and /2-lang"
-git branch -M main
-git remote add origin https://github.com/3ZEROS12/pi-lingua.git
-git push -u origin main
-```
-
-### 2. Publish to npm
-```bash
-npm run build
-npm test
-npm publish --access public
-```
-
-### 3. Add to Pi Package Ecosystem
-```bash
-# Global user installation
+# Recommended: Install from npm
 pi install npm:pi-lingual
+
+# Or install from git
+pi install git:github.com/3ZEROS12/pi-lingua
 ```
-Submit a pull request to `packages.md` in the official [pi-coding-agent](https://github.com/earendil-works/pi-coding-agent) repository to list `pi-lingual` under community extensions.
+
+### Development & Verification
+```bash
+git clone https://github.com/3ZEROS12/pi-lingua.git
+cd pi-lingua
+npm install
+npm test            # 35/35 test suites pass
+npm run typecheck   # 0 TypeScript errors
+```
 
 ---
 

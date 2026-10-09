@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 720" width="920" height="720">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 740" width="920" height="740">
   <defs>
     <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
       <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#000000" flood-opacity="0.55" />
@@ -11,7 +11,7 @@
 
   <!-- Window Container with Shadow -->
   <g filter="url(#shadow)">
-    <rect x="20" y="15" width="880" height="680" rx="12" fill="#1e2326" stroke="#343f44" stroke-width="1.2" />
+    <rect x="20" y="15" width="880" height="705" rx="12" fill="#1e2326" stroke="#343f44" stroke-width="1.2" />
 
     <!-- Titlebar -->
     <path d="M 20,27 A 12,12 0 0,1 32,15 L 888,15 A 12,12 0 0,1 900,27 L 900,52 L 20,52 Z" fill="url(#headerGrad)" stroke="#343f44" stroke-width="1" />
@@ -24,162 +24,175 @@
 
     <!-- Window Title -->
     <text x="460" y="38" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="500" fill="#859289" letter-spacing="0.3">
-      pi-lingua · Authoritative Texts &amp; Global Symmetrical Language Matrix
+      pi-lingual · Real-World Software Engineering Multilingual Matrix
     </text>
   </g>
 
   <!-- Terminal Content -->
-  <g font-family="'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, Consolas, monospace" font-size="12" xml:space="preserve">
+  <g font-family="'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, Consolas, monospace" font-size="11.5" xml:space="preserve">
 
-    <!-- Card 1: zh ➔ en (中文和合本) -->
+    <!-- Card 1: zh ➔ en (架构折衷) -->
     <g transform="translate(45, 80)">
       <text x="0" y="0">
         <tspan fill="#a7c080" font-weight="bold">#1 [zh ➔ en]</tspan>
-        <tspan fill="#859289"> · 中文 (和合本 CUV · 马太福音 6:31) ❯ </tspan>
-        <tspan fill="#e5c07b" font-weight="bold">吃什么？</tspan>
+        <tspan fill="#859289"> · Architecture Review &amp; Tech Trade-offs ❯ </tspan>
+        <tspan fill="#e5c07b" font-weight="bold">这个方案有点过度设计了，不如直接用标准库实现</tspan>
       </text>
       <text x="0" y="24">
-        <tspan fill="#7a8478">  · 原文   </tspan>
-        <tspan fill="#d3c6aa">吃什么？</tspan>
+        <tspan fill="#7a8478">  · </tspan>
+        <tspan fill="#859289">[Original] </tspan>
+        <tspan fill="#d3c6aa">这个方案有点过度设计了，不如直接用标准库实现</tspan>
       </text>
       <text x="0" y="46">
         <tspan fill="#7a8478">  ┌ </tspan>
-        <tspan fill="#a7c080" font-weight="bold">[口语] </tspan>
-        <tspan fill="#e5c07b">What are we thinking for lunch? </tspan>
-        <tspan fill="#859289">(晌午当吃甚么？大家有什么想法？——Slack 约饭高频俚语)</tspan>
+        <tspan fill="#a7c080" font-weight="bold">[Spoken]   </tspan>
+        <tspan fill="#e5c07b">This feels a bit </tspan><tspan fill="#e5c07b" text-decoration="underline">over-engineered</tspan><tspan fill="#e5c07b">; we'd be much </tspan><tspan fill="#e5c07b" text-decoration="underline">better off</tspan><tspan fill="#e5c07b"> just </tspan><tspan fill="#e5c07b" text-decoration="underline">sticking with</tspan><tspan fill="#e5c07b"> the standard library. </tspan>
+        <tspan fill="#859289">(用标准库划算得多)</tspan>
       </text>
       <text x="0" y="68">
         <tspan fill="#7a8478">  ├ </tspan>
-        <tspan fill="#7fbbb3" font-weight="bold">[写作] </tspan>
-        <tspan fill="#83a598">Please specify your catering preferences for the scheduled session. </tspan>
-        <tspan fill="#859289">(团队活动膳食偏好书面登记)</tspan>
+        <tspan fill="#7fbbb3" font-weight="bold">[Written]  </tspan>
+        <tspan fill="#83a598">The proposed approach introduces unnecessary complexity. </tspan><tspan fill="#83a598" text-decoration="underline">Leveraging</tspan><tspan fill="#83a598"> native standard library implementations is preferred. </tspan>
+        <tspan fill="#859289">(建议优先采用原生标准库)</tspan>
       </text>
       <text x="0" y="90">
         <tspan fill="#7a8478">  └ </tspan>
-        <tspan fill="#dbbc7f" font-weight="bold">[重点] </tspan>
-        <tspan fill="#d3c6aa">what are we thinking for... </tspan><tspan fill="#7a8478">(对…有何打算/偏好) </tspan>
+        <tspan fill="#dbbc7f" font-weight="bold">[Vocab]    </tspan>
+        <tspan fill="#d3c6aa">over-engineered </tspan><tspan fill="#7a8478">(过度工程化) </tspan>
         <tspan fill="#859289">· </tspan>
-        <tspan fill="#d3c6aa">catering preferences </tspan><tspan fill="#7a8478">(膳食偏好/宴饮预订)</tspan>
+        <tspan fill="#d3c6aa">be better off </tspan><tspan fill="#7a8478">(更合适/更划算) </tspan>
+        <tspan fill="#859289">· </tspan>
+        <tspan fill="#d3c6aa">stick with </tspan><tspan fill="#7a8478">(沿用/坚持) </tspan>
+        <tspan fill="#859289">· </tspan>
+        <tspan fill="#d3c6aa">leverage </tspan><tspan fill="#7a8478">(利用/借助)</tspan>
       </text>
     </g>
 
     <!-- Divider Line 1 -->
     <line x1="45" y1="195" x2="875" y2="195" stroke="#2d353b" stroke-width="1" stroke-dasharray="3,3" />
 
-    <!-- Card 2: en ➔ zh (English KJV) -->
+    <!-- Card 2: ja ➔ en (メモリ調達・リソース解放) -->
     <g transform="translate(45, 222)">
       <text x="0" y="0">
-        <tspan fill="#7fbbb3" font-weight="bold">#2 [en ➔ zh]</tspan>
-        <tspan fill="#859289"> · English (King James Version · Genesis 1:1, 1:3) ❯ </tspan>
-        <tspan fill="#e5c07b">In the beginning God created the heaven and the earth...</tspan>
+        <tspan fill="#7fbbb3" font-weight="bold">#2 [ja ➔ en]</tspan>
+        <tspan fill="#859289"> · Systems Engineering &amp; Memory Optimization ❯ </tspan>
+        <tspan fill="#e5c07b">メモリリークの可能性があるので、クリーンアップ処理を追加してください</tspan>
       </text>
       <text x="0" y="24">
-        <tspan fill="#7a8478">  · Source </tspan>
-        <tspan fill="#d3c6aa">In the beginning God created the heaven and the earth. And God said, Let there be light: and there was light.</tspan>
+        <tspan fill="#7a8478">  · </tspan>
+        <tspan fill="#859289">[Original] </tspan>
+        <tspan fill="#d3c6aa">メモリリークの可能性があるので、クリーンアップ処理を追加してください</tspan>
       </text>
       <text x="0" y="46">
         <tspan fill="#7a8478">  ┌ </tspan>
-        <tspan fill="#a7c080" font-weight="bold">[技术口语] </tspan>
-        <tspan fill="#e5c07b">最开始的时候，上帝创造了天地。上帝说了句“要有光”，立马就有了光。</tspan>
+        <tspan fill="#a7c080" font-weight="bold">[Spoken]   </tspan>
+        <tspan fill="#e5c07b">There might be a memory leak here, so let's make sure we </tspan><tspan fill="#e5c07b" text-decoration="underline">toss in</tspan><tspan fill="#e5c07b"> some cleanup logic. </tspan>
+        <tspan fill="#859289">(クリーンアップ処理サクッと入れとこう)</tspan>
       </text>
       <text x="0" y="68">
         <tspan fill="#7a8478">  ├ </tspan>
-        <tspan fill="#7fbbb3" font-weight="bold">[技术文档] </tspan>
-        <tspan fill="#83a598">起初，神创造天地。神说：“要有光”，就有了光。</tspan>
+        <tspan fill="#7fbbb3" font-weight="bold">[Written]  </tspan>
+        <tspan fill="#83a598">To prevent potential memory leaks, please incorporate explicit cleanup and resource disposal routines. </tspan>
+        <tspan fill="#859289">(リソース解放処理を追加してください)</tspan>
       </text>
       <text x="0" y="90">
         <tspan fill="#7a8478">  └ </tspan>
-        <tspan fill="#dbbc7f" font-weight="bold">[核心术语] </tspan>
-        <tspan fill="#d3c6aa">起初 </tspan><tspan fill="#7a8478">(in the beginning) </tspan>
+        <tspan fill="#dbbc7f" font-weight="bold">[Vocab]    </tspan>
+        <tspan fill="#d3c6aa">toss in </tspan><tspan fill="#7a8478">(手軽に追加する) </tspan>
         <tspan fill="#859289">· </tspan>
-        <tspan fill="#d3c6aa">创造 </tspan><tspan fill="#7a8478">(to create / frame forth) </tspan>
+        <tspan fill="#d3c6aa">cleanup logic </tspan><tspan fill="#7a8478">(終了処理) </tspan>
         <tspan fill="#859289">· </tspan>
-        <tspan fill="#d3c6aa">天地 </tspan><tspan fill="#7a8478">(heaven and earth) </tspan>
-        <tspan fill="#859289">· </tspan>
-        <tspan fill="#d3c6aa">立马 </tspan><tspan fill="#7a8478">(straightway / anon)</tspan>
+        <tspan fill="#d3c6aa">resource disposal routines </tspan><tspan fill="#7a8478">(リソース解放手順)</tspan>
       </text>
     </g>
 
     <!-- Divider Line 2 -->
     <line x1="45" y1="337" x2="875" y2="337" stroke="#2d353b" stroke-width="1" stroke-dasharray="3,3" />
 
-    <!-- Card 3: en ➔ es (English NIV ➔ Español) -->
+    <!-- Card 3: es ➔ en (PR 代码审查与原子拆分) -->
     <g transform="translate(45, 364)">
       <text x="0" y="0">
-        <tspan fill="#dbbc7f" font-weight="bold">#4 [en ➔ es]</tspan>
-        <tspan fill="#859289"> · English (NIV · Matthew 10:34) ❯ </tspan>
-        <tspan fill="#e5c07b">Do not suppose that I have come to bring peace to the earth...</tspan>
+        <tspan fill="#e5c07b" font-weight="bold">#3 [es ➔ en]</tspan>
+        <tspan fill="#859289"> · Code Review &amp; Git Atomic Decomposition ❯ </tspan>
+        <tspan fill="#e5c07b">El PR es demasiado grande, sugiero dividirlo en dos cambios atómicos</tspan>
       </text>
       <text x="0" y="24">
-        <tspan fill="#7a8478">  · Source </tspan>
-        <tspan fill="#d3c6aa">Do not suppose that I have come to bring peace to the earth. I did not come to bring peace, but a sword.</tspan>
+        <tspan fill="#7a8478">  · </tspan>
+        <tspan fill="#859289">[Original] </tspan>
+        <tspan fill="#d3c6aa">El PR es demasiado grande, sugiero dividirlo en dos cambios atómicos</tspan>
       </text>
       <text x="0" y="46">
         <tspan fill="#7a8478">  ┌ </tspan>
-        <tspan fill="#a7c080" font-weight="bold">[Coloquial] </tspan>
-        <tspan fill="#e5c07b">Ni crean que vine a traer paz a la tierra. No vine a traer paz, sino espada.</tspan>
+        <tspan fill="#a7c080" font-weight="bold">[Spoken]   </tspan>
+        <tspan fill="#e5c07b">This PR is huge — how about we split it into a couple of </tspan><tspan fill="#e5c07b" text-decoration="underline">bite-sized</tspan><tspan fill="#e5c07b"> PRs instead? </tspan>
+        <tspan fill="#859289">(¿qué tal si lo partimos en cambios manejables?)</tspan>
       </text>
       <text x="0" y="68">
         <tspan fill="#7a8478">  ├ </tspan>
-        <tspan fill="#7fbbb3" font-weight="bold">[Escrito]   </tspan>
-        <tspan fill="#83a598">No se debe suponer que he venido a traer paz a la tierra. No he venido a instaurar la paz, sino una espada.</tspan>
+        <tspan fill="#7fbbb3" font-weight="bold">[Written]  </tspan>
+        <tspan fill="#83a598">The PR scope is excessively broad; decomposing it into two discrete, atomic commits is advised. </tspan>
+        <tspan fill="#859289">(se aconseja descomponerlo en commits atómicos)</tspan>
       </text>
       <text x="0" y="90">
         <tspan fill="#7a8478">  └ </tspan>
-        <tspan fill="#dbbc7f" font-weight="bold">[Vocabulario] </tspan>
-        <tspan fill="#d3c6aa">ni crean que </tspan><tspan fill="#7a8478">(don't think for a moment that) </tspan>
+        <tspan fill="#dbbc7f" font-weight="bold">[Vocab]    </tspan>
+        <tspan fill="#d3c6aa">bite-sized </tspan><tspan fill="#7a8478">(fácil de digerir / manejable) </tspan>
         <tspan fill="#859289">· </tspan>
-        <tspan fill="#d3c6aa">sino </tspan><tspan fill="#7a8478">(but rather) </tspan>
+        <tspan fill="#d3c6aa">excessively broad </tspan><tspan fill="#7a8478">(alcance excesivo) </tspan>
         <tspan fill="#859289">· </tspan>
-        <tspan fill="#d3c6aa">instaurar la paz </tspan><tspan fill="#7a8478">(to establish peace)</tspan>
+        <tspan fill="#d3c6aa">atomic commits </tspan><tspan fill="#7a8478">(commits atómicos)</tspan>
       </text>
     </g>
 
     <!-- Divider Line 3 -->
     <line x1="45" y1="479" x2="875" y2="479" stroke="#2d353b" stroke-width="1" stroke-dasharray="3,3" />
 
-    <!-- Card 4: de ➔ en (Deutsch Lutherbibel ➔ English) -->
+    <!-- Card 4: de ➔ en (分布式接口幂等性设计) -->
     <g transform="translate(45, 506)">
       <text x="0" y="0">
-        <tspan fill="#e67e80" font-weight="bold">#8 [de ➔ en]</tspan>
-        <tspan fill="#859289"> · Deutsch (Lutherbibel LUT 2017 · Prediger 1:2, 1:9) ❯ </tspan>
-        <tspan fill="#e5c07b">Es ist alles ganz eitel. Es geschieht nichts Neues unter der Sonne.</tspan>
+        <tspan fill="#83a598" font-weight="bold">#4 [de ➔ en]</tspan>
+        <tspan fill="#859289"> · Distributed Systems &amp; API Idempotency ❯ </tspan>
+        <tspan fill="#e5c07b">Wir müssen sicherstellen, dass diese Schnittstelle idempotent ist</tspan>
       </text>
       <text x="0" y="24">
-        <tspan fill="#7a8478">  · Original </tspan>
-        <tspan fill="#d3c6aa">Es ist alles ganz eitel. Es geschieht nichts Neues unter der Sonne.</tspan>
+        <tspan fill="#7a8478">  · </tspan>
+        <tspan fill="#859289">[Original] </tspan>
+        <tspan fill="#d3c6aa">Wir müssen sicherstellen, dass diese Schnittstelle idempotent ist</tspan>
       </text>
       <text x="0" y="46">
         <tspan fill="#7a8478">  ┌ </tspan>
-        <tspan fill="#a7c080" font-weight="bold">[Spoken]  </tspan>
-        <tspan fill="#e5c07b">Honestly, it all feels like spinning our wheels. There's really nothing new under the sun. </tspan>
+        <tspan fill="#a7c080" font-weight="bold">[Spoken]   </tspan>
+        <tspan fill="#e5c07b">We've gotta make sure this endpoint is strictly idempotent so duplicate requests don't </tspan><tspan fill="#e5c07b" text-decoration="underline">bite us</tspan><tspan fill="#e5c07b">. </tspan>
+        <tspan fill="#859289">(damit Doppelklicks uns nicht um die Ohren fliegen)</tspan>
       </text>
       <text x="0" y="68">
         <tspan fill="#7a8478">  ├ </tspan>
-        <tspan fill="#7fbbb3" font-weight="bold">[Written] </tspan>
-        <tspan fill="#83a598">This initiative yields negligible substantive value; it merely re-implements established paradigms.</tspan>
+        <tspan fill="#7fbbb3" font-weight="bold">[Written]  </tspan>
+        <tspan fill="#83a598">It is imperative to guarantee strict idempotency for this API endpoint to prevent duplicate mutations. </tspan>
+        <tspan fill="#859289">(strikte Idempotenz für den Endpunkt garantieren)</tspan>
       </text>
       <text x="0" y="90">
         <tspan fill="#7a8478">  └ </tspan>
-        <tspan fill="#dbbc7f" font-weight="bold">[Vocab]   </tspan>
-        <tspan fill="#d3c6aa">spin one's wheels </tspan><tspan fill="#7a8478">(auf der Stelle treten) </tspan>
+        <tspan fill="#dbbc7f" font-weight="bold">[Vocab]    </tspan>
+        <tspan fill="#d3c6aa">strictly idempotent </tspan><tspan fill="#7a8478">(strikt idempotent) </tspan>
         <tspan fill="#859289">· </tspan>
-        <tspan fill="#d3c6aa">nothing new under the sun </tspan><tspan fill="#7a8478">(altbekannte Muster) </tspan>
+        <tspan fill="#d3c6aa">bite us </tspan><tspan fill="#7a8478">(Probleme bereiten) </tspan>
         <tspan fill="#859289">· </tspan>
-        <tspan fill="#d3c6aa">established paradigms </tspan><tspan fill="#7a8478">(bestehende Denkmuster)</tspan>
+        <tspan fill="#d3c6aa">imperative </tspan><tspan fill="#7a8478">(zwingend erforderlich)</tspan>
       </text>
     </g>
 
-    <!-- Status Bar / Footer -->
-    <rect x="21" y="635" width="878" height="34" rx="0" fill="#181b1d" />
-    <line x1="20" y1="635" x2="900" y2="635" stroke="#2d353b" stroke-width="1" />
-
-    <text x="40" y="657" font-size="11.5">
-      <tspan fill="#859289">[Global Matrix: zh ⇄ en · es ⇄ en · ja ⇄ en · fr ➔ en · de ➔ en]</tspan>
+    <!-- Bottom Metrics Banner -->
+    <rect x="21" y="660" width="878" height="40" rx="0" fill="#181b1d" />
+    <line x1="20" y1="660" x2="900" y2="660" stroke="#2d353b" stroke-width="1" />
+    <text x="45" y="685" fill="#859289" font-size="11">
+      <tspan fill="#a7c080">●</tspan> Zero Context Pollution  ·  
+      <tspan fill="#7fbbb3">●</tspan> 0ms Shield Fast-Bypass  ·  
+      <tspan fill="#dbbc7f">●</tspan> 50-Entry LRU Cache  ·  
+      <tspan fill="#e67e80">●</tspan> Dynamic Config-Driven Sovereignty
     </text>
-
-    <text x="880" y="657" text-anchor="end" font-size="11.5">
-      <tspan fill="#a7c080" font-weight="bold">⇄ [two ⇄ 二] Multi-Lingua Ready</tspan>
+    <text x="875" y="685" text-anchor="end" fill="#859289" font-size="11">
+      Universal Minimal Chrome · CJK 2-Cell Safe Left-Rail Layout
     </text>
   </g>
 </svg>
