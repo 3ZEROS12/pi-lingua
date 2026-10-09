@@ -428,7 +428,7 @@ export default function (pi: ExtensionAPI) {
 
   const switchLangHandler = async (args: string, ctx: ExtensionContext) => {
     const trimmed = args.trim().toLowerCase();
-    if (!trimmed) {
+    if (!trimmed || trimmed === "list" || trimmed === "help" || trimmed === "?") {
       const langList = [
         "• zh (中文 ➔ 英文)",
         "• ja (日本語 ➔ 英語)",
@@ -684,7 +684,12 @@ export default function (pi: ExtensionAPI) {
     handler: showStatusHandler,
   });
 
-  // 独立历史回显命令
+  // 独立历史回显命令 (支持直觉命令 /last 及全名)
+  pi.registerCommand("last", {
+    description: state.labels.cmdDescLast || "回看上一条伴学卡片: /last",
+    handler: showLastHandler,
+  });
+
   pi.registerCommand("lingual-last", {
     description: state.labels.cmdDescLast || "重新回看或重现上一条伴学卡片: /lingual-last",
     handler: showLastHandler,
@@ -705,16 +710,6 @@ export default function (pi: ExtensionAPI) {
         "info"
       );
     },
-  });
-
-  pi.registerCommand("lingual-last", {
-    description: state.labels.cmdDescLast || "重新回看或重现上一条伴学卡片: /lingual-last",
-    handler: showLastHandler,
-  });
-
-    pi.registerCommand("2-last", {
-    description: state.labels.cmdDescLast || "回看上一条伴学卡片 (别名)",
-    handler: showLastHandler,
   });
 
   if (typeof pi.registerShortcut === "function") {

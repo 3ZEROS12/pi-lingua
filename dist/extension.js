@@ -1819,7 +1819,7 @@ function extension_default(pi) {
   }
   const switchLangHandler = async (args, ctx) => {
     const trimmed = args.trim().toLowerCase();
-    if (!trimmed) {
+    if (!trimmed || trimmed === "list" || trimmed === "help" || trimmed === "?") {
       const langList = [
         "\u2022 zh (\u4E2D\u6587 \u2794 \u82F1\u6587)",
         "\u2022 ja (\u65E5\u672C\u8A9E \u2794 \u82F1\u8A9E)",
@@ -2012,6 +2012,10 @@ ${langList}
     description: state.labels.cmdDescStatus || "\u67E5\u770B\u4F34\u5B66\u63D2\u4EF6\u5F53\u524D\u72B6\u6001 (\u522B\u540D)",
     handler: showStatusHandler
   });
+  pi.registerCommand("last", {
+    description: state.labels.cmdDescLast || "\u56DE\u770B\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247: /last",
+    handler: showLastHandler
+  });
   pi.registerCommand("lingual-last", {
     description: state.labels.cmdDescLast || "\u91CD\u65B0\u56DE\u770B\u6216\u91CD\u73B0\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247: /lingual-last",
     handler: showLastHandler
@@ -2028,14 +2032,6 @@ ${langList}
         "info"
       );
     }
-  });
-  pi.registerCommand("lingual-last", {
-    description: state.labels.cmdDescLast || "\u91CD\u65B0\u56DE\u770B\u6216\u91CD\u73B0\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247: /lingual-last",
-    handler: showLastHandler
-  });
-  pi.registerCommand("2-last", {
-    description: state.labels.cmdDescLast || "\u56DE\u770B\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247 (\u522B\u540D)",
-    handler: showLastHandler
   });
   if (typeof pi.registerShortcut === "function") {
     pi.registerShortcut("alt+.", {

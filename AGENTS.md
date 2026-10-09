@@ -100,11 +100,33 @@ The Agent should proactively ask the user the following structured questions (in
   - STRICTLY FORBID hardcoding an arbitrary "1-2 words" cap. Surface as many valuable expressions as genuinely needed for the user's level.
   - **Terminal Vertical Height Guard**: To prevent the terminal HUD window from expanding vertically and pushing code off-screen, all extracted terms MUST be formatted compactly in a single horizontal inline stream: `term1 (concise native definition) · term2 (concise def) · term3 (concise def)`. Long paragraph explanations are strictly forbidden in the HUD.
 
+### 铁律 5：【开发者直觉工效学与零心智命令分发】(Command Bus Ergonomics & Anti-Swallowing Invariant · RFC 2119)
+- **First-Class Intuitive Registration**:
+  All natural, short commands that a developer instinctively types MUST be registered as first-class standalone commands: `/lang`, `/compact`, `/last` (alongside their namespaced aliases `/lingual-lang`, `/lingual-compact`, `/lingual-last`, `/2-lang`, `/2-compact`, `/2-last`).
+- **Master Command Dispatcher Required**:
+  The master commands (`/lingual` and `/2`) MUST implement sub-command routing (`masterCommandHandler`). Subcommands like `lang`, `model`, `compact`, `status`, `last`, `agent/help`, or direct language codes (`ja`, `zh`) MUST NEVER fall through into the default mode-cycling branch.
+- **Natural Language & Pair Normalization**:
+  Language switching MUST support natural aliases (`japanese`/`jp`/`日语` ➔ `ja`, `chinese`/`cn`/`中文` ➔ `zh`, `english`/`eng`/`英语` ➔ `en`) and language pair syntax (`/lang zh ja`, `/lang zh->en`). `targetLang` MUST be explicitly tracked in state and forwarded to `translatePrompt` to prevent `en ➔ en` translation loops.
+
+### 铁律 6：【0ms 确定性反馈与并发错峰防踩踏】(Deterministic UI Feedback & Concurrency Invariant · RFC 2119)
+- **Immediate Widget Teardown**:
+  Upon any new user input in `original` mode, the previous HUD widget MUST be physically dismissed immediately (`ctx.ui.setWidget("lingual_hud", undefined)`) and status set to `polishing...` to provide immediate deterministic feedback and eliminate frozen-screen illusions.
+- **Micro-Tick Staggering (80ms)**:
+  The background translation request in `original` mode MUST be staggered by 80ms (`setTimeout(..., 80)`) to allow the host session's primary prompt to complete socket handshake first, completely eliminating API gateway connection pool contention and serialization queues.
+- **Reasoning Effort Calibration**:
+  Model completers MUST use `reasoning: "low"` (capped at ~100 tokens / ~250ms burst) rather than `off` (which risks model parameter rejection) or `max` (which introduces 15-second latency).
+
+### 铁律 7：【物理级测试沙箱与零宿主环境泄露】(Multi-Probe Test Isolation Invariant · RFC 2119)
+- **Zero Host Mutation During Tests**:
+  `loadUserLingualConfig()` and `saveUserLingualConfig()` MUST detect test runners via multi-probe inspection (`isTestEnvironment()` checking `NODE_TEST_CONTEXT`, `process.execArgv` flags, and npm lifecycle events) and strictly avoid reading from or writing to `~/.pi/agent/settings.json` or `lingual.json`.
+- **SSOT Label Resolution Fallback**:
+  All annotation and layout formats MUST derive labels strictly from `resolveLabelsForLang(sourceLang)` as the Single Source of Truth, strictly forbidding naked hardcoded English fallback strings.
+
 ---
 
 ## 🛠️ Verification & Build Pipeline
 The Agent must physically run:
 1. `npm test`
 2. `npm run build`
-3. `node bin/lingua.js "<sample input in language A>"`
+3. `node ../.scripts/fleet.mjs test pi-lingua`
 Then report the physical output and prompt the user to restart the terminal.

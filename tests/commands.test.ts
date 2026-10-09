@@ -30,6 +30,7 @@ test("extension command matrix - registers standardized lingual command suite", 
   // Standalone intuitive developer commands
   assert.ok(registeredCommands["lang"], "Must register standalone /lang");
   assert.ok(registeredCommands["compact"], "Must register standalone /compact");
+  assert.ok(registeredCommands["last"], "Must register standalone /last");
 
   // Compatibility aliases
   assert.ok(registeredCommands["2"], "Must retain /2 alias");
