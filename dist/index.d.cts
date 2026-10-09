@@ -263,6 +263,7 @@ declare function getVisualWidth(str: string): number;
 /**
  * Robust ANSI-safe CJK & Latin visual text wrapper:
  * Breaks cleanly at word boundaries for Latin words, and character boundaries for CJK.
+ * Implements strict Kinsoku Shori (标点禁则处理) to guarantee that punctuation marks never orphan at the start of a line!
  */
 declare function wrapVisualText(text: string, maxWidth: number): string[];
 /**

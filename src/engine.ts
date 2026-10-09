@@ -253,12 +253,22 @@ export function getVisualWidth(str: string): number {
 }
 
 /**
+ * 禁则处理标点集合：绝对禁止出现在行首的标点符号
+ */
+const CANNOT_START_LINE_CHARS = new Set([
+  ",", ".", ";", "!", "?", ":",
+  "，", "。", "；", "！", "？", "：", "、",
+  ")", "]", "}", "）", "】", "”", "’", "»"
+]);
+
+/**
  * Robust ANSI-safe CJK & Latin visual text wrapper:
  * Breaks cleanly at word boundaries for Latin words, and character boundaries for CJK.
+ * Implements strict Kinsoku Shori (标点禁则处理) to guarantee that punctuation marks never orphan at the start of a line!
  */
 export function wrapVisualText(text: string, maxWidth: number): string[] {
   if (maxWidth <= 0) return [text];
-  const lines: string[] = [];
+  const rawLines: string[] = [];
   let currentLine = "";
   let currentWidth = 0;
 
@@ -279,20 +289,38 @@ export function wrapVisualText(text: string, maxWidth: number): string[] {
       currentWidth += tokenWidth;
     } else {
       if (currentLine === "") {
-        lines.push(token);
+        rawLines.push(token);
         continue;
       }
-      lines.push(currentLine.trimEnd());
+      rawLines.push(currentLine.trimEnd());
       currentLine = token.trimStart();
       currentWidth = getVisualWidth(currentLine);
     }
   }
 
   if (currentLine.trim()) {
-    lines.push(currentLine.trimEnd());
+    rawLines.push(currentLine.trimEnd());
   }
 
-  return lines;
+  // 标点禁则后处理：若某一行以标点符号开头，强行将其吸附到上一行行尾！
+  const lines: string[] = [];
+  for (let i = 0; i < rawLines.length; i++) {
+    let line = rawLines[i];
+    if (i > 0 && line.length > 0) {
+      const firstChar = line[0];
+      if (CANNOT_START_LINE_CHARS.has(firstChar)) {
+        // 将标点吸附到上一行
+        const prevIdx = lines.length - 1;
+        lines[prevIdx] = lines[prevIdx] + firstChar;
+        line = line.slice(1).trimStart();
+      }
+    }
+    if (line.trim()) {
+      lines.push(line);
+    }
+  }
+
+  return lines.length > 0 ? lines : [text];
 }
 
 /**

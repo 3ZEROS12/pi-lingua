@@ -1032,9 +1032,32 @@ function getVisualWidth(str) {
   }
   return width;
 }
+var CANNOT_START_LINE_CHARS = /* @__PURE__ */ new Set([
+  ",",
+  ".",
+  ";",
+  "!",
+  "?",
+  ":",
+  "\uFF0C",
+  "\u3002",
+  "\uFF1B",
+  "\uFF01",
+  "\uFF1F",
+  "\uFF1A",
+  "\u3001",
+  ")",
+  "]",
+  "}",
+  "\uFF09",
+  "\u3011",
+  "\u201D",
+  "\u2019",
+  "\xBB"
+]);
 function wrapVisualText(text, maxWidth) {
   if (maxWidth <= 0) return [text];
-  const lines = [];
+  const rawLines = [];
   let currentLine = "";
   let currentWidth = 0;
   const tokenRegex = /\x1b\[[0-9;]*[a-zA-Z]|\s+|[\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af]|[^\s\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af\x1b]+/g;
@@ -1051,18 +1074,33 @@ function wrapVisualText(text, maxWidth) {
       currentWidth += tokenWidth;
     } else {
       if (currentLine === "") {
-        lines.push(token);
+        rawLines.push(token);
         continue;
       }
-      lines.push(currentLine.trimEnd());
+      rawLines.push(currentLine.trimEnd());
       currentLine = token.trimStart();
       currentWidth = getVisualWidth(currentLine);
     }
   }
   if (currentLine.trim()) {
-    lines.push(currentLine.trimEnd());
+    rawLines.push(currentLine.trimEnd());
   }
-  return lines;
+  const lines = [];
+  for (let i = 0; i < rawLines.length; i++) {
+    let line = rawLines[i];
+    if (i > 0 && line.length > 0) {
+      const firstChar = line[0];
+      if (CANNOT_START_LINE_CHARS.has(firstChar)) {
+        const prevIdx = lines.length - 1;
+        lines[prevIdx] = lines[prevIdx] + firstChar;
+        line = line.slice(1).trimStart();
+      }
+    }
+    if (line.trim()) {
+      lines.push(line);
+    }
+  }
+  return lines.length > 0 ? lines : [text];
 }
 function formatTreeBranch(branchChar, contChar, tag, content, prefixDecorator = (s) => s, tagDecorator = (s) => s, contDecorator = (s) => s, lineDecorator = (s) => s, maxCols = (process.stdout.columns || 80) - 8) {
   const actualLineDecorator = typeof lineDecorator === "function" ? lineDecorator : (s) => s;
@@ -1322,7 +1360,10 @@ function sanitizePromptForTranslation(raw) {
       naturalCharsLength: 0
     };
   }
-  let text = trimmed.replace(CLIPBOARD_IMAGE_REGEX, "").trim();
+  let text = trimmed;
+  while (CLIPBOARD_IMAGE_REGEX.test(text)) {
+    text = text.replace(CLIPBOARD_IMAGE_REGEX, "").trim();
+  }
   if (!text) {
     return {
       distilledText: "",

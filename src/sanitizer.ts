@@ -48,8 +48,11 @@ export function sanitizePromptForTranslation(raw: string): SanitizedPromptResult
     };
   }
 
-  // 1. 剥离图片路径前缀
-  let text = trimmed.replace(CLIPBOARD_IMAGE_REGEX, "").trim();
+  // 1. 循环剥离所有图片/附件路径前缀 (支持连续排队多张截图)
+  let text = trimmed;
+  while (CLIPBOARD_IMAGE_REGEX.test(text)) {
+    text = text.replace(CLIPBOARD_IMAGE_REGEX, "").trim();
+  }
   if (!text) {
     return {
       distilledText: "",

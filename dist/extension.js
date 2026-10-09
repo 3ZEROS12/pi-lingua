@@ -913,9 +913,32 @@ function getVisualWidth(str) {
   }
   return width;
 }
+var CANNOT_START_LINE_CHARS = /* @__PURE__ */ new Set([
+  ",",
+  ".",
+  ";",
+  "!",
+  "?",
+  ":",
+  "\uFF0C",
+  "\u3002",
+  "\uFF1B",
+  "\uFF01",
+  "\uFF1F",
+  "\uFF1A",
+  "\u3001",
+  ")",
+  "]",
+  "}",
+  "\uFF09",
+  "\u3011",
+  "\u201D",
+  "\u2019",
+  "\xBB"
+]);
 function wrapVisualText(text, maxWidth) {
   if (maxWidth <= 0) return [text];
-  const lines = [];
+  const rawLines = [];
   let currentLine = "";
   let currentWidth = 0;
   const tokenRegex = /\x1b\[[0-9;]*[a-zA-Z]|\s+|[\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af]|[^\s\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af\x1b]+/g;
@@ -932,18 +955,33 @@ function wrapVisualText(text, maxWidth) {
       currentWidth += tokenWidth;
     } else {
       if (currentLine === "") {
-        lines.push(token);
+        rawLines.push(token);
         continue;
       }
-      lines.push(currentLine.trimEnd());
+      rawLines.push(currentLine.trimEnd());
       currentLine = token.trimStart();
       currentWidth = getVisualWidth(currentLine);
     }
   }
   if (currentLine.trim()) {
-    lines.push(currentLine.trimEnd());
+    rawLines.push(currentLine.trimEnd());
   }
-  return lines;
+  const lines = [];
+  for (let i = 0; i < rawLines.length; i++) {
+    let line = rawLines[i];
+    if (i > 0 && line.length > 0) {
+      const firstChar = line[0];
+      if (CANNOT_START_LINE_CHARS.has(firstChar)) {
+        const prevIdx = lines.length - 1;
+        lines[prevIdx] = lines[prevIdx] + firstChar;
+        line = line.slice(1).trimStart();
+      }
+    }
+    if (line.trim()) {
+      lines.push(line);
+    }
+  }
+  return lines.length > 0 ? lines : [text];
 }
 function formatTreeBranch(branchChar, contChar, tag, content, prefixDecorator = (s) => s, tagDecorator = (s) => s, contDecorator = (s) => s, lineDecorator = (s) => s, maxCols = (process.stdout.columns || 80) - 8) {
   const actualLineDecorator = typeof lineDecorator === "function" ? lineDecorator : (s) => s;
@@ -1218,7 +1256,10 @@ function sanitizePromptForTranslation(raw) {
       naturalCharsLength: 0
     };
   }
-  let text = trimmed.replace(CLIPBOARD_IMAGE_REGEX, "").trim();
+  let text = trimmed;
+  while (CLIPBOARD_IMAGE_REGEX.test(text)) {
+    text = text.replace(CLIPBOARD_IMAGE_REGEX, "").trim();
+  }
   if (!text) {
     return {
       distilledText: "",
@@ -1439,10 +1480,12 @@ function renderHudWidget(ctx, sourceText, spoken, written, vocab, spokenMeaning,
   } else {
     const wrapped = wrapVisualText(cleanSource, Math.max(20, maxCols - prefixW));
     sourceLines = wrapped.map((wLine, idx) => {
+      const isLast = idx === wrapped.length - 1;
+      const tagSuffix = isLast ? pageTag : "";
       if (idx === 0) {
-        return ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", sourceTag) + ctx.ui.theme.fg("muted", "] ") + wLine + pageTag;
+        return ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", sourceTag) + ctx.ui.theme.fg("muted", "] ") + wLine + tagSuffix;
       }
-      return " ".repeat(prefixW) + ctx.ui.theme.fg("dim", wLine);
+      return " ".repeat(prefixW) + ctx.ui.theme.fg("dim", wLine) + tagSuffix;
     });
   }
   let lines = [...sourceLines];
@@ -1466,67 +1509,38 @@ function renderHudWidget(ctx, sourceText, spoken, written, vocab, spokenMeaning,
   if (hasVocab) {
     lines.push(...formatTreeBranch("\u2514", " ", vocabTag, vocab, pMuted, pMuted, pMuted, pDim, maxCols));
   }
-  const HARD_MAX_LINES = 8;
+  const HARD_MAX_LINES = 9;
   if (lines.length > HARD_MAX_LINES) {
-    const t1Lines = [...sourceLines];
-    const spT1 = spokenMeaning ? `${spoken} (${spokenMeaning})` : spoken;
-    t1Lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spT1, pMuted, pAccent, pMuted, (s) => s, maxCols));
+    const inlineLines = [...sourceLines];
+    const spInline = spokenMeaning ? `${spoken} (${spokenMeaning})` : spoken;
+    inlineLines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spInline, pMuted, pAccent, pMuted, (s) => s, maxCols));
     if (hasWritten) {
       const branchChar = hasVocab ? "\u251C" : "\u2514";
       const contChar = hasVocab ? "\u2502" : " ";
-      const wrT1 = writtenMeaning ? `${written} (${writtenMeaning})` : written || "";
-      t1Lines.push(...formatTreeBranch(branchChar, contChar, slot2, wrT1, pMuted, pAccent, pMuted, (s) => s, maxCols));
+      const wrInline = writtenMeaning ? `${written} (${writtenMeaning})` : written || "";
+      inlineLines.push(...formatTreeBranch(branchChar, contChar, slot2, wrInline, pMuted, pAccent, pMuted, (s) => s, maxCols));
     }
     if (hasVocab) {
-      t1Lines.push(...formatTreeBranch("\u2514", " ", vocabTag, vocab, pMuted, pMuted, pMuted, pDim, maxCols));
+      inlineLines.push(...formatTreeBranch("\u2514", " ", vocabTag, vocab, pMuted, pMuted, pMuted, pDim, maxCols));
     }
-    if (t1Lines.length <= HARD_MAX_LINES) {
-      lines = t1Lines;
+    if (inlineLines.length <= HARD_MAX_LINES) {
+      lines = inlineLines;
     } else {
-      const t2Lines = [...sourceLines];
-      t2Lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, displaySpoken, pMuted, pAccent, pMuted, (s) => s, maxCols));
-      if (hasWritten) {
-        const branchChar = hasVocab ? "\u251C" : "\u2514";
-        const contChar = hasVocab ? "\u2502" : " ";
-        t2Lines.push(...formatTreeBranch(branchChar, contChar, slot2, displayWritten, pMuted, pAccent, pMuted, (s) => s, maxCols));
-      }
-      if (hasVocab) {
-        t2Lines.push(...formatTreeBranch("\u2514", " ", vocabTag, vocab, pMuted, pMuted, pMuted, pDim, maxCols));
-      }
-      if (t2Lines.length <= HARD_MAX_LINES) {
-        lines = t2Lines;
-      } else {
-        const t3Lines = [];
-        if (sourceLines.length > 2) {
-          t3Lines.push(sourceLines[0]);
-          t3Lines.push(sourceLines[1]);
-        } else {
-          t3Lines.push(...sourceLines);
+      const capsuleText = formatCapsuleLine(
+        state.labels.hudTitle,
+        spoken,
+        written,
+        {
+          slot1Short: state.labels.capsuleSlot1Prefix || slot1,
+          slot2Short: state.labels.capsuleSlot2Prefix || slot2,
+          maxCols: process.stdout?.columns || 80
         }
-        t3Lines.push(...formatTreeBranch(hasWritten ? "\u250C" : "\u2514", hasWritten ? "\u2502" : " ", slot1, displaySpoken, pMuted, pAccent, pMuted, (s) => s, maxCols));
-        if (hasWritten) {
-          t3Lines.push(...formatTreeBranch("\u2514", " ", slot2, displayWritten, pMuted, pAccent, pMuted, (s) => s, maxCols));
-        }
-        if (t3Lines.length <= HARD_MAX_LINES) {
-          lines = t3Lines;
-        } else {
-          const capsuleText = formatCapsuleLine(
-            state.labels.hudTitle,
-            spoken,
-            written,
-            {
-              slot1Short: state.labels.capsuleSlot1Prefix || slot1,
-              slot2Short: state.labels.capsuleSlot2Prefix || slot2,
-              maxCols: process.stdout?.columns || 80
-            }
-          );
-          lines = [capsuleText + pageTag];
-        }
-      }
+      );
+      lines = [capsuleText + pageTag];
     }
   }
-  if (lines.length > HARD_MAX_LINES) {
-    lines = lines.slice(0, HARD_MAX_LINES);
+  if (lines.length > 9) {
+    lines = lines.slice(0, 9);
   }
   ctx.ui.setWidget("lingua_hud", lines, { placement: "aboveEditor" });
 }
@@ -1790,7 +1804,7 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
           }
         );
         const timeoutPromise = new Promise(
-          (_, reject) => setTimeout(() => reject(new Error("Lingua translation timed out")), 8e3)
+          (_, reject) => setTimeout(() => reject(new Error("Lingua translation timed out")), 3e4)
         );
         const res = await Promise.race([stream.result(), timeoutPromise]);
         if (!res) return null;
@@ -1858,12 +1872,22 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
             }
           } else {
             if (ctx.hasUI) {
-              ctx.ui.setWidget("lingua_hud", void 0);
+              const cleanFirst = chunks[0].replace(/\r?\n+/g, " ").trim();
+              const fallbackLines = [
+                ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", state.labels.sourceLabel) + ctx.ui.theme.fg("muted", "] ") + cleanFirst,
+                ctx.ui.theme.fg("muted", "  \u250C ") + ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) + ctx.ui.theme.fg("dim", "(\u4F34\u5B66\u751F\u6210\u7A0D\u6709\u5EF6\u8FDF\uFF0C\u7A7A\u95F2\u65F6\u952E\u5165 /2-last \u5373\u53EF\u91CD\u65B0\u83B7\u53D6)")
+              ];
+              ctx.ui.setWidget("lingua_hud", fallbackLines, { placement: "aboveEditor" });
             }
           }
         }).catch(() => {
           if (requestId === currentRequestId && ctx.hasUI) {
-            ctx.ui.setWidget("lingua_hud", void 0);
+            const cleanFirst = chunks[0].replace(/\r?\n+/g, " ").trim();
+            const fallbackLines = [
+              ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", state.labels.sourceLabel) + ctx.ui.theme.fg("muted", "] ") + cleanFirst,
+              ctx.ui.theme.fg("muted", "  \u250C ") + ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) + ctx.ui.theme.fg("dim", "(\u4F34\u5B66\u751F\u6210\u7A0D\u6709\u5EF6\u8FDF\uFF0C\u7A7A\u95F2\u65F6\u952E\u5165 /2-last \u5373\u53EF\u91CD\u65B0\u83B7\u53D6)")
+            ];
+            ctx.ui.setWidget("lingua_hud", fallbackLines, { placement: "aboveEditor" });
           }
         }).finally(() => {
           if (requestId === currentRequestId) {
@@ -1888,12 +1912,22 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
             }
           } else {
             if (ctx.hasUI) {
-              ctx.ui.setWidget("lingua_hud", void 0);
+              const cleanFirst = chunks[0].replace(/\r?\n+/g, " ").trim();
+              const fallbackLines = [
+                ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", state.labels.sourceLabel) + ctx.ui.theme.fg("muted", "] ") + cleanFirst,
+                ctx.ui.theme.fg("muted", "  \u250C ") + ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) + ctx.ui.theme.fg("dim", "(\u4F34\u5B66\u751F\u6210\u7A0D\u6709\u5EF6\u8FDF\uFF0C\u7A7A\u95F2\u65F6\u952E\u5165 /2-last \u5373\u53EF\u91CD\u65B0\u83B7\u53D6)")
+              ];
+              ctx.ui.setWidget("lingua_hud", fallbackLines, { placement: "aboveEditor" });
             }
           }
         }).catch(() => {
           if (requestId === currentRequestId && ctx.hasUI) {
-            ctx.ui.setWidget("lingua_hud", void 0);
+            const cleanFirst = chunks[0].replace(/\r?\n+/g, " ").trim();
+            const fallbackLines = [
+              ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", state.labels.sourceLabel) + ctx.ui.theme.fg("muted", "] ") + cleanFirst,
+              ctx.ui.theme.fg("muted", "  \u250C ") + ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) + ctx.ui.theme.fg("dim", "(\u4F34\u5B66\u751F\u6210\u7A0D\u6709\u5EF6\u8FDF\uFF0C\u7A7A\u95F2\u65F6\u952E\u5165 /2-last \u5373\u53EF\u91CD\u65B0\u83B7\u53D6)")
+            ];
+            ctx.ui.setWidget("lingua_hud", fallbackLines, { placement: "aboveEditor" });
           }
         }).finally(() => {
           if (requestId === currentRequestId) {

@@ -211,9 +211,11 @@ function renderHudWidget(
       ctx.ui.theme.fg("muted", "  · ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", sourceTag) + ctx.ui.theme.fg("muted", "] ") + cleanSource + pageTag,
     ];
   } else {
-    // 超过可用宽度时采用悬挂缩进自然折行，保证每一页原句完整展示，零省略号
+    // 超过可用宽度时采用悬挂缩进自然折行；翻页角标挂在最后一行末尾，防止第一行被挤压腰斩！
     const wrapped = wrapVisualText(cleanSource, Math.max(20, maxCols - prefixW));
     sourceLines = wrapped.map((wLine, idx) => {
+      const isLast = idx === wrapped.length - 1;
+      const tagSuffix = isLast ? pageTag : "";
       if (idx === 0) {
         return (
           ctx.ui.theme.fg("muted", "  · ") +
@@ -221,10 +223,10 @@ function renderHudWidget(
           ctx.ui.theme.fg("dim", sourceTag) +
           ctx.ui.theme.fg("muted", "] ") +
           wLine +
-          pageTag
+          tagSuffix
         );
       }
-      return " ".repeat(prefixW) + ctx.ui.theme.fg("dim", wLine);
+      return " ".repeat(prefixW) + ctx.ui.theme.fg("dim", wLine) + tagSuffix;
     });
   }
 
@@ -254,86 +256,54 @@ function renderHudWidget(
     }
   }
 
-  // 3. 重点词汇分支：对每行独立应用 pDim 装饰器，彻底解决折行时 ANSI SGR 重置引发的颜色断裂问题
+  // 3. 重点词汇分支：对每行独立应用 pDim 装饰器
   if (hasVocab) {
     lines.push(...formatTreeBranch("└", " ", vocabTag, vocab!, pMuted, pMuted, pMuted, pDim, maxCols));
   }
 
-  // 4. 动态行数坚不可摧守卫 (Bulletproof Tiered Hard Budget Guard)
-  // Pi host widget 的物理截断硬上限为 10 行。
-  // 为了 100% 物理杜绝 "... (widget truncated)"，我们严格将最大行数预算约束在 <= 8 行 (保留 2 行绝对安全冗余)！
-  const HARD_MAX_LINES = 8;
+  // 4. 动态行数守卫 (遵循伴学核心灵魂：绝不剥离母语语感，绝不删除重点词汇)
+  // Pi host widget 的物理截断上限为 10 行。
+  // 若全展开超过 9 行，优雅将语感内联进双模括号；若极端超长，平滑降级为单行胶囊模式，彻底杜绝内容残缺！
+  const HARD_MAX_LINES = 9;
 
   if (lines.length > HARD_MAX_LINES) {
-    // Tier 1: 内联母语语感释义入括号 (收起独立的 subRail 语感导轨行)
-    const t1Lines: string[] = [...sourceLines];
-    const spT1 = spokenMeaning ? `${spoken} (${spokenMeaning})` : spoken;
-    t1Lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spT1, pMuted, pAccent, pMuted, s => s, maxCols));
+    // 优雅内联：双模括号包含完整母语语感，重点词汇依然完整保留
+    const inlineLines: string[] = [...sourceLines];
+    const spInline = spokenMeaning ? `${spoken} (${spokenMeaning})` : spoken;
+    inlineLines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spInline, pMuted, pAccent, pMuted, s => s, maxCols));
+
     if (hasWritten) {
       const branchChar = hasVocab ? "├" : "└";
       const contChar = hasVocab ? "│" : " ";
-      const wrT1 = writtenMeaning ? `${written} (${writtenMeaning})` : (written || "");
-      t1Lines.push(...formatTreeBranch(branchChar, contChar, slot2, wrT1, pMuted, pAccent, pMuted, s => s, maxCols));
+      const wrInline = writtenMeaning ? `${written} (${writtenMeaning})` : (written || "");
+      inlineLines.push(...formatTreeBranch(branchChar, contChar, slot2, wrInline, pMuted, pAccent, pMuted, s => s, maxCols));
     }
+
     if (hasVocab) {
-      t1Lines.push(...formatTreeBranch("└", " ", vocabTag, vocab!, pMuted, pMuted, pMuted, pDim, maxCols));
+      inlineLines.push(...formatTreeBranch("└", " ", vocabTag, vocab!, pMuted, pMuted, pMuted, pDim, maxCols));
     }
 
-    if (t1Lines.length <= HARD_MAX_LINES) {
-      lines = t1Lines;
+    if (inlineLines.length <= HARD_MAX_LINES) {
+      lines = inlineLines;
     } else {
-      // Tier 2: 句子本身过长或屏幕极窄，剥离括号中的长篇母语释义，只保留精纯目标语 spoken 和 written
-      const t2Lines: string[] = [...sourceLines];
-      t2Lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, displaySpoken, pMuted, pAccent, pMuted, s => s, maxCols));
-      if (hasWritten) {
-        const branchChar = hasVocab ? "├" : "└";
-        const contChar = hasVocab ? "│" : " ";
-        t2Lines.push(...formatTreeBranch(branchChar, contChar, slot2, displayWritten!, pMuted, pAccent, pMuted, s => s, maxCols));
-      }
-      if (hasVocab) {
-        t2Lines.push(...formatTreeBranch("└", " ", vocabTag, vocab!, pMuted, pMuted, pMuted, pDim, maxCols));
-      }
-
-      if (t2Lines.length <= HARD_MAX_LINES) {
-        lines = t2Lines;
-      } else {
-        // Tier 3: 进一步省略重点词汇行，原文最多保留 2 行
-        const t3Lines: string[] = [];
-        if (sourceLines.length > 2) {
-          t3Lines.push(sourceLines[0]);
-          t3Lines.push(sourceLines[1]);
-        } else {
-          t3Lines.push(...sourceLines);
+      // 极端窄屏或超长语句：优雅降级为单行胶囊模式，保留最纯粹双模流，绝不输出光秃秃的残缺卡片
+      const capsuleText = formatCapsuleLine(
+        state.labels.hudTitle,
+        spoken,
+        written,
+        {
+          slot1Short: state.labels.capsuleSlot1Prefix || slot1,
+          slot2Short: state.labels.capsuleSlot2Prefix || slot2,
+          maxCols: process.stdout?.columns || 80,
         }
-        t3Lines.push(...formatTreeBranch(hasWritten ? "┌" : "└", hasWritten ? "│" : " ", slot1, displaySpoken, pMuted, pAccent, pMuted, s => s, maxCols));
-        if (hasWritten) {
-          t3Lines.push(...formatTreeBranch("└", " ", slot2, displayWritten!, pMuted, pAccent, pMuted, s => s, maxCols));
-        }
-
-        if (t3Lines.length <= HARD_MAX_LINES) {
-          lines = t3Lines;
-        } else {
-          // Tier 4: 极端长句/超窄屏，优雅降级为单行胶囊模式 (1-Line Capsule Mode)，严格 1 行！
-          const capsuleText = formatCapsuleLine(
-            state.labels.hudTitle,
-            spoken,
-            written,
-            {
-              slot1Short: state.labels.capsuleSlot1Prefix || slot1,
-              slot2Short: state.labels.capsuleSlot2Prefix || slot2,
-              maxCols: process.stdout?.columns || 80,
-            }
-          );
-          lines = [capsuleText + pageTag];
-        }
-      }
+      );
+      lines = [capsuleText + pageTag];
     }
   }
 
-  // 终极物理拦截底线 (Ultimate Physical Safety Redline)
-  // 无论发生何种异常折行计算，送入宿主的行数绝对不能超过 HARD_MAX_LINES
-  if (lines.length > HARD_MAX_LINES) {
-    lines = lines.slice(0, HARD_MAX_LINES);
+  // 终极绝对安全切片保护
+  if (lines.length > 9) {
+    lines = lines.slice(0, 9);
   }
 
   ctx.ui.setWidget("lingua_hud", lines, { placement: "aboveEditor" });
@@ -654,9 +624,9 @@ export default function (pi: ExtensionAPI) {
           } as any
         );
 
-        // 【关键保护 2】：设置 8s 超时熔断保护，防止上游网络死锁或挂起阻塞用户终端输入
+        // 【关键保护 2】：设置 30s 充裕超时保护，防止上游网络死锁或挂起阻塞用户终端输入，同时避免并发排队时虚假超时
         const timeoutPromise = new Promise<null>((_, reject) =>
-          setTimeout(() => reject(new Error("Lingua translation timed out")), 8000)
+          setTimeout(() => reject(new Error("Lingua translation timed out")), 30000)
         );
         const res = (await Promise.race([stream.result(), timeoutPromise])) as any;
         if (!res) return null;
@@ -759,15 +729,37 @@ export default function (pi: ExtensionAPI) {
                 );
               }
             } else {
-              // 【关键体验防线 3 · 失败优雅清空】：若推理超时或返回 null，立即清空骨架屏，绝不留脏卡片
+              // 失败/延迟优雅沉降：绝不神经质地闪退消失小部件，平稳保留原句锚点
               if (ctx.hasUI) {
-                ctx.ui.setWidget("lingua_hud", undefined);
+                const cleanFirst = chunks[0].replace(/\r?\n+/g, " ").trim();
+                const fallbackLines = [
+                  ctx.ui.theme.fg("muted", "  · ") +
+                    ctx.ui.theme.fg("muted", "[") +
+                    ctx.ui.theme.fg("dim", state.labels.sourceLabel) +
+                    ctx.ui.theme.fg("muted", "] ") +
+                    cleanFirst,
+                  ctx.ui.theme.fg("muted", "  ┌ ") +
+                    ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) +
+                    ctx.ui.theme.fg("dim", "(伴学生成稍有延迟，空闲时键入 /2-last 即可重新获取)"),
+                ];
+                ctx.ui.setWidget("lingua_hud", fallbackLines, { placement: "aboveEditor" });
               }
             }
           })
           .catch(() => {
             if (requestId === currentRequestId && ctx.hasUI) {
-              ctx.ui.setWidget("lingua_hud", undefined);
+              const cleanFirst = chunks[0].replace(/\r?\n+/g, " ").trim();
+              const fallbackLines = [
+                ctx.ui.theme.fg("muted", "  · ") +
+                  ctx.ui.theme.fg("muted", "[") +
+                  ctx.ui.theme.fg("dim", state.labels.sourceLabel) +
+                  ctx.ui.theme.fg("muted", "] ") +
+                  cleanFirst,
+                ctx.ui.theme.fg("muted", "  ┌ ") +
+                  ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) +
+                  ctx.ui.theme.fg("dim", "(伴学生成稍有延迟，空闲时键入 /2-last 即可重新获取)"),
+              ];
+              ctx.ui.setWidget("lingua_hud", fallbackLines, { placement: "aboveEditor" });
             }
           })
           .finally(() => {
@@ -795,13 +787,35 @@ export default function (pi: ExtensionAPI) {
               }
             } else {
               if (ctx.hasUI) {
-                ctx.ui.setWidget("lingua_hud", undefined);
+                const cleanFirst = chunks[0].replace(/\r?\n+/g, " ").trim();
+                const fallbackLines = [
+                  ctx.ui.theme.fg("muted", "  · ") +
+                    ctx.ui.theme.fg("muted", "[") +
+                    ctx.ui.theme.fg("dim", state.labels.sourceLabel) +
+                    ctx.ui.theme.fg("muted", "] ") +
+                    cleanFirst,
+                  ctx.ui.theme.fg("muted", "  ┌ ") +
+                    ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) +
+                    ctx.ui.theme.fg("dim", "(伴学生成稍有延迟，空闲时键入 /2-last 即可重新获取)"),
+                ];
+                ctx.ui.setWidget("lingua_hud", fallbackLines, { placement: "aboveEditor" });
               }
             }
           })
           .catch(() => {
             if (requestId === currentRequestId && ctx.hasUI) {
-              ctx.ui.setWidget("lingua_hud", undefined);
+              const cleanFirst = chunks[0].replace(/\r?\n+/g, " ").trim();
+              const fallbackLines = [
+                ctx.ui.theme.fg("muted", "  · ") +
+                  ctx.ui.theme.fg("muted", "[") +
+                  ctx.ui.theme.fg("dim", state.labels.sourceLabel) +
+                  ctx.ui.theme.fg("muted", "] ") +
+                  cleanFirst,
+                ctx.ui.theme.fg("muted", "  ┌ ") +
+                  ctx.ui.theme.fg("accent", `[${state.labels.slot1Label}]   `) +
+                  ctx.ui.theme.fg("dim", "(伴学生成稍有延迟，空闲时键入 /2-last 即可重新获取)"),
+              ];
+              ctx.ui.setWidget("lingua_hud", fallbackLines, { placement: "aboveEditor" });
             }
           })
           .finally(() => {
