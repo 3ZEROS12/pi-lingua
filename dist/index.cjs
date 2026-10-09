@@ -124,7 +124,16 @@ var LANGUAGE_PRESETS = {
     modelFollowSession: "\u8DDF\u968F\u4F1A\u8BDD",
     modelAvailableListHeader: "\u53EF\u7528\u6A21\u578B (\u8F93\u5165 /lingual-model <id> \u5207\u6362):",
     modelAutoFollowDesc: "auto (\u81EA\u52A8\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD\u4E3B\u6A21\u578B)",
-    modelSelectHint: "\u53EF\u8F93\u5165 /lingual-model <model-id> \u6216 auto \u6307\u5B9A\u4F34\u5B66\u6A21\u578B\u3002"
+    modelSelectHint: "\u53EF\u8F93\u5165 /lingual-model <model-id> \u6216 auto \u6307\u5B9A\u4F34\u5B66\u6A21\u578B\u3002",
+    langUsageHint: "\u7528\u6CD5: /lang <zh|ja|en|es|fr|de> [target] (\u5982 /lang ja \u6216 /lang zh ja)",
+    langList: [
+      "\u2022 zh (\u4E2D\u6587 \u2794 \u82F1\u6587)",
+      "\u2022 ja (\u65E5\u672C\u8A9E \u2794 \u82F1\u8A9E)",
+      "\u2022 en (\u82F1\u6587 \u2794 \u65E5\u6587)",
+      "\u2022 es (\u897F\u73ED\u7259\u6587 \u2794 \u82F1\u6587)",
+      "\u2022 fr (\u6CD5\u6587 \u2794 \u82F1\u6587)",
+      "\u2022 de (\u5FB7\u6587 \u2794 \u82F1\u6587)"
+    ]
   },
   ja: {
     slot1Label: "\u53E3\u8A9E",
@@ -176,7 +185,16 @@ var LANGUAGE_PRESETS = {
     modelFollowSession: "\u30BB\u30C3\u30B7\u30E7\u30F3\u9023\u52D5",
     modelAvailableListHeader: "\u5229\u7528\u53EF\u80FD\u306A\u30E2\u30C7\u30EB (/lingual-model <id> \u3067\u5207\u66FF):",
     modelAutoFollowDesc: "auto (\u30BB\u30C3\u30B7\u30E7\u30F3\u306E\u4E3B\u30E2\u30C7\u30EB\u306B\u81EA\u52D5\u8FFD\u5F93)",
-    modelSelectHint: "/lingual-model <model-id> \u307E\u305F\u306F auto \u3092\u5165\u529B\u3057\u3066\u30E2\u30C7\u30EB\u3092\u6307\u5B9A\u3067\u304D\u307E\u3059\u3002"
+    modelSelectHint: "/lingual-model <model-id> \u307E\u305F\u306F auto \u3092\u5165\u529B\u3057\u3066\u30E2\u30C7\u30EB\u3092\u6307\u5B9A\u3067\u304D\u307E\u3059\u3002",
+    langUsageHint: "\u4F7F\u3044\u65B9: /lang <zh|ja|en|es|fr|de> [target] (\u4F8B: /lang ja \u307E\u305F\u306F /lang zh ja)",
+    langList: [
+      "\u2022 zh (\u4E2D\u56FD\u8A9E \u2794 \u82F1\u8A9E)",
+      "\u2022 ja (\u65E5\u672C\u8A9E \u2794 \u82F1\u8A9E)",
+      "\u2022 en (\u82F1\u8A9E \u2794 \u65E5\u672C\u8A9E)",
+      "\u2022 es (\u30B9\u30DA\u30A4\u30F3\u8A9E \u2794 \u82F1\u8A9E)",
+      "\u2022 fr (\u30D5\u30E9\u30F3\u30B9\u8A9E \u2794 \u82F1\u8A9E)",
+      "\u2022 de (\u30C9\u30A4\u30C4\u8A9E \u2794 \u82F1\u8A9E)"
+    ]
   },
   en: {
     slot1Label: "Spoken",
@@ -228,7 +246,16 @@ var LANGUAGE_PRESETS = {
     modelFollowSession: "Follow session",
     modelAvailableListHeader: "Available models (run /lingual-model <id> to switch):",
     modelAutoFollowDesc: "auto (Automatically follows active session model)",
-    modelSelectHint: "Run /lingual-model <model-id> or auto to designate a model."
+    modelSelectHint: "Run /lingual-model <model-id> or auto to designate a model.",
+    langUsageHint: "Usage: /lang <zh|ja|en|es|fr|de> [target] (e.g. /lang ja or /lang zh ja)",
+    langList: [
+      "\u2022 zh (Chinese \u2794 English)",
+      "\u2022 ja (Japanese \u2794 English)",
+      "\u2022 en (English \u2794 Japanese)",
+      "\u2022 es (Spanish \u2794 English)",
+      "\u2022 fr (French \u2794 English)",
+      "\u2022 de (German \u2794 English)"
+    ]
   },
   es: {
     slot1Label: "Coloquial",
@@ -280,7 +307,16 @@ var LANGUAGE_PRESETS = {
     modelFollowSession: "Siguiendo sesi\xF3n",
     modelAvailableListHeader: "Modelos disponibles (ejecute /lingual-model <id>):",
     modelAutoFollowDesc: "auto (Sigue autom\xE1ticamente el modelo de la sesi\xF3n)",
-    modelSelectHint: "Use /lingual-model <id> o auto para asignar un modelo."
+    modelSelectHint: "Use /lingual-model <id> o auto para asignar un modelo.",
+    langUsageHint: "Uso: /lang <zh|ja|en|es|fr|de> [target] (ej. /lang ja o /lang zh ja)",
+    langList: [
+      "\u2022 zh (Chino \u2794 Ingl\xE9s)",
+      "\u2022 ja (Japon\xE9s \u2794 Ingl\xE9s)",
+      "\u2022 en (Ingl\xE9s \u2794 Japon\xE9s)",
+      "\u2022 es (Espa\xF1ol \u2794 Ingl\xE9s)",
+      "\u2022 fr (Franc\xE9s \u2794 Ingl\xE9s)",
+      "\u2022 de (Alem\xE1n \u2794 Ingl\xE9s)"
+    ]
   },
   fr: {
     slot1Label: "Oral",
@@ -332,7 +368,16 @@ var LANGUAGE_PRESETS = {
     modelFollowSession: "Suit la session",
     modelAvailableListHeader: "Mod\xE8les disponibles (tapez /lingual-model <id>):",
     modelAutoFollowDesc: "auto (Suit automatiquement le mod\xE8le principal)",
-    modelSelectHint: "Entrez /lingual-model <id> ou auto pour d\xE9finir le mod\xE8le."
+    modelSelectHint: "Entrez /lingual-model <id> ou auto pour d\xE9finir le mod\xE8le.",
+    langUsageHint: "Utilisation : /lang <zh|ja|en|es|fr|de> [target] (ex : /lang ja ou /lang zh ja)",
+    langList: [
+      "\u2022 zh (Chinois \u2794 Anglais)",
+      "\u2022 ja (Japonais \u2794 Anglais)",
+      "\u2022 en (Anglais \u2794 Japonais)",
+      "\u2022 es (Espagnol \u2794 Anglais)",
+      "\u2022 fr (Fran\xE7ais \u2794 Anglais)",
+      "\u2022 de (Allemand \u2794 Anglais)"
+    ]
   },
   de: {
     slot1Label: "Gesprochen",
@@ -384,7 +429,16 @@ var LANGUAGE_PRESETS = {
     modelFollowSession: "Sitzungsmodell",
     modelAvailableListHeader: "Verf\xFCgbare Modelle (/lingual-model <id> ausf\xFChren):",
     modelAutoFollowDesc: "auto (Folgt automatisch dem aktiven Sitzungsmodell)",
-    modelSelectHint: "Geben Sie /lingual-model <id> oder auto ein."
+    modelSelectHint: "Geben Sie /lingual-model <id> oder auto ein.",
+    langUsageHint: "Verwendung: /lang <zh|ja|en|es|fr|de> [target] (z.B. /lang ja oder /lang zh ja)",
+    langList: [
+      "\u2022 zh (Chinesisch \u2794 Englisch)",
+      "\u2022 ja (Japanisch \u2794 Englisch)",
+      "\u2022 en (Englisch \u2794 Japanisch)",
+      "\u2022 es (Spanisch \u2794 Englisch)",
+      "\u2022 fr (Franz\xF6sisch \u2794 Englisch)",
+      "\u2022 de (Deutsch \u2794 Englisch)"
+    ]
   }
 };
 function resolveLabelsForLang(lang, overrides, targetLang) {
@@ -392,7 +446,7 @@ function resolveLabelsForLang(lang, overrides, targetLang) {
   const target = LANGUAGE_PRESETS[norm] || LANGUAGE_PRESETS.zh;
   const actualTarget = targetLang || (norm === "en" ? "ja" : "en");
   const pairTitle = `${norm} \u21C4 ${actualTarget}`;
-  return {
+  const merged = {
     ...LANGUAGE_PRESETS.en,
     // 1. 英文全量保底 (保证任何新增 key 不为空，不泄露中文)
     ...target,
@@ -400,9 +454,16 @@ function resolveLabelsForLang(lang, overrides, targetLang) {
     hudTitle: pairTitle,
     statusOriginal: pairTitle,
     statusEnglish: pairTitle,
+    statusOff: `${pairTitle}: off`,
     ...overrides || {}
     // 3. 用户显式覆盖
   };
+  for (const [key, val] of Object.entries(merged)) {
+    if (typeof val === "string") {
+      merged[key] = val.replace(/\[(?:zh|ja|en|es|fr|de)\s*⇄\s*(?:zh|ja|en|es|fr|de)\]/g, `[${pairTitle}]`);
+    }
+  }
+  return merged;
 }
 function formatStatusReport(labels, info) {
   const modeDesc = info.mode === "original" ? labels.modeDescOriginal || "Original pass-through" : info.mode === "english" ? labels.modeDescEnglish || "English deep reasoning" : labels.modeDescOff || "Off";
@@ -739,25 +800,8 @@ Output: ${JSON.stringify({
   const condensationDirective = isLongInput ? `
 
 [LONG INPUT CONDENSATION DIRECTIVE]:
-The user's input text is long (>90 chars). DO NOT translate verbatim line by line.
-First, distill and synthesize the core architectural/technical intent into a concise summary ("summary") in native ${spec.name} (strictly under 25 words).
-Then, translate that distilled intent into concise, punchy spoken and written expressions in ${targetName} (strictly under 25 words each) so that the translation fits cleanly on a single terminal HUD card without information bloat.` : "";
-  const jsonFormatHint = isLongInput ? `Strict JSON format:
-{
-  "summary": "Concise core intent in native ${spec.name} (under 25 words)",
-  "spoken": "...",
-  "spoken_meaning": "...",
-  "written": "...",
-  "written_meaning": "...",
-  "vocab": "..."
-}` : `Strict JSON format:
-{
-  "spoken": "...",
-  "spoken_meaning": "...",
-  "written": "...",
-  "written_meaning": "...",
-  "vocab": "..."
-}`;
+The user's input text is long (>90 chars). DO NOT translate verbatim line by line with wordy padding.
+Synthesize the core technical intent into concise, punchy spoken and written expressions (strictly under 25 words each) so that the translation fits cleanly on a single terminal HUD card without information bloat.` : "";
   return `You are an elite bilingual developer language coach and senior software architect.
 Task:
 Translate the user's message from native ${spec.name} (language A) into TWO distinct authentic ${targetName} registers (language B), and provide the exact back-translation/nuance in native ${spec.name} for each register:
@@ -774,7 +818,14 @@ ${condensationDirective}
 [GOLDEN FEW-SHOT ANCHORS]:
 ${anchorText}
 
-${jsonFormatHint}
+Strict JSON format:
+{
+  "spoken": "...",
+  "spoken_meaning": "...",
+  "written": "...",
+  "written_meaning": "...",
+  "vocab": "..."
+}
 Output valid JSON ONLY. Never output markdown code fences, backticks, quotes, or explanations.`;
 }
 
@@ -1414,15 +1465,13 @@ function parseLlmResponse(raw) {
     const written = (parsed.written || parsed.academic || parsed.slot2 || "").trim();
     const writtenMeaning = (parsed.written_meaning || parsed.writtenMeaning || "").trim();
     const vocab = typeof parsed.vocab === "string" ? parsed.vocab.trim() : "";
-    const summary = typeof (parsed.summary || parsed.core_intent || parsed.coreIntent) === "string" ? (parsed.summary || parsed.core_intent || parsed.coreIntent).trim() : "";
     if (spoken) {
       return {
         spoken,
         spokenMeaning: spokenMeaning || void 0,
         written: written || void 0,
         writtenMeaning: writtenMeaning || void 0,
-        vocab: vocab || void 0,
-        summary: summary || void 0
+        vocab: vocab || void 0
       };
     }
     return null;
@@ -1541,17 +1590,15 @@ async function translatePrompt(text, userConfig = {}) {
     const slot2Label = labels.slot2Label || labels.writtenLabel || "\u5199\u4F5C";
     const vocabLabel = labels.vocabLabel || "\u91CD\u70B9";
     const sourceLabel = labels.sourceLabel || "\u539F\u6587";
-    const effectiveSourceText = isLongInput && payload.summary && payload.summary.trim() ? payload.summary.trim() : trimmed;
     const result = {
       spoken: payload.spoken,
       spokenMeaning: payload.spokenMeaning,
       written: payload.written || "",
       writtenMeaning: payload.writtenMeaning,
       vocab: payload.vocab,
-      summary: payload.summary,
-      sourceText: effectiveSourceText,
+      sourceText: trimmed,
       annotated: formatTerminalAnnotation(
-        effectiveSourceText,
+        trimmed,
         payload.spoken,
         payload.written,
         payload.vocab,

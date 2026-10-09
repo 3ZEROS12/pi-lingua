@@ -63,6 +63,10 @@ export interface LingualI18nLabels {
   modelAutoFollowDesc?: string;
   modelSelectHint?: string;
 
+  // Localized language switcher & usage hints (Zero Chinese Residue)
+  langUsageHint?: string;
+  langList?: string[];
+
   // Aliases for backwards compatibility
   spokenLabel?: string;
   writtenLabel?: string;
@@ -92,8 +96,7 @@ export interface LingualResult {
   written: string;          // Slot 2 target expression
   writtenMeaning?: string;  // Slot 2 exact nuance/meaning in native language A
   vocab?: string;           // Vocab/idiom highlights
-  sourceText: string;       // Original source text (or distilled core intent for long inputs)
-  summary?: string;          // Distilled core intent in language A for long inputs
+  sourceText: string;       // Original source text in language A
   annotated: string;
 }
 export type LinguaResult = LingualResult;
@@ -104,5 +107,4 @@ export interface TranslationPayload {
   written?: string;
   writtenMeaning?: string;
   vocab?: string;
-  summary?: string;
 }

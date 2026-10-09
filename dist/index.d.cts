@@ -51,6 +51,8 @@ interface LingualI18nLabels {
     modelAvailableListHeader?: string;
     modelAutoFollowDesc?: string;
     modelSelectHint?: string;
+    langUsageHint?: string;
+    langList?: string[];
     spokenLabel?: string;
     writtenLabel?: string;
 }
@@ -78,7 +80,6 @@ interface LingualResult {
     writtenMeaning?: string;
     vocab?: string;
     sourceText: string;
-    summary?: string;
     annotated: string;
 }
 type LinguaResult = LingualResult;
@@ -88,7 +89,6 @@ interface TranslationPayload {
     written?: string;
     writtenMeaning?: string;
     vocab?: string;
-    summary?: string;
 }
 
 /**

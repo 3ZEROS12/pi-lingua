@@ -29,7 +29,6 @@ test("extension command matrix - registers standardized lingual command suite", 
 
   // Standalone intuitive developer commands
   assert.ok(registeredCommands["lang"], "Must register standalone /lang");
-  assert.ok(registeredCommands["compact"], "Must register standalone /compact");
   assert.ok(registeredCommands["last"], "Must register standalone /last");
 
   // Compatibility aliases
@@ -163,17 +162,18 @@ test("standalone /lang and language normalization - switches languages and handl
   await registeredCommands["lang"].handler("zh ja", mockCtx);
   assert.ok(notifications[notifications.length - 1].includes("zh ⇄ ja"));
 
-  // 5. Standalone /compact command
-  await registeredCommands["compact"].handler("", mockCtx);
+  // 5. Standalone /2-compact command
+  await registeredCommands["2-compact"].handler("", mockCtx);
   assert.ok(
     notifications[notifications.length - 1].includes("胶囊") ||
     notifications[notifications.length - 1].includes("Capsule") ||
+    notifications[notifications.length - 1].includes("capsule") ||
     notifications[notifications.length - 1].includes("カプセル")
   );
 
   // Teardown: Restore to zh ➔ en and tree layout
   await registeredCommands["lang"].handler("zh", mockCtx);
-  await registeredCommands["compact"].handler("", mockCtx);
+  await registeredCommands["2-compact"].handler("", mockCtx);
 });
 
 test("master command dispatcher - routes subcommands in /lingual and /2 smoothly", async () => {

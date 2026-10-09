@@ -423,16 +423,17 @@ export default function (pi: ExtensionAPI) {
   const switchLangHandler = async (args: string, ctx: ExtensionContext) => {
     const trimmed = args.trim().toLowerCase();
     if (!trimmed || trimmed === "list" || trimmed === "help" || trimmed === "?") {
-      const langList = [
-        "• zh (中文 ➔ 英文)",
-        "• ja (日本語 ➔ 英語)",
+      const listText = (state.labels.langList || [
+        "• zh (Chinese ➔ English)",
+        "• ja (Japanese ➔ English)",
         "• en (English ➔ Japanese)",
-        "• es (Español ➔ English)",
-        "• fr (Français ➔ English)",
-        "• de (Deutsch ➔ English)",
-      ].join("\n");
+        "• es (Spanish ➔ English)",
+        "• fr (French ➔ English)",
+        "• de (German ➔ English)",
+      ]).join("\n");
+      const usage = state.labels.langUsageHint || "Usage: /lang <zh|ja|en|es|fr|de> [target] (e.g. /lang ja or /lang zh ja)";
       ctx.ui.notify(
-        `[${state.sourceLang} ⇄ ${state.targetLang}] ${state.labels.statusReportFlow || "Flow"}: [${state.sourceLang} ➔ ${state.targetLang}]\n${langList}\n用法: /lang <zh|ja|en|es|fr|de> [target] (如 /lang ja 或 /lang zh ja)`,
+        `[${state.sourceLang} ⇄ ${state.targetLang}] ${state.labels.statusReportFlow || "Flow"}: [${state.sourceLang} ➔ ${state.targetLang}]\n${listText}\n${usage}`,
         "info"
       );
       return;
@@ -467,8 +468,8 @@ export default function (pi: ExtensionAPI) {
     state.compact = !state.compact;
     saveUserLingualConfig({ compact: state.compact });
     const msg = state.compact
-      ? (state.labels.notifyCompactOn || `[${state.labels.hudTitle}] 已开启单行胶囊模式`)
-      : (state.labels.notifyCompactOff || `[${state.labels.hudTitle}] 已切换为左导轨树状架构`);
+      ? (state.labels.notifyCompactOn || `[${state.labels.hudTitle}] Single-line capsule mode enabled`)
+      : (state.labels.notifyCompactOff || `[${state.labels.hudTitle}] Full tree layout restored`);
     ctx.ui.notify(msg, "info");
 
     // 若当前有活动卡片，立即就地刷新重绘
@@ -509,12 +510,12 @@ export default function (pi: ExtensionAPI) {
   const showLastHandler = async (_args: string, ctx: ExtensionContext) => {
     if (session.getReadyPages().length > 0) {
       renderActiveCard(ctx);
-      ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] 已重新显示上一条伴学卡片`, "info");
+      ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] Restored previous companion card`, "info");
       return;
     }
     const last = session.getLastResult();
     if (!last) {
-      ctx.ui.notify(state.labels.notifyNoHistory || `[${state.labels.hudTitle}] 暂无上一条伴学记录`, "info");
+      ctx.ui.notify(state.labels.notifyNoHistory || `[${state.labels.hudTitle}] No previous companion card recorded`, "info");
       return;
     }
     renderHudWidget(
@@ -526,7 +527,7 @@ export default function (pi: ExtensionAPI) {
       last.spokenMeaning,
       last.writtenMeaning
     );
-    ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] 已重新显示上一条伴学卡片`, "info");
+    ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] Restored previous companion card`, "info");
   };
 
   // 核心主命令总线调度器：处理 /lingual 和 /2 下的子命令路由与平滑轮转
@@ -577,7 +578,7 @@ export default function (pi: ExtensionAPI) {
     if (sub === "agent" || sub === "help" || sub === "?") {
       ctx.ui.notify(
         state.labels.notifyAgentHelp ||
-          "💡 切换母语？直接运行 /lang <zh|ja|en|es|fr|de> 即可实时切换并持久化；若需定制特殊风格，可直接向 Agent 描述你的定制偏好。",
+          "💡 Switch native language with /lang <zh|ja|en|es|fr|de> anytime; for advanced prompt or style customization, simply describe your preferences to your Agent.",
         "info"
       );
       return;
@@ -609,98 +610,93 @@ export default function (pi: ExtensionAPI) {
 
   // 主命令总线 (支持所有子命令与平滑三态模式轮转)
   pi.registerCommand("lingual", {
-    description: state.labels.cmdDescMode || "切换或管理伴学: /lingual [lang|model|compact|status|original|english|off]",
+    description: state.labels.cmdDescMode || "Switch or manage companion: /lingual [lang|model|compact|status|original|english|off]",
     handler: masterCommandHandler,
   });
 
   pi.registerCommand("2", {
-    description: state.labels.cmdDescMode || "伴学极速总线 (别名): /2 [lang|model|compact|status|original|english|off]",
+    description: state.labels.cmdDescMode || "Companion quick bus (alias): /2 [lang|model|compact|status|original|english|off]",
     handler: masterCommandHandler,
   });
 
   // 独立模式切换命令
   pi.registerCommand("lingual-mode", {
-    description: state.labels.cmdDescMode || "设置伴学模式: /lingual-mode <original|english|off>",
+    description: state.labels.cmdDescMode || "Set companion mode: /lingual-mode <original|english|off>",
     handler: setModeHandler,
   });
 
   // 独立语言切换命令 (首选直觉命令 /lang 及别名)
   pi.registerCommand("lang", {
-    description: state.labels.cmdDescLang || "切换伴学语言: /lang <zh|ja|en|es|fr|de> [target]",
+    description: state.labels.cmdDescLang || "Switch companion language: /lang <zh|ja|en|es|fr|de> [target]",
     handler: switchLangHandler,
   });
 
   pi.registerCommand("lingual-lang", {
-    description: state.labels.cmdDescLang || "切换伴学语言 (别名): /lingual-lang <zh|ja|en|es|fr|de>",
+    description: state.labels.cmdDescLang || "Switch companion language (alias): /lingual-lang <zh|ja|en|es|fr|de>",
     handler: switchLangHandler,
   });
 
   pi.registerCommand("2-lang", {
-    description: state.labels.cmdDescLang || "极速切换伴学母语 (别名): /2-lang <lang>",
+    description: state.labels.cmdDescLang || "Quick switch companion native language (alias): /2-lang <lang>",
     handler: switchLangHandler,
   });
 
-  // 独立胶囊紧凑布局命令 (直觉命令 /compact 及别名)
-  pi.registerCommand("compact", {
-    description: state.labels.cmdDescCompact || "切换单行胶囊与完整树状图: /compact",
-    handler: toggleCompactHandler,
-  });
-
+  // 独立胶囊紧凑布局命令 (/lingual-compact 及别名 /2-compact；避免直接占用 Pi 内置 /compact 历史压缩命令)
   pi.registerCommand("lingual-compact", {
-    description: state.labels.cmdDescCompact || "切换单行胶囊模式 (别名)",
+    description: state.labels.cmdDescCompact || "Toggle single-line capsule mode: /lingual-compact",
     handler: toggleCompactHandler,
   });
 
   pi.registerCommand("2-compact", {
-    description: state.labels.cmdDescCompact || "极速切换单行胶囊模式 (别名): /2-compact",
+    description: state.labels.cmdDescCompact || "Toggle single-line capsule mode (alias): /2-compact",
     handler: toggleCompactHandler,
   });
 
   // 独立伴学模型配置命令
   pi.registerCommand("lingual-model", {
-    description: state.labels.cmdDescModel || "查看或切换伴学模型: /lingual-model [model-id|auto]",
+    description: state.labels.cmdDescModel || "Inspect or switch companion model: /lingual-model [model-id|auto]",
     handler: setModelHandler,
   });
 
   pi.registerCommand("2-model", {
-    description: state.labels.cmdDescModel || "查看或切换伴学模型 (别名)",
+    description: state.labels.cmdDescModel || "Inspect or switch companion model (alias)",
     handler: setModelHandler,
   });
 
   // 独立状态报告命令
   pi.registerCommand("lingual-status", {
-    description: state.labels.cmdDescStatus || "查看伴学插件当前状态报告与模型诊断: /lingual-status",
+    description: state.labels.cmdDescStatus || "Display companion status report: /lingual-status",
     handler: showStatusHandler,
   });
 
   pi.registerCommand("2-status", {
-    description: state.labels.cmdDescStatus || "查看伴学插件当前状态 (别名)",
+    description: state.labels.cmdDescStatus || "Display companion status report (alias)",
     handler: showStatusHandler,
   });
 
   // 独立历史回显命令 (支持直觉命令 /last 及全名)
   pi.registerCommand("last", {
-    description: state.labels.cmdDescLast || "回看上一条伴学卡片: /last",
+    description: state.labels.cmdDescLast || "Replay previous companion card: /last",
     handler: showLastHandler,
   });
 
   pi.registerCommand("lingual-last", {
-    description: state.labels.cmdDescLast || "重新回看或重现上一条伴学卡片: /lingual-last",
+    description: state.labels.cmdDescLast || "Replay previous companion card: /lingual-last",
     handler: showLastHandler,
   });
 
   pi.registerCommand("2-last", {
-    description: state.labels.cmdDescLast || "回看上一条伴学卡片 (别名)",
+    description: state.labels.cmdDescLast || "Replay previous companion card (alias)",
     handler: showLastHandler,
   });
 
   // 伴学定制指南
   pi.registerCommand("lingual-agent", {
-    description: state.labels.cmdDescAgent || "查看伴学定制与母语切换指南: /lingual-agent",
+    description: state.labels.cmdDescAgent || "View companion customization and language guide: /lingual-agent",
     handler: async (_args, ctx) => {
       ctx.ui.notify(
         state.labels.notifyAgentHelp ||
-          "💡 切换母语？直接运行 /lang <zh|ja|en|es|fr|de> 即可实时切换并持久化；若需定制特殊风格，可直接向 Agent 描述你的定制偏好。",
+          "💡 Switch native language with /lang <zh|ja|en|es|fr|de> anytime; for advanced prompt or style customization, simply describe your preferences to your Agent.",
         "info"
       );
     },
@@ -709,7 +705,7 @@ export default function (pi: ExtensionAPI) {
   if (typeof pi.registerShortcut === "function") {
     // 快捷键支持：使用 Alt+. 与 Alt+,（对应 US 键盘 > 与 < 左右方向，零系统冲突）
     pi.registerShortcut("alt+.", {
-      description: state.labels.shortcutNextPage || "切换至下一段伴学切片",
+      description: state.labels.shortcutNextPage || "Switch to next companion segment",
       handler: async (ctx) => {
         if (session.nextPage()) {
           renderActiveCard(ctx);
@@ -718,7 +714,7 @@ export default function (pi: ExtensionAPI) {
     });
 
     pi.registerShortcut("alt+,", {
-      description: state.labels.shortcutPrevPage || "切换至上一段伴学切片",
+      description: state.labels.shortcutPrevPage || "Switch to previous companion segment",
       handler: async (ctx) => {
         if (session.prevPage()) {
           renderActiveCard(ctx);

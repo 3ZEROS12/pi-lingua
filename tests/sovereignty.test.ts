@@ -66,6 +66,22 @@ test("Primary Language Sovereignty - English (en) leaves ZERO Chinese in UI and 
   assert.ok(modelMsg.includes("Current companion model: auto"));
   const modelMsgWithoutTotem = modelMsg.replace("two ⇄ 二", "");
   assert.ok(!/[\u4e00-\u9fa5]/.test(modelMsgWithoutTotem), "English model selection must contain zero Chinese characters outside the totem");
+
+  // Language switcher list and usage hint must have zero Chinese characters
+  assert.ok(enLabels.langUsageHint, "English must have langUsageHint");
+  assert.ok(!/[\u4e00-\u9fa5]/.test(enLabels.langUsageHint), "English langUsageHint must contain zero Chinese characters");
+  assert.ok(Array.isArray(enLabels.langList) && enLabels.langList.length > 0, "English must have langList");
+  for (const item of enLabels.langList) {
+    assert.ok(!/[\u4e00-\u9fa5]/.test(item), `English langList item "${item}" must contain zero Chinese characters`);
+  }
+
+  // Dynamic language pair token substitution: en ➔ zh must yield [en ⇄ zh] notifications, zero [en ⇄ ja] residue
+  const enZhLabels = resolveLabelsForLang("en", undefined, "zh");
+  assert.equal(enZhLabels.hudTitle, "en ⇄ zh");
+  assert.ok(enZhLabels.notifyOriginal?.includes("[en ⇄ zh]"));
+  assert.ok(enZhLabels.notifyCompactOn?.includes("[en ⇄ zh]"));
+  assert.ok(!enZhLabels.notifyOriginal?.includes("[en ⇄ ja]"));
+  assert.ok(!enZhLabels.notifyCompactOn?.includes("[en ⇄ ja]"));
 });
 
 test("System Prompt Sovereignty - Generates authentic Language A anchors and rules", () => {

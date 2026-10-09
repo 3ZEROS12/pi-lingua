@@ -249,9 +249,6 @@ export function parseLlmResponse(raw: string): TranslationPayload | null {
     const written = (parsed.written || parsed.academic || parsed.slot2 || "").trim();
     const writtenMeaning = (parsed.written_meaning || parsed.writtenMeaning || "").trim();
     const vocab = typeof parsed.vocab === "string" ? parsed.vocab.trim() : "";
-    const summary = typeof (parsed.summary || parsed.core_intent || parsed.coreIntent) === "string"
-      ? (parsed.summary || parsed.core_intent || parsed.coreIntent).trim()
-      : "";
 
     if (spoken) {
       return {
@@ -260,7 +257,6 @@ export function parseLlmResponse(raw: string): TranslationPayload | null {
         written: written || undefined,
         writtenMeaning: writtenMeaning || undefined,
         vocab: vocab || undefined,
-        summary: summary || undefined,
       };
     }
     return null;
@@ -428,20 +424,15 @@ export async function translatePrompt(
     const vocabLabel = labels.vocabLabel || "重点";
     const sourceLabel = labels.sourceLabel || "原文";
 
-    const effectiveSourceText = (isLongInput && payload.summary && payload.summary.trim())
-      ? payload.summary.trim()
-      : trimmed;
-
     const result: LingualResult = {
       spoken: payload.spoken,
       spokenMeaning: payload.spokenMeaning,
       written: payload.written || "",
       writtenMeaning: payload.writtenMeaning,
       vocab: payload.vocab,
-      summary: payload.summary,
-      sourceText: effectiveSourceText,
+      sourceText: trimmed,
       annotated: formatTerminalAnnotation(
-        effectiveSourceText,
+        trimmed,
         payload.spoken,
         payload.written,
         payload.vocab,

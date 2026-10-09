@@ -339,7 +339,16 @@ var LANGUAGE_PRESETS = {
     modelFollowSession: "\u8DDF\u968F\u4F1A\u8BDD",
     modelAvailableListHeader: "\u53EF\u7528\u6A21\u578B (\u8F93\u5165 /lingual-model <id> \u5207\u6362):",
     modelAutoFollowDesc: "auto (\u81EA\u52A8\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD\u4E3B\u6A21\u578B)",
-    modelSelectHint: "\u53EF\u8F93\u5165 /lingual-model <model-id> \u6216 auto \u6307\u5B9A\u4F34\u5B66\u6A21\u578B\u3002"
+    modelSelectHint: "\u53EF\u8F93\u5165 /lingual-model <model-id> \u6216 auto \u6307\u5B9A\u4F34\u5B66\u6A21\u578B\u3002",
+    langUsageHint: "\u7528\u6CD5: /lang <zh|ja|en|es|fr|de> [target] (\u5982 /lang ja \u6216 /lang zh ja)",
+    langList: [
+      "\u2022 zh (\u4E2D\u6587 \u2794 \u82F1\u6587)",
+      "\u2022 ja (\u65E5\u672C\u8A9E \u2794 \u82F1\u8A9E)",
+      "\u2022 en (\u82F1\u6587 \u2794 \u65E5\u6587)",
+      "\u2022 es (\u897F\u73ED\u7259\u6587 \u2794 \u82F1\u6587)",
+      "\u2022 fr (\u6CD5\u6587 \u2794 \u82F1\u6587)",
+      "\u2022 de (\u5FB7\u6587 \u2794 \u82F1\u6587)"
+    ]
   },
   ja: {
     slot1Label: "\u53E3\u8A9E",
@@ -391,7 +400,16 @@ var LANGUAGE_PRESETS = {
     modelFollowSession: "\u30BB\u30C3\u30B7\u30E7\u30F3\u9023\u52D5",
     modelAvailableListHeader: "\u5229\u7528\u53EF\u80FD\u306A\u30E2\u30C7\u30EB (/lingual-model <id> \u3067\u5207\u66FF):",
     modelAutoFollowDesc: "auto (\u30BB\u30C3\u30B7\u30E7\u30F3\u306E\u4E3B\u30E2\u30C7\u30EB\u306B\u81EA\u52D5\u8FFD\u5F93)",
-    modelSelectHint: "/lingual-model <model-id> \u307E\u305F\u306F auto \u3092\u5165\u529B\u3057\u3066\u30E2\u30C7\u30EB\u3092\u6307\u5B9A\u3067\u304D\u307E\u3059\u3002"
+    modelSelectHint: "/lingual-model <model-id> \u307E\u305F\u306F auto \u3092\u5165\u529B\u3057\u3066\u30E2\u30C7\u30EB\u3092\u6307\u5B9A\u3067\u304D\u307E\u3059\u3002",
+    langUsageHint: "\u4F7F\u3044\u65B9: /lang <zh|ja|en|es|fr|de> [target] (\u4F8B: /lang ja \u307E\u305F\u306F /lang zh ja)",
+    langList: [
+      "\u2022 zh (\u4E2D\u56FD\u8A9E \u2794 \u82F1\u8A9E)",
+      "\u2022 ja (\u65E5\u672C\u8A9E \u2794 \u82F1\u8A9E)",
+      "\u2022 en (\u82F1\u8A9E \u2794 \u65E5\u672C\u8A9E)",
+      "\u2022 es (\u30B9\u30DA\u30A4\u30F3\u8A9E \u2794 \u82F1\u8A9E)",
+      "\u2022 fr (\u30D5\u30E9\u30F3\u30B9\u8A9E \u2794 \u82F1\u8A9E)",
+      "\u2022 de (\u30C9\u30A4\u30C4\u8A9E \u2794 \u82F1\u8A9E)"
+    ]
   },
   en: {
     slot1Label: "Spoken",
@@ -443,7 +461,16 @@ var LANGUAGE_PRESETS = {
     modelFollowSession: "Follow session",
     modelAvailableListHeader: "Available models (run /lingual-model <id> to switch):",
     modelAutoFollowDesc: "auto (Automatically follows active session model)",
-    modelSelectHint: "Run /lingual-model <model-id> or auto to designate a model."
+    modelSelectHint: "Run /lingual-model <model-id> or auto to designate a model.",
+    langUsageHint: "Usage: /lang <zh|ja|en|es|fr|de> [target] (e.g. /lang ja or /lang zh ja)",
+    langList: [
+      "\u2022 zh (Chinese \u2794 English)",
+      "\u2022 ja (Japanese \u2794 English)",
+      "\u2022 en (English \u2794 Japanese)",
+      "\u2022 es (Spanish \u2794 English)",
+      "\u2022 fr (French \u2794 English)",
+      "\u2022 de (German \u2794 English)"
+    ]
   },
   es: {
     slot1Label: "Coloquial",
@@ -495,7 +522,16 @@ var LANGUAGE_PRESETS = {
     modelFollowSession: "Siguiendo sesi\xF3n",
     modelAvailableListHeader: "Modelos disponibles (ejecute /lingual-model <id>):",
     modelAutoFollowDesc: "auto (Sigue autom\xE1ticamente el modelo de la sesi\xF3n)",
-    modelSelectHint: "Use /lingual-model <id> o auto para asignar un modelo."
+    modelSelectHint: "Use /lingual-model <id> o auto para asignar un modelo.",
+    langUsageHint: "Uso: /lang <zh|ja|en|es|fr|de> [target] (ej. /lang ja o /lang zh ja)",
+    langList: [
+      "\u2022 zh (Chino \u2794 Ingl\xE9s)",
+      "\u2022 ja (Japon\xE9s \u2794 Ingl\xE9s)",
+      "\u2022 en (Ingl\xE9s \u2794 Japon\xE9s)",
+      "\u2022 es (Espa\xF1ol \u2794 Ingl\xE9s)",
+      "\u2022 fr (Franc\xE9s \u2794 Ingl\xE9s)",
+      "\u2022 de (Alem\xE1n \u2794 Ingl\xE9s)"
+    ]
   },
   fr: {
     slot1Label: "Oral",
@@ -547,7 +583,16 @@ var LANGUAGE_PRESETS = {
     modelFollowSession: "Suit la session",
     modelAvailableListHeader: "Mod\xE8les disponibles (tapez /lingual-model <id>):",
     modelAutoFollowDesc: "auto (Suit automatiquement le mod\xE8le principal)",
-    modelSelectHint: "Entrez /lingual-model <id> ou auto pour d\xE9finir le mod\xE8le."
+    modelSelectHint: "Entrez /lingual-model <id> ou auto pour d\xE9finir le mod\xE8le.",
+    langUsageHint: "Utilisation : /lang <zh|ja|en|es|fr|de> [target] (ex : /lang ja ou /lang zh ja)",
+    langList: [
+      "\u2022 zh (Chinois \u2794 Anglais)",
+      "\u2022 ja (Japonais \u2794 Anglais)",
+      "\u2022 en (Anglais \u2794 Japonais)",
+      "\u2022 es (Espagnol \u2794 Anglais)",
+      "\u2022 fr (Fran\xE7ais \u2794 Anglais)",
+      "\u2022 de (Allemand \u2794 Anglais)"
+    ]
   },
   de: {
     slot1Label: "Gesprochen",
@@ -599,7 +644,16 @@ var LANGUAGE_PRESETS = {
     modelFollowSession: "Sitzungsmodell",
     modelAvailableListHeader: "Verf\xFCgbare Modelle (/lingual-model <id> ausf\xFChren):",
     modelAutoFollowDesc: "auto (Folgt automatisch dem aktiven Sitzungsmodell)",
-    modelSelectHint: "Geben Sie /lingual-model <id> oder auto ein."
+    modelSelectHint: "Geben Sie /lingual-model <id> oder auto ein.",
+    langUsageHint: "Verwendung: /lang <zh|ja|en|es|fr|de> [target] (z.B. /lang ja oder /lang zh ja)",
+    langList: [
+      "\u2022 zh (Chinesisch \u2794 Englisch)",
+      "\u2022 ja (Japanisch \u2794 Englisch)",
+      "\u2022 en (Englisch \u2794 Japanisch)",
+      "\u2022 es (Spanisch \u2794 Englisch)",
+      "\u2022 fr (Franz\xF6sisch \u2794 Englisch)",
+      "\u2022 de (Deutsch \u2794 Englisch)"
+    ]
   }
 };
 function resolveLabelsForLang(lang, overrides, targetLang) {
@@ -607,7 +661,7 @@ function resolveLabelsForLang(lang, overrides, targetLang) {
   const target = LANGUAGE_PRESETS[norm] || LANGUAGE_PRESETS.zh;
   const actualTarget = targetLang || (norm === "en" ? "ja" : "en");
   const pairTitle = `${norm} \u21C4 ${actualTarget}`;
-  return {
+  const merged = {
     ...LANGUAGE_PRESETS.en,
     // 1. 英文全量保底 (保证任何新增 key 不为空，不泄露中文)
     ...target,
@@ -615,9 +669,16 @@ function resolveLabelsForLang(lang, overrides, targetLang) {
     hudTitle: pairTitle,
     statusOriginal: pairTitle,
     statusEnglish: pairTitle,
+    statusOff: `${pairTitle}: off`,
     ...overrides || {}
     // 3. 用户显式覆盖
   };
+  for (const [key, val] of Object.entries(merged)) {
+    if (typeof val === "string") {
+      merged[key] = val.replace(/\[(?:zh|ja|en|es|fr|de)\s*⇄\s*(?:zh|ja|en|es|fr|de)\]/g, `[${pairTitle}]`);
+    }
+  }
+  return merged;
 }
 function formatStatusReport(labels, info) {
   const modeDesc = info.mode === "original" ? labels.modeDescOriginal || "Original pass-through" : info.mode === "english" ? labels.modeDescEnglish || "English deep reasoning" : labels.modeDescOff || "Off";
@@ -867,25 +928,8 @@ Output: ${JSON.stringify({
   const condensationDirective = isLongInput ? `
 
 [LONG INPUT CONDENSATION DIRECTIVE]:
-The user's input text is long (>90 chars). DO NOT translate verbatim line by line.
-First, distill and synthesize the core architectural/technical intent into a concise summary ("summary") in native ${spec.name} (strictly under 25 words).
-Then, translate that distilled intent into concise, punchy spoken and written expressions in ${targetName} (strictly under 25 words each) so that the translation fits cleanly on a single terminal HUD card without information bloat.` : "";
-  const jsonFormatHint = isLongInput ? `Strict JSON format:
-{
-  "summary": "Concise core intent in native ${spec.name} (under 25 words)",
-  "spoken": "...",
-  "spoken_meaning": "...",
-  "written": "...",
-  "written_meaning": "...",
-  "vocab": "..."
-}` : `Strict JSON format:
-{
-  "spoken": "...",
-  "spoken_meaning": "...",
-  "written": "...",
-  "written_meaning": "...",
-  "vocab": "..."
-}`;
+The user's input text is long (>90 chars). DO NOT translate verbatim line by line with wordy padding.
+Synthesize the core technical intent into concise, punchy spoken and written expressions (strictly under 25 words each) so that the translation fits cleanly on a single terminal HUD card without information bloat.` : "";
   return `You are an elite bilingual developer language coach and senior software architect.
 Task:
 Translate the user's message from native ${spec.name} (language A) into TWO distinct authentic ${targetName} registers (language B), and provide the exact back-translation/nuance in native ${spec.name} for each register:
@@ -902,7 +946,14 @@ ${condensationDirective}
 [GOLDEN FEW-SHOT ANCHORS]:
 ${anchorText}
 
-${jsonFormatHint}
+Strict JSON format:
+{
+  "spoken": "...",
+  "spoken_meaning": "...",
+  "written": "...",
+  "written_meaning": "...",
+  "vocab": "..."
+}
 Output valid JSON ONLY. Never output markdown code fences, backticks, quotes, or explanations.`;
 }
 
@@ -1201,15 +1252,13 @@ function parseLlmResponse(raw) {
     const written = (parsed.written || parsed.academic || parsed.slot2 || "").trim();
     const writtenMeaning = (parsed.written_meaning || parsed.writtenMeaning || "").trim();
     const vocab = typeof parsed.vocab === "string" ? parsed.vocab.trim() : "";
-    const summary = typeof (parsed.summary || parsed.core_intent || parsed.coreIntent) === "string" ? (parsed.summary || parsed.core_intent || parsed.coreIntent).trim() : "";
     if (spoken) {
       return {
         spoken,
         spokenMeaning: spokenMeaning || void 0,
         written: written || void 0,
         writtenMeaning: writtenMeaning || void 0,
-        vocab: vocab || void 0,
-        summary: summary || void 0
+        vocab: vocab || void 0
       };
     }
     return null;
@@ -1286,17 +1335,15 @@ async function translatePrompt(text, userConfig = {}) {
     const slot2Label = labels.slot2Label || labels.writtenLabel || "\u5199\u4F5C";
     const vocabLabel = labels.vocabLabel || "\u91CD\u70B9";
     const sourceLabel = labels.sourceLabel || "\u539F\u6587";
-    const effectiveSourceText = isLongInput && payload.summary && payload.summary.trim() ? payload.summary.trim() : trimmed;
     const result = {
       spoken: payload.spoken,
       spokenMeaning: payload.spokenMeaning,
       written: payload.written || "",
       writtenMeaning: payload.writtenMeaning,
       vocab: payload.vocab,
-      summary: payload.summary,
-      sourceText: effectiveSourceText,
+      sourceText: trimmed,
       annotated: formatTerminalAnnotation(
-        effectiveSourceText,
+        trimmed,
         payload.spoken,
         payload.written,
         payload.vocab,
@@ -1869,18 +1916,19 @@ function extension_default(pi) {
   const switchLangHandler = async (args, ctx) => {
     const trimmed = args.trim().toLowerCase();
     if (!trimmed || trimmed === "list" || trimmed === "help" || trimmed === "?") {
-      const langList = [
-        "\u2022 zh (\u4E2D\u6587 \u2794 \u82F1\u6587)",
-        "\u2022 ja (\u65E5\u672C\u8A9E \u2794 \u82F1\u8A9E)",
+      const listText = (state.labels.langList || [
+        "\u2022 zh (Chinese \u2794 English)",
+        "\u2022 ja (Japanese \u2794 English)",
         "\u2022 en (English \u2794 Japanese)",
-        "\u2022 es (Espa\xF1ol \u2794 English)",
-        "\u2022 fr (Fran\xE7ais \u2794 English)",
-        "\u2022 de (Deutsch \u2794 English)"
-      ].join("\n");
+        "\u2022 es (Spanish \u2794 English)",
+        "\u2022 fr (French \u2794 English)",
+        "\u2022 de (German \u2794 English)"
+      ]).join("\n");
+      const usage = state.labels.langUsageHint || "Usage: /lang <zh|ja|en|es|fr|de> [target] (e.g. /lang ja or /lang zh ja)";
       ctx.ui.notify(
         `[${state.sourceLang} \u21C4 ${state.targetLang}] ${state.labels.statusReportFlow || "Flow"}: [${state.sourceLang} \u2794 ${state.targetLang}]
-${langList}
-\u7528\u6CD5: /lang <zh|ja|en|es|fr|de> [target] (\u5982 /lang ja \u6216 /lang zh ja)`,
+${listText}
+${usage}`,
         "info"
       );
       return;
@@ -1909,7 +1957,7 @@ ${langList}
   const toggleCompactHandler = async (_args, ctx) => {
     state.compact = !state.compact;
     saveUserLingualConfig({ compact: state.compact });
-    const msg = state.compact ? state.labels.notifyCompactOn || `[${state.labels.hudTitle}] \u5DF2\u5F00\u542F\u5355\u884C\u80F6\u56CA\u6A21\u5F0F` : state.labels.notifyCompactOff || `[${state.labels.hudTitle}] \u5DF2\u5207\u6362\u4E3A\u5DE6\u5BFC\u8F68\u6811\u72B6\u67B6\u6784`;
+    const msg = state.compact ? state.labels.notifyCompactOn || `[${state.labels.hudTitle}] Single-line capsule mode enabled` : state.labels.notifyCompactOff || `[${state.labels.hudTitle}] Full tree layout restored`;
     ctx.ui.notify(msg, "info");
     if (session.getReadyPages().length > 0) {
       renderActiveCard(ctx);
@@ -1942,12 +1990,12 @@ ${langList}
   const showLastHandler = async (_args, ctx) => {
     if (session.getReadyPages().length > 0) {
       renderActiveCard(ctx);
-      ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] \u5DF2\u91CD\u65B0\u663E\u793A\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247`, "info");
+      ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] Restored previous companion card`, "info");
       return;
     }
     const last = session.getLastResult();
     if (!last) {
-      ctx.ui.notify(state.labels.notifyNoHistory || `[${state.labels.hudTitle}] \u6682\u65E0\u4E0A\u4E00\u6761\u4F34\u5B66\u8BB0\u5F55`, "info");
+      ctx.ui.notify(state.labels.notifyNoHistory || `[${state.labels.hudTitle}] No previous companion card recorded`, "info");
       return;
     }
     renderHudWidget(
@@ -1959,7 +2007,7 @@ ${langList}
       last.spokenMeaning,
       last.writtenMeaning
     );
-    ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] \u5DF2\u91CD\u65B0\u663E\u793A\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247`, "info");
+    ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] Restored previous companion card`, "info");
   };
   const masterCommandHandler = async (args, ctx) => {
     const trimmed = args?.trim();
@@ -1993,7 +2041,7 @@ ${langList}
     }
     if (sub === "agent" || sub === "help" || sub === "?") {
       ctx.ui.notify(
-        state.labels.notifyAgentHelp || "\u{1F4A1} \u5207\u6362\u6BCD\u8BED\uFF1F\u76F4\u63A5\u8FD0\u884C /lang <zh|ja|en|es|fr|de> \u5373\u53EF\u5B9E\u65F6\u5207\u6362\u5E76\u6301\u4E45\u5316\uFF1B\u82E5\u9700\u5B9A\u5236\u7279\u6B8A\u98CE\u683C\uFF0C\u53EF\u76F4\u63A5\u5411 Agent \u63CF\u8FF0\u4F60\u7684\u5B9A\u5236\u504F\u597D\u3002",
+        state.labels.notifyAgentHelp || "\u{1F4A1} Switch native language with /lang <zh|ja|en|es|fr|de> anytime; for advanced prompt or style customization, simply describe your preferences to your Agent.",
         "info"
       );
       return;
@@ -2010,81 +2058,77 @@ ${langList}
     await setModeHandler(trimmed, ctx);
   };
   pi.registerCommand("lingual", {
-    description: state.labels.cmdDescMode || "\u5207\u6362\u6216\u7BA1\u7406\u4F34\u5B66: /lingual [lang|model|compact|status|original|english|off]",
+    description: state.labels.cmdDescMode || "Switch or manage companion: /lingual [lang|model|compact|status|original|english|off]",
     handler: masterCommandHandler
   });
   pi.registerCommand("2", {
-    description: state.labels.cmdDescMode || "\u4F34\u5B66\u6781\u901F\u603B\u7EBF (\u522B\u540D): /2 [lang|model|compact|status|original|english|off]",
+    description: state.labels.cmdDescMode || "Companion quick bus (alias): /2 [lang|model|compact|status|original|english|off]",
     handler: masterCommandHandler
   });
   pi.registerCommand("lingual-mode", {
-    description: state.labels.cmdDescMode || "\u8BBE\u7F6E\u4F34\u5B66\u6A21\u5F0F: /lingual-mode <original|english|off>",
+    description: state.labels.cmdDescMode || "Set companion mode: /lingual-mode <original|english|off>",
     handler: setModeHandler
   });
   pi.registerCommand("lang", {
-    description: state.labels.cmdDescLang || "\u5207\u6362\u4F34\u5B66\u8BED\u8A00: /lang <zh|ja|en|es|fr|de> [target]",
+    description: state.labels.cmdDescLang || "Switch companion language: /lang <zh|ja|en|es|fr|de> [target]",
     handler: switchLangHandler
   });
   pi.registerCommand("lingual-lang", {
-    description: state.labels.cmdDescLang || "\u5207\u6362\u4F34\u5B66\u8BED\u8A00 (\u522B\u540D): /lingual-lang <zh|ja|en|es|fr|de>",
+    description: state.labels.cmdDescLang || "Switch companion language (alias): /lingual-lang <zh|ja|en|es|fr|de>",
     handler: switchLangHandler
   });
   pi.registerCommand("2-lang", {
-    description: state.labels.cmdDescLang || "\u6781\u901F\u5207\u6362\u4F34\u5B66\u6BCD\u8BED (\u522B\u540D): /2-lang <lang>",
+    description: state.labels.cmdDescLang || "Quick switch companion native language (alias): /2-lang <lang>",
     handler: switchLangHandler
   });
-  pi.registerCommand("compact", {
-    description: state.labels.cmdDescCompact || "\u5207\u6362\u5355\u884C\u80F6\u56CA\u4E0E\u5B8C\u6574\u6811\u72B6\u56FE: /compact",
-    handler: toggleCompactHandler
-  });
   pi.registerCommand("lingual-compact", {
-    description: state.labels.cmdDescCompact || "\u5207\u6362\u5355\u884C\u80F6\u56CA\u6A21\u5F0F (\u522B\u540D)",
+    description: state.labels.cmdDescCompact || "Toggle single-line capsule mode: /lingual-compact",
     handler: toggleCompactHandler
   });
   pi.registerCommand("2-compact", {
-    description: state.labels.cmdDescCompact || "\u6781\u901F\u5207\u6362\u5355\u884C\u80F6\u56CA\u6A21\u5F0F (\u522B\u540D): /2-compact",
+    description: state.labels.cmdDescCompact || "Toggle single-line capsule mode (alias): /2-compact",
     handler: toggleCompactHandler
   });
   pi.registerCommand("lingual-model", {
-    description: state.labels.cmdDescModel || "\u67E5\u770B\u6216\u5207\u6362\u4F34\u5B66\u6A21\u578B: /lingual-model [model-id|auto]",
+    description: state.labels.cmdDescModel || "Inspect or switch companion model: /lingual-model [model-id|auto]",
     handler: setModelHandler
   });
   pi.registerCommand("2-model", {
-    description: state.labels.cmdDescModel || "\u67E5\u770B\u6216\u5207\u6362\u4F34\u5B66\u6A21\u578B (\u522B\u540D)",
+    description: state.labels.cmdDescModel || "Inspect or switch companion model (alias)",
     handler: setModelHandler
   });
   pi.registerCommand("lingual-status", {
-    description: state.labels.cmdDescStatus || "\u67E5\u770B\u4F34\u5B66\u63D2\u4EF6\u5F53\u524D\u72B6\u6001\u62A5\u544A\u4E0E\u6A21\u578B\u8BCA\u65AD: /lingual-status",
+    description: state.labels.cmdDescStatus || "Display companion status report: /lingual-status",
     handler: showStatusHandler
   });
   pi.registerCommand("2-status", {
-    description: state.labels.cmdDescStatus || "\u67E5\u770B\u4F34\u5B66\u63D2\u4EF6\u5F53\u524D\u72B6\u6001 (\u522B\u540D)",
+    description: state.labels.cmdDescStatus || "Display companion status report (alias)",
     handler: showStatusHandler
   });
   pi.registerCommand("last", {
-    description: state.labels.cmdDescLast || "\u56DE\u770B\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247: /last",
+    description: state.labels.cmdDescLast || "Replay previous companion card: /last",
     handler: showLastHandler
   });
   pi.registerCommand("lingual-last", {
-    description: state.labels.cmdDescLast || "\u91CD\u65B0\u56DE\u770B\u6216\u91CD\u73B0\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247: /lingual-last",
+    description: state.labels.cmdDescLast || "Replay previous companion card: /lingual-last",
     handler: showLastHandler
   });
   pi.registerCommand("2-last", {
-    description: state.labels.cmdDescLast || "\u56DE\u770B\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247 (\u522B\u540D)",
+    description: state.labels.cmdDescLast || "Replay previous companion card (alias)",
     handler: showLastHandler
   });
   pi.registerCommand("lingual-agent", {
-    description: state.labels.cmdDescAgent || "\u67E5\u770B\u4F34\u5B66\u5B9A\u5236\u4E0E\u6BCD\u8BED\u5207\u6362\u6307\u5357: /lingual-agent",
+    description: state.labels.cmdDescAgent || "View companion customization and language guide: /lingual-agent",
     handler: async (_args, ctx) => {
       ctx.ui.notify(
-        state.labels.notifyAgentHelp || "\u{1F4A1} \u5207\u6362\u6BCD\u8BED\uFF1F\u76F4\u63A5\u8FD0\u884C /lang <zh|ja|en|es|fr|de> \u5373\u53EF\u5B9E\u65F6\u5207\u6362\u5E76\u6301\u4E45\u5316\uFF1B\u82E5\u9700\u5B9A\u5236\u7279\u6B8A\u98CE\u683C\uFF0C\u53EF\u76F4\u63A5\u5411 Agent \u63CF\u8FF0\u4F60\u7684\u5B9A\u5236\u504F\u597D\u3002",
+        state.labels.notifyAgentHelp || "\u{1F4A1} Switch native language with /lang <zh|ja|en|es|fr|de> anytime; for advanced prompt or style customization, simply describe your preferences to your Agent.",
         "info"
       );
     }
   });
   if (typeof pi.registerShortcut === "function") {
     pi.registerShortcut("alt+.", {
-      description: state.labels.shortcutNextPage || "\u5207\u6362\u81F3\u4E0B\u4E00\u6BB5\u4F34\u5B66\u5207\u7247",
+      description: state.labels.shortcutNextPage || "Switch to next companion segment",
       handler: async (ctx) => {
         if (session.nextPage()) {
           renderActiveCard(ctx);
@@ -2092,7 +2136,7 @@ ${langList}
       }
     });
     pi.registerShortcut("alt+,", {
-      description: state.labels.shortcutPrevPage || "\u5207\u6362\u81F3\u4E0A\u4E00\u6BB5\u4F34\u5B66\u5207\u7247",
+      description: state.labels.shortcutPrevPage || "Switch to previous companion segment",
       handler: async (ctx) => {
         if (session.prevPage()) {
           renderActiveCard(ctx);

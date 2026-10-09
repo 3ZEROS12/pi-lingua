@@ -61,6 +61,16 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     modelAvailableListHeader: "可用模型 (输入 /lingual-model <id> 切换):",
     modelAutoFollowDesc: "auto (自动跟随当前会话主模型)",
     modelSelectHint: "可输入 /lingual-model <model-id> 或 auto 指定伴学模型。",
+
+    langUsageHint: "用法: /lang <zh|ja|en|es|fr|de> [target] (如 /lang ja 或 /lang zh ja)",
+    langList: [
+      "• zh (中文 ➔ 英文)",
+      "• ja (日本語 ➔ 英語)",
+      "• en (英文 ➔ 日文)",
+      "• es (西班牙文 ➔ 英文)",
+      "• fr (法文 ➔ 英文)",
+      "• de (德文 ➔ 英文)",
+    ],
   },
   ja: {
     slot1Label: "口語",
@@ -118,6 +128,16 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     modelAvailableListHeader: "利用可能なモデル (/lingual-model <id> で切替):",
     modelAutoFollowDesc: "auto (セッションの主モデルに自動追従)",
     modelSelectHint: "/lingual-model <model-id> または auto を入力してモデルを指定できます。",
+
+    langUsageHint: "使い方: /lang <zh|ja|en|es|fr|de> [target] (例: /lang ja または /lang zh ja)",
+    langList: [
+      "• zh (中国語 ➔ 英語)",
+      "• ja (日本語 ➔ 英語)",
+      "• en (英語 ➔ 日本語)",
+      "• es (スペイン語 ➔ 英語)",
+      "• fr (フランス語 ➔ 英語)",
+      "• de (ドイツ語 ➔ 英語)",
+    ],
   },
   en: {
     slot1Label: "Spoken",
@@ -175,6 +195,16 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     modelAvailableListHeader: "Available models (run /lingual-model <id> to switch):",
     modelAutoFollowDesc: "auto (Automatically follows active session model)",
     modelSelectHint: "Run /lingual-model <model-id> or auto to designate a model.",
+
+    langUsageHint: "Usage: /lang <zh|ja|en|es|fr|de> [target] (e.g. /lang ja or /lang zh ja)",
+    langList: [
+      "• zh (Chinese ➔ English)",
+      "• ja (Japanese ➔ English)",
+      "• en (English ➔ Japanese)",
+      "• es (Spanish ➔ English)",
+      "• fr (French ➔ English)",
+      "• de (German ➔ English)",
+    ],
   },
   es: {
     slot1Label: "Coloquial",
@@ -232,6 +262,16 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     modelAvailableListHeader: "Modelos disponibles (ejecute /lingual-model <id>):",
     modelAutoFollowDesc: "auto (Sigue automáticamente el modelo de la sesión)",
     modelSelectHint: "Use /lingual-model <id> o auto para asignar un modelo.",
+
+    langUsageHint: "Uso: /lang <zh|ja|en|es|fr|de> [target] (ej. /lang ja o /lang zh ja)",
+    langList: [
+      "• zh (Chino ➔ Inglés)",
+      "• ja (Japonés ➔ Inglés)",
+      "• en (Inglés ➔ Japonés)",
+      "• es (Español ➔ Inglés)",
+      "• fr (Francés ➔ Inglés)",
+      "• de (Alemán ➔ Inglés)",
+    ],
   },
   fr: {
     slot1Label: "Oral",
@@ -289,6 +329,16 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     modelAvailableListHeader: "Modèles disponibles (tapez /lingual-model <id>):",
     modelAutoFollowDesc: "auto (Suit automatiquement le modèle principal)",
     modelSelectHint: "Entrez /lingual-model <id> ou auto pour définir le modèle.",
+
+    langUsageHint: "Utilisation : /lang <zh|ja|en|es|fr|de> [target] (ex : /lang ja ou /lang zh ja)",
+    langList: [
+      "• zh (Chinois ➔ Anglais)",
+      "• ja (Japonais ➔ Anglais)",
+      "• en (Anglais ➔ Japonais)",
+      "• es (Espagnol ➔ Anglais)",
+      "• fr (Français ➔ Anglais)",
+      "• de (Allemand ➔ Anglais)",
+    ],
   },
   de: {
     slot1Label: "Gesprochen",
@@ -346,6 +396,16 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     modelAvailableListHeader: "Verfügbare Modelle (/lingual-model <id> ausführen):",
     modelAutoFollowDesc: "auto (Folgt automatisch dem aktiven Sitzungsmodell)",
     modelSelectHint: "Geben Sie /lingual-model <id> oder auto ein.",
+
+    langUsageHint: "Verwendung: /lang <zh|ja|en|es|fr|de> [target] (z.B. /lang ja oder /lang zh ja)",
+    langList: [
+      "• zh (Chinesisch ➔ Englisch)",
+      "• ja (Japanisch ➔ Englisch)",
+      "• en (Englisch ➔ Japanisch)",
+      "• es (Spanisch ➔ Englisch)",
+      "• fr (Französisch ➔ Englisch)",
+      "• de (Deutsch ➔ Englisch)",
+    ],
   },
 };
 
@@ -362,14 +422,25 @@ export function resolveLabelsForLang(
   const target = LANGUAGE_PRESETS[norm] || LANGUAGE_PRESETS.zh;
   const actualTarget = targetLang || (norm === "en" ? "ja" : "en");
   const pairTitle = `${norm} ⇄ ${actualTarget}`;
-  return {
+
+  const merged: Record<string, any> = {
     ...LANGUAGE_PRESETS.en, // 1. 英文全量保底 (保证任何新增 key 不为空，不泄露中文)
     ...target,              // 2. 目标母语官方预设
     hudTitle: pairTitle,
     statusOriginal: pairTitle,
     statusEnglish: pairTitle,
+    statusOff: `${pairTitle}: off`,
     ...(overrides || {}),   // 3. 用户显式覆盖
   };
+
+  // 动态将预设中的死板语言对标签替换为真实的动态当前流向 pairTitle
+  for (const [key, val] of Object.entries(merged)) {
+    if (typeof val === "string") {
+      merged[key] = val.replace(/\[(?:zh|ja|en|es|fr|de)\s*⇄\s*(?:zh|ja|en|es|fr|de)\]/g, `[${pairTitle}]`);
+    }
+  }
+
+  return merged as LingualI18nLabels;
 }
 
 /**

@@ -234,29 +234,9 @@ export function buildSystemPrompt(sourceLang = "zh", targetLang = "en", isLongIn
 
   const condensationDirective = isLongInput
     ? `\n\n[LONG INPUT CONDENSATION DIRECTIVE]:
-The user's input text is long (>90 chars). DO NOT translate verbatim line by line.
-First, distill and synthesize the core architectural/technical intent into a concise summary ("summary") in native ${spec.name} (strictly under 25 words).
-Then, translate that distilled intent into concise, punchy spoken and written expressions in ${targetName} (strictly under 25 words each) so that the translation fits cleanly on a single terminal HUD card without information bloat.`
+The user's input text is long (>90 chars). DO NOT translate verbatim line by line with wordy padding.
+Synthesize the core technical intent into concise, punchy spoken and written expressions (strictly under 25 words each) so that the translation fits cleanly on a single terminal HUD card without information bloat.`
     : "";
-
-  const jsonFormatHint = isLongInput
-    ? `Strict JSON format:
-{
-  "summary": "Concise core intent in native ${spec.name} (under 25 words)",
-  "spoken": "...",
-  "spoken_meaning": "...",
-  "written": "...",
-  "written_meaning": "...",
-  "vocab": "..."
-}`
-    : `Strict JSON format:
-{
-  "spoken": "...",
-  "spoken_meaning": "...",
-  "written": "...",
-  "written_meaning": "...",
-  "vocab": "..."
-}`;
 
   return `You are an elite bilingual developer language coach and senior software architect.
 Task:
@@ -274,6 +254,13 @@ ${condensationDirective}
 [GOLDEN FEW-SHOT ANCHORS]:
 ${anchorText}
 
-${jsonFormatHint}
+Strict JSON format:
+{
+  "spoken": "...",
+  "spoken_meaning": "...",
+  "written": "...",
+  "written_meaning": "...",
+  "vocab": "..."
+}
 Output valid JSON ONLY. Never output markdown code fences, backticks, quotes, or explanations.`;
 }
