@@ -107,6 +107,17 @@
   * **中间状态动态预算等比兜底 (Intermediate Slot Budgeting)**：
     * 在卡片空间极端紧凑时，将口语与写作单项平滑收紧为最多 2 行（末行带 `...`），确保为重点词汇稳固保留 2 行黄金展示空间，彻底根除重点词汇被挤成碎片的窘境。
 
+### 13. 零密钥外泄安全防御与三层模型配置解耦机制 (Zero-Credential Exposure & 3-Tier Model Decoupling)
+- **核心安全问题**：用户担忧本地配置的真实 API Key 或 Token 被不慎提交、上传至开源仓库，或者外部用户不知道如何安全修改伴学模型。
+- **物理事实与安全核验**：
+  * **全局代码零凭据扫描**：全工程 `src/`、`dist/`、文档及配置地毯式扫描，`sk-` 真实私钥匹配数为严格的 **0**；
+  * **宿主内认证沙箱（In-Process Auth）**：通过 `ctx.modelRegistry.streamSimple()` 运行伴学推理时，认证过程由 Pi 宿主底层处理，插件源码不读取、不持有、不上报任何敏感 Token；
+  * **物理文件隔离**：`.gitignore` 严格忽略 `*.env`, `*credentials*`, `*.key`, `lingual.json`, `models.json`；用户本地配置存放在 `~/.pi/agent/` 用户根目录中，绝不落入任何 Git 仓库；
+- **三层极简配置指引与透明化**：
+  1. **层级 1（零配置跟随主会话 · 推荐）**：默认自动跟随当前 Pi 会话模型，0 配置、0 门槛、0 密钥外泄风险；
+  2. **层级 2（会话内交互式模型自选与算力解耦）**：运行 `/lingual-model` 直接列出当前宿主中所有可用模型；运行 `/lingual-model <model-id>`（如 `/lingual-model gemini-3.8-flash`）指定轻量专属模型独立伴学，保护主模型推理配额；运行 `/lingual-model auto` 一键复位；
+  3. **层级 3（私有 BYOK / 本地 Ollama 离线端点）**：在离线内网或第三方中转场景下，用户可在本地 `~/.pi/agent/lingual.json` 或环境变量中安全指定 `endpoint`, `apiKey`（文档仅提供虚构占位符 `your_api_key_here`，严格规避真实密钥展示）。
+
 ---
 
 ## 🧪 物理执行与验证数据 (Physical Proof)

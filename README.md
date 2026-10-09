@@ -172,29 +172,71 @@ Configuration persists under `~/.pi/agent/settings.json`:
 
 ## Model Engine Integration & Quota Isolation
 
-`pi-lingual` executes against Pi's internal model dispatch buses, requiring zero separate API keys for subscribed users:
+`pi-lingual` executes directly against Pi's internal model dispatch buses, requiring zero separate API keys for active users:
 
-### 1. Default: In-Process Pi Session Model (Zero Setup)
-Calls `ctx.modelRegistry.streamSimple()` using the currently active Pi model credentials. No separate billing, zero token leak risk.
+### 1. Default: In-Process Pi Session Model (Zero Setup & Zero Leakage)
+Calls `ctx.modelRegistry.streamSimple()` using the currently active Pi session model credentials.
+* **100% In-Process Authentication**: Handled securely by Pi's runtime. No API keys or tokens are read, stored, or transmitted by `pi-lingual`.
+* **Zero Additional Billing**: Reuses your existing session credentials.
 
-### 2. Quota Isolation (Protecting Reasoning Budgets)
-When pairing with high-tier reasoning models (Claude 3.5 Sonnet, o1, o3-mini), avoid draining primary rate limits by delegating companion duties to a fast model:
-```bash
-/lingual-model gemini-2.5-flash
-```
-Restore default session inheritance at any time:
-```bash
-/lingual-model auto
-```
+### 2. Quota Isolation & Model Switching (Protecting Reasoning Budgets)
+When pairing with high-tier reasoning models (Claude 3.5 Sonnet, o1, o3-mini), avoid consuming reasoning quota by delegating companion duties to a lightweight, high-speed model:
+* **List Available Models**: Run `/lingual-model` without arguments to query and display all authenticated models available in your Pi environment.
+* **Designate Dedicated Model**:
+  ```bash
+  /lingual-model gemini-3.8-flash    # Or any model available in your environment
+  /2-model gpt-4o-mini              # Quick alias
+  ```
+* **Restore Default Follow-Session Mode**:
+  ```bash
+  /lingual-model auto
+  ```
+Preferences persist safely in `~/.pi/agent/settings.json` under `"pi-lingual": { "selectedModel": "..." }` in your home directory (never in the project git repo).
 
-### 3. Local Offline Models (Ollama · Zero Network Usage)
-For air-gapped or sensitive codebases, point to a local instance running a compact 3B model (e.g. `qwen2.5:3b`) via `~/.pi/agent/lingual.json`:
-```json
-{
-  "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
-  "model": "qwen2.5:3b"
-}
-```
+### 3. Private BYOK & Offline Models (Local Ollama / OpenAI-Compatible)
+For air-gapped, offline, or private BYOK environments, configure custom endpoints via `~/.pi/agent/lingual.json` or environment variables:
+* **Local Ollama (Zero Network Usage)**:
+  ```json
+  {
+    "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
+    "model": "qwen2.5:3b"
+  }
+  ```
+* **Custom OpenAI-Compatible API (e.g. DeepSeek / OpenRouter / Private Gateway)**:
+  ```json
+  {
+    "endpoint": "https://api.deepseek.com/v1/chat/completions",
+    "apiKey": "your_api_key_here",
+    "model": "deepseek-chat"
+  }
+  ```
+* **Environment Variable Overrides**:
+  You can also export environment variables without creating any file:
+  ```bash
+  export LINGUAL_ENDPOINT="https://api.deepseek.com/v1/chat/completions"
+  export LINGUAL_API_KEY="your_api_key_here"
+  export LINGUAL_MODEL="deepseek-chat"
+  ```
+
+> 🔒 **Absolute Privacy & Zero-Credential Exposure Guarantee**:  
+> `pi-lingual` contains zero telemetry, zero analytics, and zero external tracking sinks (`dependencies: {}`). Configuration files reside exclusively in your user home directory (`~/.pi/agent/`), strictly isolated from project workspaces and never tracked or committed by Git.
+
+---
+
+## Author's Note
+
+The system prompts for the translation model are currently tailored by me, but you can deeply customize them to fit your own needs at any time using the `/lingual agent` command.
+
+Beyond just tweaking configurations, I genuinely encourage everyone to think through the output style you actually want:
+* **How granular should the breakdown of key phrases in a sentence be?**
+* **Do you need supplementary explanations on specific grammar nuances or engineering contexts?**
+* **How many core collocations strike the right balance for your cognitive load?**
+
+These questions matter immensely. You will only achieve the best results when you tune the prompts intentionally to match your baseline. In your daily workflow, whenever you press Enter and wait a few seconds for the AI to generate code, take that brief idle window to glance at the natural phrasing right above your prompt.
+
+The inspiration for this project came from my personal experience using tools like the Metasequoia (水杉) input method. I used them faithfully for quite a while, but the outcome was disappointing—I felt like I wasn't really learning anything. Elementary vocabulary was already familiar and didn't need reinforcement, while difficult, obscure words couldn't be grasped just by staring at isolated dictionary entries. During that period, my vocabulary apps were practically worn out from constant lookups. What truly allows you to internalize language and actually use it is authentic phrasing and natural collocations embedded within real context.
+
+I hope everyone takes the time to tune a prompt that works best for them, catches those brief moments during code generation, and keeps going.
 
 ---
 

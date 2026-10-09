@@ -2,3 +2,10 @@ node_modules/
 .tmp/
 *.log
 .DS_Store
+*.env
+*.env.*
+*credentials*
+*.key
+lingual.json
+translate.json
+models.json

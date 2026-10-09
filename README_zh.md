@@ -172,29 +172,70 @@ lingual "这个方案有点过度设计了，不如直接用标准库实现"
 
 ## 零配置原生模型执行与算力解耦
 
-`pi-lingual` 直接运行在 Pi 宿主的大模型总线之上，无需订阅用户单独购买 API Key：
+`pi-lingual` 直接运行在 Pi 宿主的大模型总线之上，无需订阅用户单独购买任何额外的 API Key：
 
-### 1. 默认：继承 Pi 宿主会话模型（零配置，开箱即用）
-调用 `ctx.modelRegistry.streamSimple()` 复用终端当前会话的已认证凭证，无额外账单，无密钥泄露风险。
+### 1. 默认：继承 Pi 宿主会话模型（零配置 · 零密钥泄露）
+调用 `ctx.modelRegistry.streamSimple()` 直接在进程内复用当前会话已认证的模型凭据。
+* **100% 宿主内认证**：由 Pi 宿主安全托管，插件代码不提取、不记录、不上传任何 API Key 或 Token；
+* **无额外账单**：直接复用已有会话环境，0 额外配置开销。
 
-### 2. 算力解耦（保护昂贵的高阶推理配额）
-当主会话使用 Claude 3.5 Sonnet 或 o1 等高阶模型时，为了避免伴学分析消耗主模型的调用频次配额，可挂载轻量模型独立处理：
-```bash
-/lingual-model gemini-2.5-flash
-```
-随时重置为自动跟随主会话：
-```bash
-/lingual-model auto
-```
+### 2. 算力解耦与模型自选（保护昂贵的高阶推理配额）
+当主会话使用 Claude 3.5 Sonnet、o1 或 Opus 等高阶推理模型时，为避免伴学分析消耗宝贵的主模型配额，可挂载轻量模型独立处理：
+* **查看可用模型清单**：直接在终端输入 `/lingual-model`（不带参数），插件会自动检索并列出当前 Pi 宿主中所有已认证的模型供您选择；
+* **挂载专属轻量模型**：
+  ```bash
+  /lingual-model gemini-3.8-flash    # 或当前宿主中已配置的任意模型 ID
+  /2-model gpt-4o-mini              # 极速别名
+  ```
+* **一键恢复跟随会话主模型**：
+  ```bash
+  /lingual-model auto
+  ```
+个人偏好安全保存在您个人电脑的 `~/.pi/agent/settings.json` 中（绝对不会进入任何 Git 仓库）。
 
-### 3. 本地离线模型（Ollama · 零云端消耗）
-在离线或代码保密环境中，可在本地启动 Ollama 运行轻量 3B 模型（如 `qwen2.5:3b`），在 `~/.pi/agent/lingual.json` 中配置：
-```json
-{
-  "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
-  "model": "qwen2.5:3b"
-}
-```
+### 3. 本地离线模型与私有 BYOK 端点（Ollama / 第三方 OpenAI 兼容端点）
+在离线内网、代码严格保密或希望使用私有第三方中转（如 DeepSeek、OpenRouter）的环境中，可配置 `~/.pi/agent/lingual.json` 或环境变量：
+* **本地 Ollama（零网络调用）**：
+  ```json
+  {
+    "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
+    "model": "qwen2.5:3b"
+  }
+  ```
+* **第三方 OpenAI 兼容 API（如 DeepSeek / 私有网关）**：
+  ```json
+  {
+    "endpoint": "https://api.deepseek.com/v1/chat/completions",
+    "apiKey": "your_api_key_here",
+    "model": "deepseek-chat"
+  }
+  ```
+* **环境变量免文件配置**：
+  ```bash
+  export LINGUAL_ENDPOINT="https://api.deepseek.com/v1/chat/completions"
+  export LINGUAL_API_KEY="your_api_key_here"
+  export LINGUAL_MODEL="deepseek-chat"
+  ```
+
+> 🔒 **隐私安全与绝对零凭据外泄保证**：  
+> `pi-lingual` 是真正的零外部运行依赖（`dependencies: {}`），**无任何遥测、埋点、统计或外部网络外联代码**。配置文件严格存放于用户本地主目录（`~/.pi/agent/`），与项目代码库绝对物理隔离，Git 绝不会追踪、提交或上传用户的私有密钥。
+
+---
+
+## 作者手记 (Author's Note)
+
+翻译模型的 Prompts 目前是我预先定制好的，但大家完全可以通过我们提供的 `/lingual agent` 命令，针对各自的具体情况进行深度个性化定制。
+
+不仅局限于此，大家尽可能真的好好考虑自己想要的输出效果到底是什么：
+* **需要多细的颗粒度去分解句子里的重点短语？**
+* **是否需要针对特定的语法或工程语境额外增加用法讲解？**
+* **提取几个核心搭配最适合自己的认知负荷？**
+
+这些都是很重要的，只有用心调整了，才能达到更好的效果。在终端里敲完回车、等待 AI 生成代码的日常间隙中，顺便多看一眼屏幕上方浮现的地道表达。
+
+启发我这个工具灵感的，可能源于我之前使用水杉输入法等项目的切身经历。我切实地用了很长一段时间，但结果并不是很好，感觉并没有真正学到什么：简单的词汇平时本就熟悉，不用重复学习；而真正困难生僻的词汇，脱离了真实语境光看孤立的词条也学不明白，那段时间我的词汇软件都快被翻烂了。真正能让人自然内化并能脱口而出的，永远是完整语境下的地道表达与真实搭配。
+
+希望大家能用心调出最适合自己的提示词，日常多看一眼，坚持下去吧。
 
 ---
 
