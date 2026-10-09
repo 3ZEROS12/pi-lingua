@@ -3,7 +3,7 @@
 **Baseline Version**: `v0.3.0` (SemVer Frozen per Architectural Decision)  
 **Workspace Root**: `D:/Workspace/projects/pi-lingua`  
 **Execution Status**: Final End-to-End Audit & Complete Hardening Completed  
-**Test Suite Health**: **67 / 67 PASS (100% Green)**  
+**Test Suite Health**: **68 / 68 PASS (100% Green)**  
 **Fleet Pre-Flight**: **Passed: 1 | Failed: 0**  
 **Host Mount**: Direct link to local repository in `~/.pi/agent/settings.json`
 
@@ -65,6 +65,19 @@
 - **历史问题**：Pi 启动时告警 `[Extension issues] Extension command '/compact' conflicts with built-in interactive command. Skipping in autocomplete`。
 - **闭环结果**：移除顶级的 `compact` 命令注册，保留标准的 `/lingual-compact` 与极速别名 `/2-compact` 以及主总线子命令，彻底消灭启动红色告警。
 
+### 10. 目标语完整性铁律与括号闭合守卫 (Target Language Integrity Invariant)
+- **发现场景**：用户真实会话 (`01a12049-46a1-7793-bc78-d309c8933dac`) 中输入 73 字符长句（“探讨林纳斯·托瓦兹...”），实机排版在 100 列视窗下呈现两项断裂：
+  * 口语第 2 行末尾被生硬切断为 `(嗨，今天想跟你聊聊林纳斯·托瓦兹。我以`，留下未闭合的孤立左括号；
+  * 写作第 2 行末尾被生硬切断为 `...which came as quite a`，英文主句直接残缺，丢失后半句与语感。
+- **物理根因**：全内联状态下 `spInline`（英文 + 中文母语语感段落）合并折行达 4 行，超预算时执行了粗暴的 `rawSpLines.slice(0, 2)` 数组截取，把完整的段落从中间拦腰斩断。
+- **第一性原理彻底根治**：
+  * **目标语完整性铁律**：当全内联超出行预算时，绝对禁止对带长语感的段落执行盲目 slice。
+  * **分级降阶优雅沉降**：
+    1. Tier 1: 展开式子导轨 (`↳`)；
+    2. Tier 2: 全量内联双模语感；
+    3. Tier 3: 若全量内联超出预算，**优先确保纯正目标语英文（`spoken` 与 `written`）100% 完整无缺**，并在此基础上选择性容纳能放下的语感；
+    4. Tier 4: 在极端窄屏（$< 60$ 列）预算耗尽时，末行强制采用视觉宽度省略号 `truncateVisual(line, maxCols)` 优雅收尾，彻底杜绝孤立断句与未闭合的悬挂左括号 `(`。
+
 ---
 
 ## 🧪 物理执行与验证数据 (Physical Proof)
@@ -80,14 +93,15 @@
 ✔ master command dispatcher - routes subcommands in /lingual and /2 smoothly
 ✔ renderCardLayout - renders tree branch for normal inputs within 9 lines
 ✔ renderCardLayout - guarantees output <= 9 lines on long multi-clause inputs with fallback
+✔ renderCardLayout - target language integrity: no dangling open parentheses or severed sentences
 ✔ Bulletproof Tiered Hard Budget Guard - guarantees lines.length <= 8 on extreme long inputs and narrow columns
 ✔ sanitizePromptForTranslation - correctly recognizes declarative English sentences without question keywords
 ...
-ℹ tests 67
+ℹ tests 68
 ℹ suites 0
-ℹ pass 67
+ℹ pass 68
 ℹ fail 0
-ℹ duration_ms 31919.8683
+ℹ duration_ms 31821.7375
 
 🧪 Fleet Physical Pre-Flight: Passed: 1 | Failed: 0
 ```

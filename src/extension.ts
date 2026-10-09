@@ -299,14 +299,61 @@ function renderHudWidget(
     if (totalInline <= HARD_MAX_LINES) {
       lines = [...clampedSourceLines, ...rawSpLines, ...rawWrLines, ...rawVocabLines];
     } else {
-      // 约束 Tier 3: 槽位等比有界钳位 (Proportional Slot Clamping)
-      // 保证 · [原文]、┌ [口语]、├ [写作]、└ [重点] 四大分支全员保留，绝对不发生末尾盲目切断丢失分支！
-      const spClamped = rawSpLines.length > 2 ? rawSpLines.slice(0, 2) : rawSpLines;
-      const wrClamped = rawWrLines.length > 2 ? rawWrLines.slice(0, 2) : rawWrLines;
-      const vocabClamped = rawVocabLines.length > 2 ? rawVocabLines.slice(0, 2) : rawVocabLines;
-      lines = [...clampedSourceLines, ...spClamped, ...wrClamped, ...vocabClamped];
-      if (lines.length > HARD_MAX_LINES) {
-        lines = lines.slice(0, HARD_MAX_LINES);
+      // 约束 Tier 3: 目标语完整性铁律 (Target Language Integrity Invariant)
+      // 当全内联依然超出行预算时，绝对禁止对带长语感的折行数组执行盲目 slice，
+      // 彻底根除英文主句被截断 (如 "which came as quite a") 或留下未闭合孤立括号 (如 "(嗨，今天想跟你聊聊林纳斯·托瓦兹。我以") 的缺陷！
+      // 优先保障纯正目标语英文与重点词汇的完整性：
+      const branchChar = hasVocab ? "├" : "└";
+      const contChar = hasVocab ? "│" : " ";
+      const pureSpLines = formatTreeBranch(branch1Char, cont1Char, slot1, displaySpoken, pMuted, pAccent, pMuted, s => s, maxCols);
+      const pureWrLines = hasWritten
+        ? formatTreeBranch(branchChar, contChar, slot2, displayWritten!, pMuted, pAccent, pMuted, s => s, maxCols)
+        : [];
+      const pureVocabLines = hasVocab
+        ? formatTreeBranch("└", " ", vocabTag, vocab!, pMuted, pMuted, pMuted, pDim, maxCols)
+        : [];
+
+      const totalPure = clampedSourceLines.length + pureSpLines.length + pureWrLines.length + pureVocabLines.length;
+      if (totalPure <= HARD_MAX_LINES) {
+        // 若预算有空余，尝试保留其中某一个语感 (优先保留口语语感)
+        if (clampedSourceLines.length + rawSpLines.length + pureWrLines.length + pureVocabLines.length <= HARD_MAX_LINES) {
+          lines = [...clampedSourceLines, ...rawSpLines, ...pureWrLines, ...pureVocabLines];
+        } else if (clampedSourceLines.length + pureSpLines.length + rawWrLines.length + pureVocabLines.length <= HARD_MAX_LINES) {
+          lines = [...clampedSourceLines, ...pureSpLines, ...rawWrLines, ...pureVocabLines];
+        } else {
+          lines = [...clampedSourceLines, ...pureSpLines, ...pureWrLines, ...pureVocabLines];
+        }
+      } else {
+        // 约束 Tier 4: 超窄屏或超长文安全有界分配
+        // 优先收缩重点词汇为 1 行 (以省略号结尾)
+        let vLines = pureVocabLines;
+        if (vLines.length > 1) {
+          vLines = [truncateVisual(vLines[0] + " · ...", maxCols)];
+        }
+
+        if (clampedSourceLines.length + pureSpLines.length + pureWrLines.length + vLines.length <= HARD_MAX_LINES) {
+          lines = [...clampedSourceLines, ...pureSpLines, ...pureWrLines, ...vLines];
+        } else {
+          // 对纯目标语按剩余预算均衡分配，末行采用视觉省略号收尾，绝不生硬断句
+          const rem = Math.max(2, HARD_MAX_LINES - clampedSourceLines.length - vLines.length);
+          const spBudget = Math.max(1, Math.floor(rem / 2));
+          const wrBudget = Math.max(1, rem - spBudget);
+
+          const clampLines = (arr: string[], budget: number): string[] => {
+            if (arr.length <= budget) return arr;
+            const res = arr.slice(0, budget);
+            const last = res.length - 1;
+            res[last] = truncateVisual(res[last], maxCols);
+            return res;
+          };
+
+          const spSafe = clampLines(pureSpLines, spBudget);
+          const wrSafe = clampLines(pureWrLines, wrBudget);
+          lines = [...clampedSourceLines, ...spSafe, ...wrSafe, ...vLines];
+          if (lines.length > HARD_MAX_LINES) {
+            lines = lines.slice(0, HARD_MAX_LINES);
+          }
+        }
       }
     }
   }

@@ -1795,12 +1795,45 @@ function renderHudWidget(ctx, sourceText, spoken, written, vocab, spokenMeaning,
     if (totalInline <= HARD_MAX_LINES) {
       lines = [...clampedSourceLines, ...rawSpLines, ...rawWrLines, ...rawVocabLines];
     } else {
-      const spClamped = rawSpLines.length > 2 ? rawSpLines.slice(0, 2) : rawSpLines;
-      const wrClamped = rawWrLines.length > 2 ? rawWrLines.slice(0, 2) : rawWrLines;
-      const vocabClamped = rawVocabLines.length > 2 ? rawVocabLines.slice(0, 2) : rawVocabLines;
-      lines = [...clampedSourceLines, ...spClamped, ...wrClamped, ...vocabClamped];
-      if (lines.length > HARD_MAX_LINES) {
-        lines = lines.slice(0, HARD_MAX_LINES);
+      const branchChar = hasVocab ? "\u251C" : "\u2514";
+      const contChar = hasVocab ? "\u2502" : " ";
+      const pureSpLines = formatTreeBranch(branch1Char, cont1Char, slot1, displaySpoken, pMuted, pAccent, pMuted, (s) => s, maxCols);
+      const pureWrLines = hasWritten ? formatTreeBranch(branchChar, contChar, slot2, displayWritten, pMuted, pAccent, pMuted, (s) => s, maxCols) : [];
+      const pureVocabLines = hasVocab ? formatTreeBranch("\u2514", " ", vocabTag, vocab, pMuted, pMuted, pMuted, pDim, maxCols) : [];
+      const totalPure = clampedSourceLines.length + pureSpLines.length + pureWrLines.length + pureVocabLines.length;
+      if (totalPure <= HARD_MAX_LINES) {
+        if (clampedSourceLines.length + rawSpLines.length + pureWrLines.length + pureVocabLines.length <= HARD_MAX_LINES) {
+          lines = [...clampedSourceLines, ...rawSpLines, ...pureWrLines, ...pureVocabLines];
+        } else if (clampedSourceLines.length + pureSpLines.length + rawWrLines.length + pureVocabLines.length <= HARD_MAX_LINES) {
+          lines = [...clampedSourceLines, ...pureSpLines, ...rawWrLines, ...pureVocabLines];
+        } else {
+          lines = [...clampedSourceLines, ...pureSpLines, ...pureWrLines, ...pureVocabLines];
+        }
+      } else {
+        let vLines = pureVocabLines;
+        if (vLines.length > 1) {
+          vLines = [truncateVisual(vLines[0] + " \xB7 ...", maxCols)];
+        }
+        if (clampedSourceLines.length + pureSpLines.length + pureWrLines.length + vLines.length <= HARD_MAX_LINES) {
+          lines = [...clampedSourceLines, ...pureSpLines, ...pureWrLines, ...vLines];
+        } else {
+          const rem = Math.max(2, HARD_MAX_LINES - clampedSourceLines.length - vLines.length);
+          const spBudget = Math.max(1, Math.floor(rem / 2));
+          const wrBudget = Math.max(1, rem - spBudget);
+          const clampLines = (arr, budget) => {
+            if (arr.length <= budget) return arr;
+            const res = arr.slice(0, budget);
+            const last = res.length - 1;
+            res[last] = truncateVisual(res[last], maxCols);
+            return res;
+          };
+          const spSafe = clampLines(pureSpLines, spBudget);
+          const wrSafe = clampLines(pureWrLines, wrBudget);
+          lines = [...clampedSourceLines, ...spSafe, ...wrSafe, ...vLines];
+          if (lines.length > HARD_MAX_LINES) {
+            lines = lines.slice(0, HARD_MAX_LINES);
+          }
+        }
       }
     }
   }

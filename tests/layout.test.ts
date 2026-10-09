@@ -89,3 +89,35 @@ test("wrapVisualText - handles consecutive punctuation and Kinsoku Shori", () =>
     assert.ok(![",", "，", "。", "！", "？", "；"].includes(firstChar), `Line ${i} should not start with punctuation '${firstChar}'`);
   }
 });
+
+test("renderCardLayout - target language integrity: no dangling open parentheses or severed sentences", () => {
+  const labels = resolveLabelsForLang("zh");
+  const card: LingualResult = {
+    sourceText: "hi,我今天想跟你探讨的是林纳斯托瓦兹这个人，从前我只知道它是Linux的创始人，突然蔡发祥他竟然是Git和github的创始人，，这让我非常震惊",
+    spoken: "Hey, I wanted to chat about Linus Torvalds today. I always knew him as the creator of Linux, but it just blew my mind to find out he also created Git and GitHub.",
+    spokenMeaning: "嗨，今天想跟你聊聊林纳斯·托瓦兹。我以前只知道他是Linux的创始人，突然发现他居然也是Git和GitHub的创始人，这让我太震惊了。",
+    written: "I would like to discuss Linus Torvalds today. Previously, I only recognized him as the creator of Linux; however, I recently discovered that he also created Git and GitHub, which came as quite a surprise to me.",
+    writtenMeaning: "我想探讨一下林纳斯·托瓦兹。此前我只知晓他是Linux之父，近来方知Git与GitHub亦出自其手，深感震撼。",
+    vocab: "blow one's mind (令人极度震撼/震惊) · find out (获悉/发现) · recognize someone as (将某人公认为/视作) · come as a shock (令人深感震惊)",
+    annotated: "",
+  };
+
+  const lines = renderCardLayout(card, labels, { maxCols: 100, maxLines: 9 });
+  assert.ok(lines.length <= 9, `Lines count must be <= 9 (got ${lines.length})`);
+
+  // Verify all 4 rail branch tags exist
+  assert.ok(lines.some(l => l.includes("· [原文]")), "Must retain · [原文]");
+  assert.ok(lines.some(l => l.includes("┌ [口语]")), "Must retain ┌ [口语]");
+  assert.ok(lines.some(l => l.includes("├ [写作]")), "Must retain ├ [写作]");
+  assert.ok(lines.some(l => l.includes("└ [重点]")), "Must retain └ [重点]");
+
+  // Verify no dangling open parentheses '(' without closing ')'
+  const fullRendered = lines.join("\n");
+  const openCount = (fullRendered.match(/\(/g) || []).length;
+  const closeCount = (fullRendered.match(/\)/g) || []).length;
+  assert.equal(openCount, closeCount, "All opened parentheses must be closed (no dangling unclosed '(')");
+
+  // Verify target language is not severed mid-phrase
+  assert.ok(fullRendered.includes("Git and GitHub."), "Spoken sentence must end cleanly");
+  assert.ok(fullRendered.includes("quite a surprise to me."), "Written sentence must end cleanly");
+});
