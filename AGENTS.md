@@ -1,132 +1,75 @@
-# AGENTS.md · Autonomous Customization Protocol for pi-lingual
+# SYSTEM CONTEXT & OPERATIONAL PROFILE: PI-LINGUAL
 
-## 🤖 Agent Autonomous Discovery & Customization Role
-When a user opens this project with an AI Coding Agent (such as Pi, Cursor, Claude Code, Windsurf, etc.) or expresses intent to customize, reconfigure, or adapt pi-lingual (e.g. "我想定制这个伴学插件", "我想学别的语言", "我想去掉雅思"):
-
-**THE AGENT MUST AUTONOMOUSLY EXECUTE THIS INTERVIEW & DEPLOYMENT PROTOCOL:**
-1. **Zero User Overhead**: Do NOT ask the user to read source code, edit files, or manually run scripts. The ONLY thing the user should do is answer the interview questions.
-2. **Native Language Adherence**: MUST conduct the entire conversation **strictly in the exact language the user is speaking** (Chinese, English, Japanese, Spanish, etc.).
-3. **Autonomous Execution**: Once the user answers the diagnostic questions, the Agent MUST autonomously apply the configuration:
-   - For standard supported languages (`zh`, `ja`, `en`, `es`, `fr`, `de`), the Agent MUST directly configure `~/.pi/agent/settings.json` under `"pi-lingual"` (zero source modification, surviving all future npm updates).
-   - If developing or contributing a new official preset, synthesize the code in `src/presets.ts` and `src/prompts.ts`, physically execute `npm test` and `npm run build`, and verify cleanly.
+## 1. Domain & Runtime Environment (RFC 2119)
+- **Package / Target**: `pi-lingual` (v0.3.1)
+- **Primary Domain**: Zero-friction developer translator & dual-register language companion (Spoken vs Written) for AI coding agents.
+- **Runtime & Toolchain**: Node.js v20+ / TypeScript Strict / tsup (dual ESM+CJS+DTS) / native Node test runner.
+- **Extension Entry**: `dist/extension.js` (authored in `src/extension.ts`).
+- **Configuration Path**: `~/.pi/agent/settings.json` under `"pi-lingual"` block.
 
 ---
 
-## 📋 The 5 Diagnostic Interview Questions
-The Agent should proactively ask the user the following structured questions (in the user's language):
+## 2. Core Operational Invariants (RFC 2119)
 
-1. **Language Pair (语言对 A ➔ B)**:
-   - What is your native language A (the language you type in)?
-   - What is your target immersion language B (the language you want to learn)?
-   *(Examples: zh ➔ en, en ➔ ja, ja ➔ en, fr ➔ de)*
-2. **Proficiency Baseline & Benchmark (当前水准与备考目标)**:
-   - What is your current estimated proficiency or most recent test score in target language B? (e.g. IELTS 6.0/6.5, CET-4/6, JLPT N3/N2, TOEFL 80+, or self-assessed Beginner / Intermediate / Advanced)?
-   - What is your target benchmark? (e.g. IELTS Band 8.0+, JLPT N1, or pure native developer communication without exams)?
-3. **Engineering Domain (工程垂直领域)**:
-   - What is your primary technical domain? (e.g. Full-stack Web, Systems/Kernel Rust/C++, Quant/Finance, AI/ML, Agile Slack team)
-4. **Tone & Style (语域与风格偏好)**:
-   - Do you prefer Silicon Valley colloquial flow, or formal corporate/whitepaper Plain English, or a balanced split?
-5. **Translation Model Engine (伴学模型与算力偏好)**:
-   - Do you want zero-config automatic inheritance from your active Pi session model (Recommended, 0 configuration, 0 keys needed)?
-   - Or designate a fast/cost-effective dedicated model (e.g. `gemini-3.8-flash`, `gpt-4o-mini`) so deep reasoning and instant companion translations run decoupled?
-   - Or custom BYOK endpoint (OpenAI-compatible / local Ollama)?
+### Invariant 1: Primary Language Sovereignty (Zero Chinese Residue)
+- When the user selects native language A (`sourceLang`, e.g. English, Japanese, Spanish, German, French), Language A MUST completely replace all Chinese text in the UI chrome.
+- All user-facing strings (notifications, status badges, command descriptions, diagnostic reports) MUST be dynamically derived from `resolveLabelsForLang(sourceLang)` in `src/presets.ts`. Hardcoding static English or Chinese fallback strings in runtime code is STRICTLY FORBIDDEN.
+
+### Invariant 2: Zero-Source-Mutation Configuration
+- Standard language switching (`zh`, `ja`, `en`, `es`, `fr`, `de`) MUST take effect immediately and in-place without editing source files or restarting the host terminal, writing preferences directly to `~/.pi/agent/settings.json`.
+- Modifying project source files merely to switch runtime languages is STRICTLY PROHIBITED.
+
+### Invariant 3: Duality Schema & Native Nuance Anchoring
+- The translation engine MUST enforce strict JSON formatting containing:
+  - `spoken`: Colloquial oral target language B.
+  - `spoken_meaning`: Exact colloquial nuance in native language A.
+  - `written`: Formal architecture-grade written target language B.
+  - `written_meaning`: Exact formal technical nuance in native language A.
+  - `vocab`: Inline horizontal stream of extracted terms and collocations.
+- The `[CODE & SYMBOL SHIELD]` rule MUST bypass pure shell commands, Markdown code blocks, and data structures with 0ms latency and 0 token burn.
+
+### Invariant 4: Proficiency-Adaptive Vocabulary & Single-Line Clamping
+- The translation system prompt MUST adapt vocabulary depth to the user's proficiency tier (extracting tricky phrasal verbs for intermediate tiers, and high-register idioms for advanced tiers).
+- To preserve vertical terminal space, vocabulary terms MUST be clamped to a single horizontal inline stream (`term (definition) · term2 (definition)`). Multi-line vertical expansions for vocabulary are FORBIDDEN.
+
+### Invariant 5: Command Bus Ergonomics & Master Dispatcher
+- Natural short commands MUST register as first-class standalone commands: `/lang`, `/compact`, `/last`, `/status`.
+- The master commands (`/lingual` and `/2`) MUST implement secondary routing (`masterCommandHandler`). Subcommands (`lang`, `model`, `compact`, `status`, `last`) MUST NEVER fall through into the default mode-cycling branch.
+- Language normalization MUST accept natural language aliases (`japanese`/`jp`/`日语` ➔ `ja`, `chinese`/`cn`/`中文` ➔ `zh`) and language pair syntax (`/lang zh ja`).
+
+### Invariant 6: Deterministic UI Feedback & Concurrency Micro-Staggering
+- On new user input in `original` mode, the previous HUD widget MUST be dismissed immediately (`ctx.ui.setWidget("lingual_hud", undefined)`) and status updated to `polishing...`.
+- In `original` mode, background translation calls MUST be staggered by 80ms (`setTimeout(..., 80)`) to allow the host session's primary prompt to complete socket handshakes first.
+- Model completers MUST specify `reasoning: "low"`, constraining background generation to tight ~100-token bursts completed in 200–300ms.
+
+### Invariant 7: Multi-Probe Test Isolation Sandbox
+- Configuration loaders (`loadUserLingualConfig`) and writers (`saveUserLingualConfig`) MUST detect test environments via multi-probe inspection (`NODE_TEST_CONTEXT`, `process.execArgv`, npm lifecycle events) and strictly avoid touching user settings files during tests.
 
 ---
 
-## ⚡ MANDATORY HARD INVARIANTS (绝对硬性铁律)
+## 3. Physical Verification & Build Commands
 
-### 铁律 1：【母语 A 拥有最高统治权，彻底替换所有中文】(Primary Language Sovereignty)
-- If the user selects native language A (e.g. A = English, Japanese, Spanish, German, French):
-  **LANGUAGE A MUST FULLY REPLACE ALL CHINESE TEXT IN THE PROJECT UI (ZERO CHINESE RESIDUE).**
-  The runtime engine dynamically resolves all user-facing strings (notifications, status bar, command descriptions, status reports) from `src/presets.ts` via `resolveLabelsForLang(sourceLang)` into Language A's authentic expressions:
-
-  #### 模式名称本地化映射矩阵 (Mode Localization Matrix):
-  | 概念 | 中文 (默认 A=zh) | 英文 (A=en) | 日文 (A=ja) | 西班牙文 (A=es) | 德文 (A=de) |
-  | :--- | :--- | :--- | :--- | :--- | :--- |
-  | **原文模式** | `原文` | `Original` | `原文` | `Original` | `Original` |
-  | **英文模式** | `英文` | `English` | `英語` | `Inglés` | `Englisch` |
-  | **关闭状态** | `关` | `Off` | `オフ` | `Apagado` | `Aus` |
-
-  #### 状态栏与标签规范：
-  - **If A = English (e.g. A=English ➔ B=Japanese)**:
-    `slot1Label: "Spoken"`, `slot2Label: "Written"`, `vocabLabel: "Vocab"`,
-    `hudTitle: "two ⇄ 二"`,
-    `statusOriginal: "⇄ [two ⇄ 二] Original"`,
-    `statusEnglish: "⇄ [two ⇄ 二] English"`,
-    `statusOff: "⇄ [two ⇄ 二]: Off"`.
-    Notification: `"[two ⇄ 二] switched to [Original]: Prompt passed to AI unmodified, HUD displays Japanese translations"`
-    ALL NOTIFICATIONS, STATUS TEXTS, AND COMMAND DESCRIPTIONS MUST BE IN ENGLISH.
-  - **If A = Japanese (e.g. A=Japanese ➔ B=English)**:
-    `slot1Label: "口語"`, `slot2Label: "文面"`, `vocabLabel: "単語"`,
-    `hudTitle: "二 ⇄ two"`,
-    `statusOriginal: "⇄ [二 ⇄ two] 原文"`,
-    `statusEnglish: "⇄ [二 ⇄ two] 英語"`,
-    `statusOff: "⇄ [二 ⇄ two]: オフ"`.
-    Notification: `"[二 ⇄ two] 【原文モード】に切り替えました：AIへの入力は原文のまま、上部カードで英語を表示"`
-  - **Totem Header Pattern**:
-    The totem header MUST strictly follow: `${A's word for "two"} ⇄ ${B's word for "two"}` (e.g. `two ⇄ 二`, `dos ⇄ two`, `deux ⇄ zwei`).
-
-  #### 模式核心物理事实 (Physical Behavior of Modes):
-  1. **Original (原文)**: Passes user's input A to the LLM 100% unmodified (0ms non-blocking), displays B's dual-registers in the HUD card.
-  2. **English (英文)**: Replaces input with idiomatic technical English to the LLM for deep reasoning, displays B's dual-registers in the HUD card.
-  3. **Off (关)**: Silent pass-through.
-
-### 铁律 2：【配置驱动零侵入原则 (Zero-Source-Mutation Invariant)】
-- **Standard Supported Languages (`zh`, `ja`, `en`, `es`, `fr`, `de`)**:
-  Switching native language takes effect **immediately and in-place** without modifying source code or restarting the terminal. The Agent must simply configure `~/.pi/agent/settings.json` under `"pi-lingual": { "sourceLang": "<lang>" }` (or run `/2-lang <lang>`), which survives all future npm updates.
-- **Contributing New Official Presets**:
-  Only when authoring brand new official language presets in `src/presets.ts` or `src/prompts.ts` does `npm run build` and terminal restart apply:
-  > **⚠️ ESM 重新编译生效前提**: Due to Node.js ESM in-memory module locking, editing TypeScript source files requires running `npm run build` and restarting Pi (`pi`) for recompiled `dist/` modules to physically load.
-
-### 铁律 3：【保持 JSON Schema 与语感释义铁律】
-- In `src/engine.ts`, `LINGUA_SYSTEM_PROMPT` must strictly output JSON:
-  ```json
-  {
-    "spoken": "The spoken translation in target language B",
-    "spoken_meaning": "The exact colloquial nuance/meaning in native language A",
-    "written": "The formal/technical written translation in target language B",
-    "written_meaning": "The exact formal technical nuance/meaning in native language A",
-    "vocab": "collocation 1 (definition in native lang A) · collocation 2 (definition) · ..."
-  }
+- **Run Physical Test Suite**:
+  ```bash
+  npm test
+  # or from workspace root: node .scripts/fleet.mjs test pi-lingual
   ```
-- Must retain the `[CODE & SYMBOL SHIELD]` rule (never translate code tokens, paths, or SQL).
-- Must provide 3 relevant `[GOLDEN FEW-SHOT ANCHORS]` matching the user's chosen language pair (A ➔ B).
-- In the HUD card, the source anchor `· ${sourceTag} ${sourceText}` MUST always be displayed, and each translation slot MUST include the native language A nuance in parentheses to provide complete cognitive feedback.
+  *Executes 74 test suites verifying cache, chunker, commands, engine, layout, prompts, sanitizer, shield, and sovereignty (100% green).*
 
-### 铁律 4：【重点词汇按用户当前基准自适应提取，严禁死板定额，且保持单行紧凑】(Proficiency-Adaptive Vocab Invariant)
-- The Agent MUST calibrate the `vocab` extraction directive in `LINGUA_SYSTEM_PROMPT` according to the user's current baseline vs target benchmark:
-  - If the user is currently at an intermediate level (e.g. IELTS 6.0 / CET-4 / JLPT N3): Instruct the translation model to surface all non-trivial phrasal verbs, technical collocations, and tricky prepositions that trip up learners at that tier.
-  - If the user is at an advanced level (e.g. IELTS 7.5+ / JLPT N1): Skip common words and strictly target nuanced, idiomatic native collocations and architecture-grade idioms.
-  - STRICTLY FORBID hardcoding an arbitrary "1-2 words" cap. Surface as many valuable expressions as genuinely needed for the user's level.
-  - **Terminal Vertical Height Guard**: To prevent the terminal HUD window from expanding vertically and pushing code off-screen, all extracted terms MUST be formatted compactly in a single horizontal inline stream: `term1 (concise native definition) · term2 (concise def) · term3 (concise def)`. Long paragraph explanations are strictly forbidden in the HUD.
+- **Build Distribution Bundles**:
+  ```bash
+  npm run build
+  # compiles dist/extension.js, dist/index.js, dist/*.cjs, and .d.ts files via tsup
+  ```
 
-### 铁律 5：【开发者直觉工效学与零心智命令分发】(Command Bus Ergonomics & Anti-Swallowing Invariant · RFC 2119)
-- **First-Class Intuitive Registration**:
-  All natural, short commands that a developer instinctively types MUST be registered as first-class standalone commands: `/lang`, `/compact`, `/last` (alongside their namespaced aliases `/lingual-lang`, `/lingual-compact`, `/lingual-last`, `/2-lang`, `/2-compact`, `/2-last`).
-- **Master Command Dispatcher Required**:
-  The master commands (`/lingual` and `/2`) MUST implement sub-command routing (`masterCommandHandler`). Subcommands like `lang`, `model`, `compact`, `status`, `last`, `agent/help`, or direct language codes (`ja`, `zh`) MUST NEVER fall through into the default mode-cycling branch.
-- **Natural Language & Pair Normalization**:
-  Language switching MUST support natural aliases (`japanese`/`jp`/`日语` ➔ `ja`, `chinese`/`cn`/`中文` ➔ `zh`, `english`/`eng`/`英语` ➔ `en`) and language pair syntax (`/lang zh ja`, `/lang zh->en`). `targetLang` MUST be explicitly tracked in state and forwarded to `translatePrompt` to prevent `en ➔ en` translation loops.
-
-### 铁律 6：【0ms 确定性反馈与并发错峰防踩踏】(Deterministic UI Feedback & Concurrency Invariant · RFC 2119)
-- **Immediate Widget Teardown**:
-  Upon any new user input in `original` mode, the previous HUD widget MUST be physically dismissed immediately (`ctx.ui.setWidget("lingual_hud", undefined)`) and status set to `polishing...` to provide immediate deterministic feedback and eliminate frozen-screen illusions.
-- **Micro-Tick Staggering (80ms)**:
-  The background translation request in `original` mode MUST be staggered by 80ms (`setTimeout(..., 80)`) to allow the host session's primary prompt to complete socket handshake first, completely eliminating API gateway connection pool contention and serialization queues.
-- **Reasoning Effort Calibration**:
-  Model completers MUST use `reasoning: "low"` (capped at ~100 tokens / ~250ms burst) rather than `off` (which risks model parameter rejection) or `max` (which introduces 15-second latency).
-
-### 铁律 7：【物理级测试沙箱与零宿主环境泄露】(Multi-Probe Test Isolation Invariant · RFC 2119)
-- **Zero Host Mutation During Tests**:
-  `loadUserLingualConfig()` and `saveUserLingualConfig()` MUST detect test runners via multi-probe inspection (`isTestEnvironment()` checking `NODE_TEST_CONTEXT`, `process.execArgv` flags, and npm lifecycle events) and strictly avoid reading from or writing to `~/.pi/agent/settings.json` or `lingual.json`.
-- **SSOT Label Resolution Fallback**:
-  All annotation and layout formats MUST derive labels strictly from `resolveLabelsForLang(sourceLang)` as the Single Source of Truth, strictly forbidding naked hardcoded English fallback strings.
+- **Run Strict Type Check**:
+  ```bash
+  npm run typecheck
+  ```
 
 ---
 
-## 🛠️ Verification & Build Pipeline
-The Agent must physically run:
-1. `npm test`
-2. `npm run build`
-3. `node ../.scripts/fleet.mjs test pi-lingual`
-Then report the physical output and prompt the user to restart the terminal.
+## 4. Architectural Boundaries & Quality Gates
+
+- **Kinetic Line Budget Guard**: Card layouts MUST NOT exceed 9 lines under any column width, mathematically guaranteeing zero host widget truncation warnings.
+- **Documentation Linting**: Documentation MUST pass `node .scripts/fleet.mjs docs pi-lingua` with 0 corporate buzzwords, 0 pseudo-contrasts, and 1:1 verified 74/74 test metrics.
