@@ -649,14 +649,13 @@ function buildSystemPrompt(sourceLang = "zh", targetLang = "en", isLongInput = f
   const targetName = targetLang === "ja" ? "Japanese" : targetLang === "zh" ? "Chinese" : "English";
   const anchorText = spec.anchors.map(
     (a) => `Input: ${JSON.stringify(a.input)}
-Output:
-{
-  "spoken": ${JSON.stringify(a.spoken)},
-  "spoken_meaning": ${JSON.stringify(a.spoken_meaning)},
-  "written": ${JSON.stringify(a.written)},
-  "written_meaning": ${JSON.stringify(a.written_meaning)},
-  "vocab": ${JSON.stringify(a.vocab)}
-}`
+Output: ${JSON.stringify({
+      spoken: a.spoken,
+      spoken_meaning: a.spoken_meaning,
+      written: a.written,
+      written_meaning: a.written_meaning,
+      vocab: a.vocab
+    })}`
   ).join("\n\n");
   const condensationDirective = isLongInput ? `
 

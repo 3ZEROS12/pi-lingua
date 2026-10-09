@@ -644,8 +644,8 @@ export default function (pi: ExtensionAPI) {
             ],
           },
           {
-            reasoning: "off",
-            maxTokens: 350,
+            reasoning: "low",
+            maxTokens: 600,
           } as any
         );
 
@@ -719,36 +719,43 @@ export default function (pi: ExtensionAPI) {
         ctx.ui.setStatus("lingual", ctx.ui.theme.fg("accent", "⇄ [lingual] polishing..."));
       }
 
-      translatePrompt(promptToTranslate, {
-        sourceLang: state.sourceLang,
-        labels: state.labels,
-        complete: completer,
-        signal,
-      })
-        .then((result) => {
-          if (!session.isLatest(generation) || state.mode !== "original") {
-            return;
-          }
-          if (result) {
-            session.setPageResult(0, result, generation);
-            if (ctx.hasUI) {
-              renderHudWidget(
-                ctx,
-                result.sourceText,
-                result.spoken,
-                result.written,
-                result.vocab,
-                result.spokenMeaning,
-                result.writtenMeaning
-              );
-            }
-          }
+      // 微任务时序错峰 (80ms)：避开与 Pi 主会话首包握手争抢连接池，消除网关排队拥堵
+      setTimeout(() => {
+        if (!session.isLatest(generation) || state.mode !== "original") {
+          return;
+        }
+
+        translatePrompt(promptToTranslate, {
+          sourceLang: state.sourceLang,
+          labels: state.labels,
+          complete: completer,
+          signal,
         })
-        .finally(() => {
-          if (session.isLatest(generation)) {
-            updateFooter(ctx);
-          }
-        });
+          .then((result) => {
+            if (!session.isLatest(generation) || state.mode !== "original") {
+              return;
+            }
+            if (result) {
+              session.setPageResult(0, result, generation);
+              if (ctx.hasUI) {
+                renderHudWidget(
+                  ctx,
+                  result.sourceText,
+                  result.spoken,
+                  result.written,
+                  result.vocab,
+                  result.spokenMeaning,
+                  result.writtenMeaning
+                );
+              }
+            }
+          })
+          .finally(() => {
+            if (session.isLatest(generation)) {
+              updateFooter(ctx);
+            }
+          });
+      }, 80);
 
       return { action: "continue" };
     }

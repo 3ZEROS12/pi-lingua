@@ -222,15 +222,13 @@ export function buildSystemPrompt(sourceLang = "zh", targetLang = "en", isLongIn
 
   const anchorText = spec.anchors
     .map(
-      (a) => `Input: ${JSON.stringify(a.input)}
-Output:
-{
-  "spoken": ${JSON.stringify(a.spoken)},
-  "spoken_meaning": ${JSON.stringify(a.spoken_meaning)},
-  "written": ${JSON.stringify(a.written)},
-  "written_meaning": ${JSON.stringify(a.written_meaning)},
-  "vocab": ${JSON.stringify(a.vocab)}
-}`
+      (a) => `Input: ${JSON.stringify(a.input)}\nOutput: ${JSON.stringify({
+        spoken: a.spoken,
+        spoken_meaning: a.spoken_meaning,
+        written: a.written,
+        written_meaning: a.written_meaning,
+        vocab: a.vocab,
+      })}`
     )
     .join("\n\n");
 

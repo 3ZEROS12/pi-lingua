@@ -851,14 +851,13 @@ function buildSystemPrompt(sourceLang = "zh", targetLang = "en", isLongInput = f
   const targetName = targetLang === "ja" ? "Japanese" : targetLang === "zh" ? "Chinese" : "English";
   const anchorText = spec.anchors.map(
     (a) => `Input: ${JSON.stringify(a.input)}
-Output:
-{
-  "spoken": ${JSON.stringify(a.spoken)},
-  "spoken_meaning": ${JSON.stringify(a.spoken_meaning)},
-  "written": ${JSON.stringify(a.written)},
-  "written_meaning": ${JSON.stringify(a.written_meaning)},
-  "vocab": ${JSON.stringify(a.vocab)}
-}`
+Output: ${JSON.stringify({
+      spoken: a.spoken,
+      spoken_meaning: a.spoken_meaning,
+      written: a.written,
+      written_meaning: a.written_meaning,
+      vocab: a.vocab
+    })}`
   ).join("\n\n");
   const condensationDirective = isLongInput ? `
 
@@ -2032,8 +2031,8 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
             ]
           },
           {
-            reasoning: "off",
-            maxTokens: 350
+            reasoning: "low",
+            maxTokens: 600
           }
         );
         const timeoutPromise = new Promise(
@@ -2078,34 +2077,39 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
         ctx.ui.setWidget("lingual_hud", void 0);
         ctx.ui.setStatus("lingual", ctx.ui.theme.fg("accent", "\u21C4 [lingual] polishing..."));
       }
-      translatePrompt(promptToTranslate, {
-        sourceLang: state.sourceLang,
-        labels: state.labels,
-        complete: completer,
-        signal
-      }).then((result) => {
+      setTimeout(() => {
         if (!session.isLatest(generation) || state.mode !== "original") {
           return;
         }
-        if (result) {
-          session.setPageResult(0, result, generation);
-          if (ctx.hasUI) {
-            renderHudWidget(
-              ctx,
-              result.sourceText,
-              result.spoken,
-              result.written,
-              result.vocab,
-              result.spokenMeaning,
-              result.writtenMeaning
-            );
+        translatePrompt(promptToTranslate, {
+          sourceLang: state.sourceLang,
+          labels: state.labels,
+          complete: completer,
+          signal
+        }).then((result) => {
+          if (!session.isLatest(generation) || state.mode !== "original") {
+            return;
           }
-        }
-      }).finally(() => {
-        if (session.isLatest(generation)) {
-          updateFooter(ctx);
-        }
-      });
+          if (result) {
+            session.setPageResult(0, result, generation);
+            if (ctx.hasUI) {
+              renderHudWidget(
+                ctx,
+                result.sourceText,
+                result.spoken,
+                result.written,
+                result.vocab,
+                result.spokenMeaning,
+                result.writtenMeaning
+              );
+            }
+          }
+        }).finally(() => {
+          if (session.isLatest(generation)) {
+            updateFooter(ctx);
+          }
+        });
+      }, 80);
       return { action: "continue" };
     }
     if (ctx.hasUI) {
