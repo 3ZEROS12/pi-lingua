@@ -275,30 +275,39 @@ function renderHudWidget(
   const HARD_MAX_LINES = 9;
 
   if (lines.length > HARD_MAX_LINES) {
-    // 约束 Tier 1: 原文最多展示 2 行，防止长原文占用 5~6 行挤爆视窗
+    // 约束 Tier 1: 原文最多展示 2 行，防止长原文占用过多预算
     const clampedSourceLines = sourceLines.length > 2 ? sourceLines.slice(0, 2) : sourceLines;
 
-    // 优雅内联：双模括号包含完整母语语感，重点词汇依然完整保留
-    const inlineLines: string[] = [...clampedSourceLines];
+    // 约束 Tier 2: 将母语语感内联入括号，收缩纵向子导轨高度
     const spInline = spokenMeaning ? `${spoken} (${spokenMeaning})` : spoken;
-    inlineLines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spInline, pMuted, pAccent, pMuted, s => s, maxCols));
+    const rawSpLines = formatTreeBranch(branch1Char, cont1Char, slot1, spInline, pMuted, pAccent, pMuted, s => s, maxCols);
 
+    let rawWrLines: string[] = [];
     if (hasWritten) {
       const branchChar = hasVocab ? "├" : "└";
       const contChar = hasVocab ? "│" : " ";
       const wrInline = writtenMeaning ? `${written} (${writtenMeaning})` : (written || "");
-      inlineLines.push(...formatTreeBranch(branchChar, contChar, slot2, wrInline, pMuted, pAccent, pMuted, s => s, maxCols));
+      rawWrLines = formatTreeBranch(branchChar, contChar, slot2, wrInline, pMuted, pAccent, pMuted, s => s, maxCols);
     }
 
+    let rawVocabLines: string[] = [];
     if (hasVocab) {
-      inlineLines.push(...formatTreeBranch("└", " ", vocabTag, vocab!, pMuted, pMuted, pMuted, pDim, maxCols));
+      rawVocabLines = formatTreeBranch("└", " ", vocabTag, vocab!, pMuted, pMuted, pMuted, pDim, maxCols);
     }
 
-    if (inlineLines.length <= HARD_MAX_LINES) {
-      lines = inlineLines;
+    const totalInline = clampedSourceLines.length + rawSpLines.length + rawWrLines.length + rawVocabLines.length;
+    if (totalInline <= HARD_MAX_LINES) {
+      lines = [...clampedSourceLines, ...rawSpLines, ...rawWrLines, ...rawVocabLines];
     } else {
-      // 坚持优雅左导轨树状架构与双模，末尾按 HARD_MAX_LINES 安全切片，绝不粗暴降级为单行胶囊与省略号！
-      lines = inlineLines.slice(0, HARD_MAX_LINES);
+      // 约束 Tier 3: 槽位等比有界钳位 (Proportional Slot Clamping)
+      // 保证 · [原文]、┌ [口语]、├ [写作]、└ [重点] 四大分支全员保留，绝对不发生末尾盲目切断丢失分支！
+      const spClamped = rawSpLines.length > 2 ? rawSpLines.slice(0, 2) : rawSpLines;
+      const wrClamped = rawWrLines.length > 2 ? rawWrLines.slice(0, 2) : rawWrLines;
+      const vocabClamped = rawVocabLines.length > 2 ? rawVocabLines.slice(0, 2) : rawVocabLines;
+      lines = [...clampedSourceLines, ...spClamped, ...wrClamped, ...vocabClamped];
+      if (lines.length > HARD_MAX_LINES) {
+        lines = lines.slice(0, HARD_MAX_LINES);
+      }
     }
   }
 

@@ -1778,22 +1778,30 @@ function renderHudWidget(ctx, sourceText, spoken, written, vocab, spokenMeaning,
   const HARD_MAX_LINES = 9;
   if (lines.length > HARD_MAX_LINES) {
     const clampedSourceLines = sourceLines.length > 2 ? sourceLines.slice(0, 2) : sourceLines;
-    const inlineLines = [...clampedSourceLines];
     const spInline = spokenMeaning ? `${spoken} (${spokenMeaning})` : spoken;
-    inlineLines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spInline, pMuted, pAccent, pMuted, (s) => s, maxCols));
+    const rawSpLines = formatTreeBranch(branch1Char, cont1Char, slot1, spInline, pMuted, pAccent, pMuted, (s) => s, maxCols);
+    let rawWrLines = [];
     if (hasWritten) {
       const branchChar = hasVocab ? "\u251C" : "\u2514";
       const contChar = hasVocab ? "\u2502" : " ";
       const wrInline = writtenMeaning ? `${written} (${writtenMeaning})` : written || "";
-      inlineLines.push(...formatTreeBranch(branchChar, contChar, slot2, wrInline, pMuted, pAccent, pMuted, (s) => s, maxCols));
+      rawWrLines = formatTreeBranch(branchChar, contChar, slot2, wrInline, pMuted, pAccent, pMuted, (s) => s, maxCols);
     }
+    let rawVocabLines = [];
     if (hasVocab) {
-      inlineLines.push(...formatTreeBranch("\u2514", " ", vocabTag, vocab, pMuted, pMuted, pMuted, pDim, maxCols));
+      rawVocabLines = formatTreeBranch("\u2514", " ", vocabTag, vocab, pMuted, pMuted, pMuted, pDim, maxCols);
     }
-    if (inlineLines.length <= HARD_MAX_LINES) {
-      lines = inlineLines;
+    const totalInline = clampedSourceLines.length + rawSpLines.length + rawWrLines.length + rawVocabLines.length;
+    if (totalInline <= HARD_MAX_LINES) {
+      lines = [...clampedSourceLines, ...rawSpLines, ...rawWrLines, ...rawVocabLines];
     } else {
-      lines = inlineLines.slice(0, HARD_MAX_LINES);
+      const spClamped = rawSpLines.length > 2 ? rawSpLines.slice(0, 2) : rawSpLines;
+      const wrClamped = rawWrLines.length > 2 ? rawWrLines.slice(0, 2) : rawWrLines;
+      const vocabClamped = rawVocabLines.length > 2 ? rawVocabLines.slice(0, 2) : rawVocabLines;
+      lines = [...clampedSourceLines, ...spClamped, ...wrClamped, ...vocabClamped];
+      if (lines.length > HARD_MAX_LINES) {
+        lines = lines.slice(0, HARD_MAX_LINES);
+      }
     }
   }
   if (lines.length > 9) {

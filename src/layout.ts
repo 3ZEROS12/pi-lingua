@@ -407,7 +407,8 @@ export function renderCardLayout(
   const pageTag = options.pageTag || "";
 
   // 1. 若显式请求胶囊模式，或列宽极窄 (< 40 列)，直接生成单行胶囊流
-  if (isCompact || maxCols < 40) {
+  // 1. 若显式请求胶囊模式，或列宽极端窄小 (< 35 列无法排版树状分支)，降级为单行胶囊流
+  if (isCompact || maxCols < 35) {
     const capsuleText = formatCapsuleLine(labels.hudTitle, card.spoken, card.written, {
       slot1Short: labels.capsuleSlot1Prefix || labels.slot1Label || "Spk",
       slot2Short: labels.capsuleSlot2Prefix || labels.slot2Label || "Wrt",
@@ -481,30 +482,39 @@ export function renderCardLayout(
 
   // 行数守卫与盒模型约束求解 (坚持左导轨树状架构，绝不粗暴降级为单行胶囊)
   if (lines.length > maxLines) {
-    // 约束 Tier 1: 原文最多展示 2 行，防止长原文占用 5~6 行挤爆视窗
+    // 约束 Tier 1: 原文最多展示 2 行，防止长原文占用过多预算
     const clampedSourceLines = sourceLines.length > 2 ? sourceLines.slice(0, 2) : sourceLines;
 
     // 约束 Tier 2: 将母语语感内联入括号，收缩纵向子导轨高度
-    const inlineLines: string[] = [...clampedSourceLines];
     const spInline = card.spokenMeaning ? `${card.spoken} (${card.spokenMeaning})` : card.spoken;
-    inlineLines.push(...formatTreeBranch(branch1Char, cont1Char, labels.slot1Label, spInline, decMuted, decAccent, decMuted, s => s, maxCols));
+    const rawSpLines = formatTreeBranch(branch1Char, cont1Char, labels.slot1Label, spInline, decMuted, decAccent, decMuted, s => s, maxCols);
 
+    let rawWrLines: string[] = [];
     if (hasWritten) {
       const branchChar = hasVocab ? "├" : "└";
       const contChar = hasVocab ? "│" : " ";
       const wrInline = card.writtenMeaning ? `${card.written} (${card.writtenMeaning})` : (card.written || "");
-      inlineLines.push(...formatTreeBranch(branchChar, contChar, labels.slot2Label, wrInline, decMuted, decAccent, decMuted, s => s, maxCols));
+      rawWrLines = formatTreeBranch(branchChar, contChar, labels.slot2Label, wrInline, decMuted, decAccent, decMuted, s => s, maxCols);
     }
 
+    let rawVocabLines: string[] = [];
     if (hasVocab) {
-      inlineLines.push(...formatTreeBranch("└", " ", labels.vocabLabel, card.vocab!, decMuted, decMuted, decMuted, decDim, maxCols));
+      rawVocabLines = formatTreeBranch("└", " ", labels.vocabLabel, card.vocab!, decMuted, decMuted, decMuted, decDim, maxCols);
     }
 
-    if (inlineLines.length <= maxLines) {
-      lines = inlineLines;
+    const totalInline = clampedSourceLines.length + rawSpLines.length + rawWrLines.length + rawVocabLines.length;
+    if (totalInline <= maxLines) {
+      lines = [...clampedSourceLines, ...rawSpLines, ...rawWrLines, ...rawVocabLines];
     } else {
-      // 约束 Tier 3: 若依然微超，坚持完整树状架构与双模，末尾按 maxLines 保护，绝不粗暴降级为单行胶囊
-      lines = inlineLines.slice(0, maxLines);
+      // 约束 Tier 3: 槽位等比有界钳位 (Proportional Slot Clamping)
+      // 保证 · [原文]、┌ [口语]、├ [写作]、└ [重点] 四大分支全员保留，绝对不发生末尾盲目切断丢失分支！
+      const spClamped = rawSpLines.length > 2 ? rawSpLines.slice(0, 2) : rawSpLines;
+      const wrClamped = rawWrLines.length > 2 ? rawWrLines.slice(0, 2) : rawWrLines;
+      const vocabClamped = rawVocabLines.length > 2 ? rawVocabLines.slice(0, 2) : rawVocabLines;
+      lines = [...clampedSourceLines, ...spClamped, ...wrClamped, ...vocabClamped];
+      if (lines.length > maxLines) {
+        lines = lines.slice(0, maxLines);
+      }
     }
   }
 

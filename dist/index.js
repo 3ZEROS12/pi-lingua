@@ -1185,7 +1185,7 @@ function renderCardLayout(card, labels, options = {}) {
   const maxLines = options.maxLines || 9;
   const isCompact = Boolean(options.isCompact);
   const pageTag = options.pageTag || "";
-  if (isCompact || maxCols < 40) {
+  if (isCompact || maxCols < 35) {
     const capsuleText = formatCapsuleLine(labels.hudTitle, card.spoken, card.written, {
       slot1Short: labels.capsuleSlot1Prefix || labels.slot1Label || "Spk",
       slot2Short: labels.capsuleSlot2Prefix || labels.slot2Label || "Wrt",
@@ -1239,22 +1239,30 @@ function renderCardLayout(card, labels, options = {}) {
   }
   if (lines.length > maxLines) {
     const clampedSourceLines = sourceLines.length > 2 ? sourceLines.slice(0, 2) : sourceLines;
-    const inlineLines = [...clampedSourceLines];
     const spInline = card.spokenMeaning ? `${card.spoken} (${card.spokenMeaning})` : card.spoken;
-    inlineLines.push(...formatTreeBranch(branch1Char, cont1Char, labels.slot1Label, spInline, decMuted, decAccent, decMuted, (s) => s, maxCols));
+    const rawSpLines = formatTreeBranch(branch1Char, cont1Char, labels.slot1Label, spInline, decMuted, decAccent, decMuted, (s) => s, maxCols);
+    let rawWrLines = [];
     if (hasWritten) {
       const branchChar = hasVocab ? "\u251C" : "\u2514";
       const contChar = hasVocab ? "\u2502" : " ";
       const wrInline = card.writtenMeaning ? `${card.written} (${card.writtenMeaning})` : card.written || "";
-      inlineLines.push(...formatTreeBranch(branchChar, contChar, labels.slot2Label, wrInline, decMuted, decAccent, decMuted, (s) => s, maxCols));
+      rawWrLines = formatTreeBranch(branchChar, contChar, labels.slot2Label, wrInline, decMuted, decAccent, decMuted, (s) => s, maxCols);
     }
+    let rawVocabLines = [];
     if (hasVocab) {
-      inlineLines.push(...formatTreeBranch("\u2514", " ", labels.vocabLabel, card.vocab, decMuted, decMuted, decMuted, decDim, maxCols));
+      rawVocabLines = formatTreeBranch("\u2514", " ", labels.vocabLabel, card.vocab, decMuted, decMuted, decMuted, decDim, maxCols);
     }
-    if (inlineLines.length <= maxLines) {
-      lines = inlineLines;
+    const totalInline = clampedSourceLines.length + rawSpLines.length + rawWrLines.length + rawVocabLines.length;
+    if (totalInline <= maxLines) {
+      lines = [...clampedSourceLines, ...rawSpLines, ...rawWrLines, ...rawVocabLines];
     } else {
-      lines = inlineLines.slice(0, maxLines);
+      const spClamped = rawSpLines.length > 2 ? rawSpLines.slice(0, 2) : rawSpLines;
+      const wrClamped = rawWrLines.length > 2 ? rawWrLines.slice(0, 2) : rawWrLines;
+      const vocabClamped = rawVocabLines.length > 2 ? rawVocabLines.slice(0, 2) : rawVocabLines;
+      lines = [...clampedSourceLines, ...spClamped, ...wrClamped, ...vocabClamped];
+      if (lines.length > maxLines) {
+        lines = lines.slice(0, maxLines);
+      }
     }
   }
   if (lines.length > maxLines) {
