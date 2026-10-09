@@ -54,7 +54,28 @@ export function splitSemanticChunks(text: string, maxChunkChars = 65): string[] 
       }
     }
     if (subCur.trim()) subChunks.push(subCur.trim());
-    return subChunks.length > 0 ? subChunks : [trimmed];
+
+    // 终极安全切断：若某个子块完全没有任何标点仍超过 maxChunkChars，执行强制平滑字数切断
+    const boundedChunks: string[] = [];
+    for (const chunk of subChunks) {
+      if (chunk.length <= maxChunkChars) {
+        boundedChunks.push(chunk);
+      } else {
+        // 优先在空格处切，无空格直接字数切片
+        let remain = chunk;
+        while (remain.length > maxChunkChars) {
+          const slicePoint = remain.lastIndexOf(" ", maxChunkChars);
+          const splitIdx = slicePoint > 10 ? slicePoint : maxChunkChars;
+          boundedChunks.push(remain.slice(0, splitIdx).trim());
+          remain = remain.slice(splitIdx).trim();
+        }
+        if (remain.trim()) {
+          boundedChunks.push(remain.trim());
+        }
+      }
+    }
+
+    return boundedChunks.length > 0 ? boundedChunks : [trimmed];
   }
 
   // Combine small consecutive sentences if under maxChunkChars (budget ~40 chars)

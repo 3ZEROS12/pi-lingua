@@ -30,6 +30,8 @@ test("shouldShieldBypass - does NOT bypass natural language prompts with tech te
   assert.equal(shouldShieldBypass("继续"), false);
   assert.equal(shouldShieldBypass("吃什么？"), false);
   assert.equal(shouldShieldBypass("git status 为什么会报错？"), false);
+  assert.equal(shouldShieldBypass("```ts console.log(1)``` 为什么这样写不行？"), false);
+  assert.equal(shouldShieldBypass("```bash\ngit commit -m 'fix'\n```\n帮我审查这个提交对不对？"), false);
   assert.equal(shouldShieldBypass("賛成です、進めましょう"), false);
   assert.equal(shouldShieldBypass("De acuerdo, empecemos"), false);
 });

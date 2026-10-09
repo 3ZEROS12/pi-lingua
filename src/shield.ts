@@ -32,6 +32,11 @@ export function shouldShieldBypass(text: string): boolean {
 
   // 1. Markdown 代码块 (以 ``` 开头)
   if (trimmed.startsWith("```")) {
+    // 若代码块外包含明确的人类自然语言提问或说明，绝不旁路拦截！
+    const withoutCodeFence = trimmed.replace(/```[\s\S]*?```/g, "").trim();
+    if (withoutCodeFence && (/[?？]/.test(withoutCodeFence) || /(?:为什么|怎么|如何|帮我|排查|优化|修改|修复|为何|报错|审查|看下|explain|why|how|please|help|could you|fix)/i.test(withoutCodeFence))) {
+      return false;
+    }
     return true;
   }
 

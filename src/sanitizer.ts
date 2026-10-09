@@ -12,9 +12,10 @@
 
 import { isNonEnglish } from "./engine.js";
 
-// 常见剪贴板临时图片及附件文件路径正则 (支持行首及行内全局剥离)
-const CLIPBOARD_IMAGE_REGEX = /^(?:[a-zA-Z]:\\[^\s\r\n\t]+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf)|(?:\/[^\s\r\n\t]+)+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf))\s*/i;
-const INLINE_MEDIA_AND_TEMP_PATH_REGEX = /(?:[a-zA-Z]:\\[^\s\r\n\t]+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf|md)|(?:\/[^\s\r\n\t]+)+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf|md))/gi;
+// 常见临时剪贴板图片及临时状态文件正则 (精确匹配 pi-clipboard 截图及系统临时状态文件，绝不误伤普通代码或 docs/README.md 文件)
+// 支持 Windows 盘符 (正反斜杠)、支持包含空格的用户名路径 (如 Jason Miller)
+const TARGETED_CLIPBOARD_PATH_REGEX = /(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png|\/(?:[^\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png|(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?)CURRENT_MISSION_STATE\.md)/gi;
+const LEADING_TARGETED_CLIPBOARD_REGEX = /^(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png|\/(?:[^\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png)\s*/i;
 
 // 堆栈跟踪特征正则
 const STACK_LINE_REGEX = /^\s*(?:at\s+(?:[\w$.<>]+|[^\s]+)\s*\(.*:\d+:\d+\)|at\s+.*:\d+:\d+|File\s+".*", line \d+, in\s+.*|goroutine \d+ \[.*\]:|Caused by:.*|^\s*\d+:\s+0x[0-9a-f]+)/;
@@ -49,18 +50,18 @@ export function sanitizePromptForTranslation(raw: string): SanitizedPromptResult
     };
   }
 
-  // 1. 循环剥离所有图片/附件路径前缀，并安全滤除文本末尾或夹带的剪贴板图片路径
+  // 1. 循环剥离所有临时截图前缀，并安全滤除文本末尾或夹带的剪贴板图片路径 (绝不误伤普通源码与 README.md)
   let text = trimmed;
-  while (CLIPBOARD_IMAGE_REGEX.test(text)) {
-    text = text.replace(CLIPBOARD_IMAGE_REGEX, "").trim();
+  while (LEADING_TARGETED_CLIPBOARD_REGEX.test(text)) {
+    text = text.replace(LEADING_TARGETED_CLIPBOARD_REGEX, "").trim();
   }
   
-  // 提取夹带在行内或尾部的截图/临时文件路径，存入 rawPayload 供 AI 上下文使用，不污染自然语言切片
-  const inlinePathMatches = text.match(INLINE_MEDIA_AND_TEMP_PATH_REGEX);
+  // 提取夹带在行内或尾部的截图/临时状态路径，存入 rawPayload 供 AI 上下文使用，不污染自然语言切片
+  const inlinePathMatches = text.match(TARGETED_CLIPBOARD_PATH_REGEX);
   let trailingPathPayload: string | undefined;
   if (inlinePathMatches && inlinePathMatches.length > 0) {
     trailingPathPayload = inlinePathMatches.join("\n");
-    text = text.replace(INLINE_MEDIA_AND_TEMP_PATH_REGEX, "").trim();
+    text = text.replace(TARGETED_CLIPBOARD_PATH_REGEX, "").trim();
   }
 
   if (!text) {
@@ -150,10 +151,14 @@ export function sanitizePromptForTranslation(raw: string): SanitizedPromptResult
     .replace(/[a-zA-Z0-9_\-\.\/\\:]+/g, "")
     .trim();
 
-  // 如果包含中日韩或非 ASCII 自然语言文字，或包含自然语言问句词
+  // 如果包含中日韩或非 ASCII 自然语言文字，或包含自然语言问句/指导动词
   const hasCJK = isNonEnglish(distilledText);
-  const hasQuestionKeywords = /(?:为什么|怎么|如何|帮我|排查|优化|修改|修复|为何|报错|explain|why|how|please|help|could you|fix)/i.test(distilledText);
-  const hasNaturalLanguage = hasCJK || hasQuestionKeywords || withoutPlaceholders.length > 5;
+  const hasQuestionKeywords = /(?:为什么|怎么|如何|帮我|排查|优化|修改|修复|为何|报错|审查|看下|explain|why|how|please|help|could you|fix|should|what|inspect)/i.test(distilledText);
+  
+  // 纯编译器诊断守卫：如果整段输入全是 TS/GCC 编译报错模板句，且没有任何人类疑问词，判定为纯输出
+  const isPureDiagnosticOutput = /^(?:[a-zA-Z0-9_\-\.\/\\:]+\s*-\s*error\s+[a-zA-Z0-9]+|error(?:\s+TS\d+|:)|warning:)/i.test(distilledText) && !hasQuestionKeywords;
+
+  const hasNaturalLanguage = (hasCJK || hasQuestionKeywords || withoutPlaceholders.length > 5) && !isPureDiagnosticOutput;
 
   // 5. 提取可能被折叠的原始代码块与堆栈追踪附件 (供 english 模式嫁接保留真实排障上下文)
   let rawPayload: string | undefined;

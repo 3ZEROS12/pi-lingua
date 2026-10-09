@@ -109,13 +109,25 @@ const a: number = "string";
   assert.ok(res.rawPayload.includes("const a: number"), "Payload must contain original code for AI context");
 });
 
-test("sanitizePromptForTranslation - strips trailing and inline clipboard images and temp files", () => {
-  const input = "不知道为什么，想要背诵一首古诗，床前明月关，疑是地上霜。日照香炉生紫烟，要看瀑布挂前川。C:\\Users\\Jason\\Desktop\\CURRENT_MISSION_STATE.mdC:\\Users\\Jason\\AppData\\Local\\Temp\\pi-clipboard-3372a8e2-6500-45a5-87b4-6749a6f85d60.png";
-
+test("sanitizePromptForTranslation - preserves regular markdown and source file paths without accidental stripping", () => {
+  const input = "请修改 docs/README.md 里面的说明文档，顺便看看 src/index.ts";
   const res = sanitizePromptForTranslation(input);
   assert.equal(res.hasNaturalLanguage, true);
-  assert.ok(!res.distilledText.includes("pi-clipboard"), "Trailing clipboard image path must be stripped");
-  assert.ok(!res.distilledText.includes("CURRENT_MISSION_STATE.md"), "Trailing temp state path must be stripped");
-  assert.ok(res.distilledText.endsWith("要看瀑布挂前川。"), "Distilled text must cleanly end with natural text");
-  assert.ok(res.rawPayload, "Stripped paths must be preserved in rawPayload");
+  assert.ok(res.distilledText.includes("docs/README.md"), "README.md path must NOT be accidentally stripped");
+  assert.ok(res.distilledText.includes("src/index.ts"), "Source path must NOT be accidentally stripped");
+});
+
+test("sanitizePromptForTranslation - handles forward slashes and paths with spaces cleanly", () => {
+  const input = "C:/Users/Jason Miller/AppData/Local/Temp/pi-clipboard-123.png 帮我看看这张图里的报错";
+  const res = sanitizePromptForTranslation(input);
+  assert.equal(res.hasNaturalLanguage, true);
+  assert.ok(!res.distilledText.includes("pi-clipboard"), "Clipboard path must be stripped");
+  assert.ok(!res.distilledText.startsWith("C:"), "Orphaned drive letter 'C:' must NOT remain");
+  assert.ok(res.distilledText.startsWith("帮我看看这张图里的报错"), "Text must start cleanly with question");
+});
+
+test("sanitizePromptForTranslation - correctly identifies pure compiler diagnostic output as non-natural", () => {
+  const input = "src/index.ts:15:3 - error TS2322: Type 'string' is not assignable to type 'number'.\nsrc/index.ts:25:7 - error TS2345: Argument of type 'boolean' is not assignable.";
+  const res = sanitizePromptForTranslation(input);
+  assert.equal(res.hasNaturalLanguage, false, "Pure compiler error without question keywords must be flagged non-natural");
 });

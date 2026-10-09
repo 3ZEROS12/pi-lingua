@@ -702,6 +702,10 @@ function shouldShieldBypass(text) {
   const trimmed = text.trim();
   if (!trimmed) return true;
   if (trimmed.startsWith("```")) {
+    const withoutCodeFence = trimmed.replace(/```[\s\S]*?```/g, "").trim();
+    if (withoutCodeFence && (/[?？]/.test(withoutCodeFence) || /(?:为什么|怎么|如何|帮我|排查|优化|修改|修复|为何|报错|审查|看下|explain|why|how|please|help|could you|fix)/i.test(withoutCodeFence))) {
+      return false;
+    }
     return true;
   }
   if (trimmed.startsWith("{") && trimmed.endsWith("}") || trimmed.startsWith("[") && trimmed.endsWith("]")) {
@@ -1258,7 +1262,24 @@ function splitSemanticChunks(text, maxChunkChars = 65) {
       }
     }
     if (subCur.trim()) subChunks.push(subCur.trim());
-    return subChunks.length > 0 ? subChunks : [trimmed];
+    const boundedChunks = [];
+    for (const chunk of subChunks) {
+      if (chunk.length <= maxChunkChars) {
+        boundedChunks.push(chunk);
+      } else {
+        let remain = chunk;
+        while (remain.length > maxChunkChars) {
+          const slicePoint = remain.lastIndexOf(" ", maxChunkChars);
+          const splitIdx = slicePoint > 10 ? slicePoint : maxChunkChars;
+          boundedChunks.push(remain.slice(0, splitIdx).trim());
+          remain = remain.slice(splitIdx).trim();
+        }
+        if (remain.trim()) {
+          boundedChunks.push(remain.trim());
+        }
+      }
+    }
+    return boundedChunks.length > 0 ? boundedChunks : [trimmed];
   }
   const chunks = [];
   let chunkBuffer = "";
@@ -1277,8 +1298,8 @@ function splitSemanticChunks(text, maxChunkChars = 65) {
 }
 
 // src/sanitizer.ts
-var CLIPBOARD_IMAGE_REGEX = /^(?:[a-zA-Z]:\\[^\s\r\n\t]+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf)|(?:\/[^\s\r\n\t]+)+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf))\s*/i;
-var INLINE_MEDIA_AND_TEMP_PATH_REGEX = /(?:[a-zA-Z]:\\[^\s\r\n\t]+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf|md)|(?:\/[^\s\r\n\t]+)+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf|md))/gi;
+var TARGETED_CLIPBOARD_PATH_REGEX = /(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png|\/(?:[^\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png|(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?)CURRENT_MISSION_STATE\.md)/gi;
+var LEADING_TARGETED_CLIPBOARD_REGEX = /^(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png|\/(?:[^\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png)\s*/i;
 var STACK_LINE_REGEX = /^\s*(?:at\s+(?:[\w$.<>]+|[^\s]+)\s*\(.*:\d+:\d+\)|at\s+.*:\d+:\d+|File\s+".*", line \d+, in\s+.*|goroutine \d+ \[.*\]:|Caused by:.*|^\s*\d+:\s+0x[0-9a-f]+)/;
 var COMPILER_DIAGNOSTIC_REGEX = /^(?:[a-zA-Z]:[\\\/]|\.{0,2}[\\\/]|[a-zA-Z0-9_\-\.]+)[^:\r\n]+:\d+:\d+:\s*(?:error|warning|fatal error|note):/i;
 function sanitizePromptForTranslation(raw) {
@@ -1292,14 +1313,14 @@ function sanitizePromptForTranslation(raw) {
     };
   }
   let text = trimmed;
-  while (CLIPBOARD_IMAGE_REGEX.test(text)) {
-    text = text.replace(CLIPBOARD_IMAGE_REGEX, "").trim();
+  while (LEADING_TARGETED_CLIPBOARD_REGEX.test(text)) {
+    text = text.replace(LEADING_TARGETED_CLIPBOARD_REGEX, "").trim();
   }
-  const inlinePathMatches = text.match(INLINE_MEDIA_AND_TEMP_PATH_REGEX);
+  const inlinePathMatches = text.match(TARGETED_CLIPBOARD_PATH_REGEX);
   let trailingPathPayload;
   if (inlinePathMatches && inlinePathMatches.length > 0) {
     trailingPathPayload = inlinePathMatches.join("\n");
-    text = text.replace(INLINE_MEDIA_AND_TEMP_PATH_REGEX, "").trim();
+    text = text.replace(TARGETED_CLIPBOARD_PATH_REGEX, "").trim();
   }
   if (!text) {
     return {
@@ -1364,8 +1385,9 @@ function sanitizePromptForTranslation(raw) {
   const distilledText = resultLines.join(" ").replace(/\s+/g, " ").trim();
   const withoutPlaceholders = distilledText.replace(/\[\.\.\.[^\]]*\]/g, "").replace(/[a-zA-Z0-9_\-\.\/\\:]+/g, "").trim();
   const hasCJK = isNonEnglish(distilledText);
-  const hasQuestionKeywords = /(?:为什么|怎么|如何|帮我|排查|优化|修改|修复|为何|报错|explain|why|how|please|help|could you|fix)/i.test(distilledText);
-  const hasNaturalLanguage = hasCJK || hasQuestionKeywords || withoutPlaceholders.length > 5;
+  const hasQuestionKeywords = /(?:为什么|怎么|如何|帮我|排查|优化|修改|修复|为何|报错|审查|看下|explain|why|how|please|help|could you|fix|should|what|inspect)/i.test(distilledText);
+  const isPureDiagnosticOutput = /^(?:[a-zA-Z0-9_\-\.\/\\:]+\s*-\s*error\s+[a-zA-Z0-9]+|error(?:\s+TS\d+|:)|warning:)/i.test(distilledText) && !hasQuestionKeywords;
+  const hasNaturalLanguage = (hasCJK || hasQuestionKeywords || withoutPlaceholders.length > 5) && !isPureDiagnosticOutput;
   let rawPayload;
   const payloadParts = [];
   if (trailingPathPayload) {
