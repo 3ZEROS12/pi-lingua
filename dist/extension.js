@@ -2107,7 +2107,7 @@ ${langList}
     }
     const sanitized = sanitizePromptForTranslation(raw);
     const promptToTranslate = sanitized.distilledText;
-    if (!sanitized.hasNaturalLanguage || promptToTranslate.length > 500 || !shouldTriggerTranslation(promptToTranslate, state.sourceLang)) {
+    if (!sanitized.hasNaturalLanguage || !shouldTriggerTranslation(promptToTranslate, state.sourceLang)) {
       if (ctx.hasUI) {
         ctx.ui.setWidget("lingual_hud", void 0);
       }

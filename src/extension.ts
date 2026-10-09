@@ -814,11 +814,9 @@ export default function (pi: ExtensionAPI) {
     const promptToTranslate = sanitized.distilledText;
 
     // 判定 1：若整段输入经过审查后，发现毫无自然语言意图 (纯堆栈/纯代码/纯命令)
-    // 判定 2：或提炼后的真实自然语言超出了合理伴学上限 (> 500 字符)
-    // 判定 3：或命中底层代码与 CLI 盾牌
+    // 判定 2：或命中底层代码与 CLI 盾牌及字符长度防护 (由 shouldTriggerTranslation 统一管控)
     if (
       !sanitized.hasNaturalLanguage ||
-      promptToTranslate.length > 500 ||
       !shouldTriggerTranslation(promptToTranslate, state.sourceLang)
     ) {
       // 【关键体验防线 1 · 绝无僵尸残留与幽灵复活】：当前输入不触发翻译时，立刻物理销毁旧卡片，并彻底清空分页池！
