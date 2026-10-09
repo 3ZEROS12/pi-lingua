@@ -78,6 +78,7 @@ interface LingualResult {
     writtenMeaning?: string;
     vocab?: string;
     sourceText: string;
+    summary?: string;
     annotated: string;
 }
 type LinguaResult = LingualResult;
@@ -87,6 +88,7 @@ interface TranslationPayload {
     written?: string;
     writtenMeaning?: string;
     vocab?: string;
+    summary?: string;
 }
 
 /**
@@ -98,7 +100,7 @@ declare const LANGUAGE_PRESETS: Record<string, LingualI18nLabels>;
  * 根据母语语言代码解析对应的本地化标签，并允许用户自定义覆盖
  * 遵循 Lesson 7: 英文中枢保底链 (English Pivot Fallback)
  */
-declare function resolveLabelsForLang(lang: string, overrides?: Partial<LingualI18nLabels>): LingualI18nLabels;
+declare function resolveLabelsForLang(lang: string, overrides?: Partial<LingualI18nLabels>, targetLang?: string): LingualI18nLabels;
 /**
  * 格式化完整的运行状态报告，严格遵循母语 A 统治权
  */

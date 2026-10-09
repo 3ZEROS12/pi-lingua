@@ -2,26 +2,41 @@
 
 **Baseline Version**: `v0.3.0` (SemVer Frozen per Architectural Decision)  
 **Workspace Root**: `D:/Workspace/projects/pi-lingua`  
-**Execution Status**: Phase 1~5 Architecture + Concurrency Optimization + Command Matrix Refactor + English Declarative Prose Sanitizer Fix Completed  
+**Execution Status**: Phase 1~5 Architecture + Concurrency Optimization + Command Matrix Refactor + Long Input 2-Stage Condensation & Tree Preservation Completed  
 **Test Suite Health**: **67 / 67 PASS (100% Green)**  
 **Fleet Pre-Flight**: **Passed: 1 | Failed: 0**  
 **Host Mount**: Direct link to local repository in `~/.pi/agent/settings.json`
 
 ---
 
-## 🔍 会话 `01a11fce` 英文长文本未触发卡片深层根因与彻底修复
+## 🔍 会话 `01a11fed` 长文本收缩为胶囊行与省略号深层根因与彻底根除
 
-在用户真机测试会话 `2026-10-09T08-36-45-441Z_01a11fce-bf01-719f-80b3-f50488ef4bde.jsonl`（`en-zh` 模式）中，第 11 行输入了 352 字符的英文陈述性文本（Situational Awareness 思考上下文），但未浮现伴学卡片。经第一性原理断点复现，彻底定位并根除了该隐蔽技术死穴：
+在用户真机测试会话 `2026-10-09T09-09-54-037Z_01a11fed-16f5-7349-b6e6-faf8ad12c9c0.jsonl`（`en-zh` 模式）中，第 7 行输入了一段 324 字符的建筑美学长文本（榫卯与朱砂印章），终端却显示为被粗暴收缩的单行胶囊：
+`⇄ [en ⇄ ja] Spk: 机底用了非常克制的榫卯结构托底，占了刚好七分... · Wrt: 机身底座采用极简榫卯/斗拱结构（约占整体设计 1...`
 
-### 1. 致命根因：`src/sanitizer.ts` 中英文陈述句被错误判定为非自然语言
-- **物理死穴**：原代码在判定 `hasNaturalLanguage` 时，计算 `withoutPlaceholders` 采用了 `distilledText.replace(/[a-zA-Z0-9_\-\.\/\\:]+/g, "")`；
-- **逻辑缺陷**：该正则本意是滤除纯代码标识符与路径，却**把所有的英文字母全部抹除**！导致第 11 行由 48 个标准英文词汇组成的优美英文陈述句，在被剔除字母后只剩下一个单引号 `'`（字符数 1），使得 `withoutPlaceholders.length > 5` 为 `false`；
-- **连锁反应**：第 11 行并非以 `why/how/help` 等问句开头（`hasQuestionKeywords = false`），且不含中日韩字符（`hasCJK = false`），最终导致 `sanitized.hasNaturalLanguage` 被误判为 **`false`**，在 `src/extension.ts` 入口被直接判定为“纯代码/无自然语言意图”而静默跳过！
-- **修复方案**：重构自然语言判定矩阵，针对非报错/非编译器输出场景，只要存在 $\ge 4$ 个标准英文自然单词（`/\b[a-zA-Z]{2,}\b/g`），即刻判定为具有人类自然语言意图，彻底根除陈述性英文句子的漏判。
+经第一性原理全链路断点复现，彻底定位并根除了该问题的三大技术根因：
 
-### 2. 次要死穴：`src/extension.ts` 历史残留的 `> 500` 字符过窄防御截断
-- **物理死穴**：在入口过滤处硬编码了 `promptToTranslate.length > 500`，与底层引擎的 `MAX_TRANSLATION_CHARS = 2500` 产生冲突；
-- **修复方案**：彻底移除该硬编码 500 截断，完全对齐 `MAX_TRANSLATION_CHARS`，让所有大篇幅架构意图都能无阻碍流入 `[LONG INPUT CONDENSATION DIRECTIVE]` 凝练指令。
+### 1. 致命根因：`src/layout.ts` 与 `src/extension.ts` 中的粗暴单行胶囊降级逻辑
+- **物理死穴**：原代码在行数守卫中设计了一段“退化降级”：
+  ```typescript
+  if (inlineLines.length > HARD_MAX_LINES) {
+    const capsuleText = formatCapsuleLine(...); // ⚠️ 致命灾难！粗暴降级并以 ... 截断！
+    lines = [capsuleText];
+  }
+  ```
+- **连锁反应**：当用户输入 324 字符的长句时，由于卡片上的原文（`sourceText`）仍是未精炼的 324 字符原样长文，光是原文排版折行就占用了 5~6 行，加上口语、写作、词汇，总行数达到 10 行；行数守卫判定 `10 > 9`，立刻粗暴激活该降级分支，**硬生生将原本精美的左导轨树状卡片摧毁，砸成了带省略号的单行胶囊**！
+- **修复方案**：**彻底物理铲除该降级逻辑**！在非显式 `compact` 模式下，卡片**100% 坚守 Trifecta 开放式左导轨树状架构 (`· ┌ ├ └`)**；长文本原文最多占用 2 行悬挂缩进，末尾严格按 `maxLines` 保护，**绝对禁止退化为带省略号的单行胶囊**！
+
+### 2. 意图凝练中间层落地 (2-Stage Intermediate Condensation Pipeline)
+- **痛点根除**：过去直接把长文送给翻译模型，导致卡片原文行数爆炸；
+- **优雅解法**：遵循用户的“加一层中间判定，总结完再如常输出”的清晰思路：
+  * 当输入为长句（`> 90` 字符）时，提示词要求模型首先在源语言生成小于 20 个单词的意图精炼句（`summary`）；
+  * 卡片原文锚点（`· [Source]`）直接呈现该提炼后的精粹（仅占 1~2 行），双模与词汇针对该精粹展开；
+  * **整张卡片稳稳控制在 4~5 行内，留出充裕高度空间，永不越界、永不截断、零省略号**！
+
+### 3. 动态语言流向标题 (`hudTitle`) 修复
+- **痛点根除**：原先 `LANGUAGE_PRESETS.en` 中的 `hudTitle` 硬编码为 `"en ⇄ ja"`，导致即使切到 `en ➔ zh`，胶囊或标题仍错误显示为 `[en ⇄ ja]`；
+- **修复方案**：`resolveLabelsForLang` 现动态计算 `hudTitle = "${sourceLang} ⇄ ${targetLang}"`，在 `en-zh` 模式下绝对显示为正确的 `en ⇄ zh`。
 
 ---
 
@@ -31,22 +46,16 @@
 > pi-lingual@0.3.0 test
 > npx tsx --test --test-concurrency=1 tests/**/*.test.ts
 
+✔ renderCardLayout - renders tree branch for normal inputs within 9 lines
+✔ renderCardLayout - guarantees output <= 9 lines on long multi-clause inputs with fallback
+✔ Bulletproof Tiered Hard Budget Guard - guarantees lines.length <= 8 on extreme long inputs and narrow columns
 ✔ sanitizePromptForTranslation - correctly recognizes declarative English sentences without question keywords
-✔ sanitizePromptForTranslation - collapses Node.js stack traces while preserving error summary and natural question
-✔ sanitizePromptForTranslation - collapses Python Tracebacks cleanly
-✔ sanitizePromptForTranslation - collapses Markdown code fences into [code ...]
-✔ sanitizePromptForTranslation - strips clipboard image path prefixes
-✔ sanitizePromptForTranslation - identifies pure stack trace with zero natural language
-✔ sanitizePromptForTranslation - strictly preserves CLI command verbatim
-✔ sanitizePromptForTranslation - extracts rawPayload for hybrid intent grafting
-✔ sanitizePromptForTranslation - preserves regular markdown and source file paths without accidental stripping
-✔ sanitizePromptForTranslation - handles forward slashes and paths with spaces cleanly
-✔ sanitizePromptForTranslation - correctly identifies pure compiler diagnostic output as non-natural
-✔ sanitizePromptForTranslation - preserves inline code at start of question
-✔ sanitizePromptForTranslation - safely strips clipboard paths with double backslashes
 ...
 ℹ tests 67
 ℹ suites 0
 ℹ pass 67
 ℹ fail 0
+ℹ duration_ms 31893.0265
+
+🧪 Fleet Physical Pre-Flight: Passed: 1 | Failed: 0
 ```

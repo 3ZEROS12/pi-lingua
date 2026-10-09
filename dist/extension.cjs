@@ -602,14 +602,19 @@ var LANGUAGE_PRESETS = {
     modelSelectHint: "Geben Sie /lingual-model <id> oder auto ein."
   }
 };
-function resolveLabelsForLang(lang, overrides) {
+function resolveLabelsForLang(lang, overrides, targetLang) {
   const norm = (lang || "zh").toLowerCase().split("-")[0];
   const target = LANGUAGE_PRESETS[norm] || LANGUAGE_PRESETS.zh;
+  const actualTarget = targetLang || (norm === "en" ? "ja" : "en");
+  const pairTitle = `${norm} \u21C4 ${actualTarget}`;
   return {
     ...LANGUAGE_PRESETS.en,
     // 1. 英文全量保底 (保证任何新增 key 不为空，不泄露中文)
     ...target,
     // 2. 目标母语官方预设
+    hudTitle: pairTitle,
+    statusOriginal: pairTitle,
+    statusEnglish: pairTitle,
     ...overrides || {}
     // 3. 用户显式覆盖
   };
@@ -863,7 +868,24 @@ Output: ${JSON.stringify({
 
 [LONG INPUT CONDENSATION DIRECTIVE]:
 The user's input text is long (>90 chars). DO NOT translate verbatim line by line.
-Instead, distill and synthesize the core architectural/technical intent into concise, punchy spoken and written expressions (strictly under 25 words each) so that the translation fits cleanly on a single terminal HUD card without information bloat.` : "";
+First, distill and synthesize the core architectural/technical intent into a concise summary ("summary") in native ${spec.name} (strictly under 25 words).
+Then, translate that distilled intent into concise, punchy spoken and written expressions in ${targetName} (strictly under 25 words each) so that the translation fits cleanly on a single terminal HUD card without information bloat.` : "";
+  const jsonFormatHint = isLongInput ? `Strict JSON format:
+{
+  "summary": "Concise core intent in native ${spec.name} (under 25 words)",
+  "spoken": "...",
+  "spoken_meaning": "...",
+  "written": "...",
+  "written_meaning": "...",
+  "vocab": "..."
+}` : `Strict JSON format:
+{
+  "spoken": "...",
+  "spoken_meaning": "...",
+  "written": "...",
+  "written_meaning": "...",
+  "vocab": "..."
+}`;
   return `You are an elite bilingual developer language coach and senior software architect.
 Task:
 Translate the user's message from native ${spec.name} (language A) into TWO distinct authentic ${targetName} registers (language B), and provide the exact back-translation/nuance in native ${spec.name} for each register:
@@ -880,14 +902,7 @@ ${condensationDirective}
 [GOLDEN FEW-SHOT ANCHORS]:
 ${anchorText}
 
-Strict JSON format:
-{
-  "spoken": "...",
-  "spoken_meaning": "...",
-  "written": "...",
-  "written_meaning": "...",
-  "vocab": "..."
-}
+${jsonFormatHint}
 Output valid JSON ONLY. Never output markdown code fences, backticks, quotes, or explanations.`;
 }
 
@@ -1186,13 +1201,15 @@ function parseLlmResponse(raw) {
     const written = (parsed.written || parsed.academic || parsed.slot2 || "").trim();
     const writtenMeaning = (parsed.written_meaning || parsed.writtenMeaning || "").trim();
     const vocab = typeof parsed.vocab === "string" ? parsed.vocab.trim() : "";
+    const summary = typeof (parsed.summary || parsed.core_intent || parsed.coreIntent) === "string" ? (parsed.summary || parsed.core_intent || parsed.coreIntent).trim() : "";
     if (spoken) {
       return {
         spoken,
         spokenMeaning: spokenMeaning || void 0,
         written: written || void 0,
         writtenMeaning: writtenMeaning || void 0,
-        vocab: vocab || void 0
+        vocab: vocab || void 0,
+        summary: summary || void 0
       };
     }
     return null;
@@ -1269,15 +1286,17 @@ async function translatePrompt(text, userConfig = {}) {
     const slot2Label = labels.slot2Label || labels.writtenLabel || "\u5199\u4F5C";
     const vocabLabel = labels.vocabLabel || "\u91CD\u70B9";
     const sourceLabel = labels.sourceLabel || "\u539F\u6587";
+    const effectiveSourceText = isLongInput && payload.summary && payload.summary.trim() ? payload.summary.trim() : trimmed;
     const result = {
       spoken: payload.spoken,
       spokenMeaning: payload.spokenMeaning,
       written: payload.written || "",
       writtenMeaning: payload.writtenMeaning,
       vocab: payload.vocab,
-      sourceText: trimmed,
+      summary: payload.summary,
+      sourceText: effectiveSourceText,
       annotated: formatTerminalAnnotation(
-        trimmed,
+        effectiveSourceText,
         payload.spoken,
         payload.written,
         payload.vocab,
@@ -1577,7 +1596,7 @@ function isTestEnvironment2() {
 var initialDiskConfig = isTestEnvironment2() ? {} : loadUserLingualConfig();
 var initialSourceLang = initialDiskConfig.sourceLang || "zh";
 var initialTargetLang = initialDiskConfig.targetLang || (initialSourceLang === "en" ? "ja" : "en");
-var initialLabels = resolveLabelsForLang(initialSourceLang, initialDiskConfig.labels);
+var initialLabels = resolveLabelsForLang(initialSourceLang, initialDiskConfig.labels, initialTargetLang);
 var state = {
   mode: initialDiskConfig.mode || "original",
   compact: Boolean(initialDiskConfig.compact),
@@ -1669,10 +1688,11 @@ function renderHudWidget(ctx, sourceText, spoken, written, vocab, spokenMeaning,
   const vocabTag = state.labels.vocabLabel || "\u91CD\u70B9";
   const sourceTag = state.labels.sourceLabel || "\u539F\u6587";
   const pageTag = pagination && pagination.totalPages > 1 ? ctx.ui.theme.fg("muted", ` [${pagination.pageIndex + 1}/${pagination.totalPages} \u2325.]`) : "";
+  const pairTitle = `${state.sourceLang} \u21C4 ${state.targetLang}`;
   const isCompact = state.compact || (process.stdout?.rows ? process.stdout.rows < 22 : false);
   if (isCompact) {
     const capsuleText = formatCapsuleLine(
-      state.labels.hudTitle,
+      pairTitle,
       spoken,
       written,
       {
@@ -1732,7 +1752,8 @@ function renderHudWidget(ctx, sourceText, spoken, written, vocab, spokenMeaning,
   }
   const HARD_MAX_LINES = 9;
   if (lines.length > HARD_MAX_LINES) {
-    const inlineLines = [...sourceLines];
+    const clampedSourceLines = sourceLines.length > 2 ? sourceLines.slice(0, 2) : sourceLines;
+    const inlineLines = [...clampedSourceLines];
     const spInline = spokenMeaning ? `${spoken} (${spokenMeaning})` : spoken;
     inlineLines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spInline, pMuted, pAccent, pMuted, (s) => s, maxCols));
     if (hasWritten) {
@@ -1747,17 +1768,7 @@ function renderHudWidget(ctx, sourceText, spoken, written, vocab, spokenMeaning,
     if (inlineLines.length <= HARD_MAX_LINES) {
       lines = inlineLines;
     } else {
-      const capsuleText = formatCapsuleLine(
-        state.labels.hudTitle,
-        spoken,
-        written,
-        {
-          slot1Short: state.labels.capsuleSlot1Prefix || slot1,
-          slot2Short: state.labels.capsuleSlot2Prefix || slot2,
-          maxCols: process.stdout?.columns || 80
-        }
-      );
-      lines = [capsuleText + pageTag];
+      lines = inlineLines.slice(0, HARD_MAX_LINES);
     }
   }
   if (lines.length > 9) {
@@ -1886,7 +1897,7 @@ ${langList}
     }
     state.sourceLang = newSource;
     state.targetLang = newTarget;
-    state.labels = resolveLabelsForLang(newSource);
+    state.labels = resolveLabelsForLang(newSource, void 0, newTarget);
     saveUserLingualConfig({ sourceLang: newSource, targetLang: newTarget });
     session.reset();
     globalLingualCache.clear();

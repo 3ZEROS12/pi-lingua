@@ -54,7 +54,7 @@ function isTestEnvironment(): boolean {
 const initialDiskConfig = isTestEnvironment() ? {} : loadUserLingualConfig();
 const initialSourceLang = initialDiskConfig.sourceLang || "zh";
 const initialTargetLang = initialDiskConfig.targetLang || (initialSourceLang === "en" ? "ja" : "en");
-const initialLabels = resolveLabelsForLang(initialSourceLang, initialDiskConfig.labels);
+const initialLabels = resolveLabelsForLang(initialSourceLang, initialDiskConfig.labels, initialTargetLang);
 
 const state: ExtensionState = {
   mode: initialDiskConfig.mode || "original",
@@ -179,10 +179,11 @@ function renderHudWidget(
 
   // 方向四：极端分屏单行胶囊模式 (Compact Capsule Mode)
   // 当显式开启 compact 或终端高度不足 (process.stdout.rows < 22) 时，渲染严格为 1 行的高密度胶囊流
+  const pairTitle = `${state.sourceLang} ⇄ ${state.targetLang}`;
   const isCompact = state.compact || (process.stdout?.rows ? process.stdout.rows < 22 : false);
   if (isCompact) {
     const capsuleText = formatCapsuleLine(
-      state.labels.hudTitle,
+      pairTitle,
       spoken,
       written,
       {
@@ -268,14 +269,17 @@ function renderHudWidget(
     lines.push(...formatTreeBranch("└", " ", vocabTag, vocab!, pMuted, pMuted, pMuted, pDim, maxCols));
   }
 
-  // 4. 动态行数守卫 (遵循伴学核心灵魂：绝不剥离母语语感，绝不删除重点词汇)
+  // 4. 动态行数守卫 (遵循伴学核心灵魂：绝不剥离母语语感，绝不删除重点词汇，绝不粗暴降级为单行胶囊)
   // Pi host widget 的物理截断上限为 10 行。
-  // 若全展开超过 9 行，优雅将语感内联进双模括号；若极端超长，平滑降级为单行胶囊模式，彻底杜绝内容残缺！
+  // 若全展开超过 9 行，优雅将原文限制为最多 2 行，并将语感内联进双模括号；绝不粗暴降级为带省略号的单行胶囊！
   const HARD_MAX_LINES = 9;
 
   if (lines.length > HARD_MAX_LINES) {
+    // 约束 Tier 1: 原文最多展示 2 行，防止长原文占用 5~6 行挤爆视窗
+    const clampedSourceLines = sourceLines.length > 2 ? sourceLines.slice(0, 2) : sourceLines;
+
     // 优雅内联：双模括号包含完整母语语感，重点词汇依然完整保留
-    const inlineLines: string[] = [...sourceLines];
+    const inlineLines: string[] = [...clampedSourceLines];
     const spInline = spokenMeaning ? `${spoken} (${spokenMeaning})` : spoken;
     inlineLines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spInline, pMuted, pAccent, pMuted, s => s, maxCols));
 
@@ -293,18 +297,8 @@ function renderHudWidget(
     if (inlineLines.length <= HARD_MAX_LINES) {
       lines = inlineLines;
     } else {
-      // 极端窄屏或超长语句：优雅降级为单行胶囊模式，保留最纯粹双模流，绝不输出光秃秃的残缺卡片
-      const capsuleText = formatCapsuleLine(
-        state.labels.hudTitle,
-        spoken,
-        written,
-        {
-          slot1Short: state.labels.capsuleSlot1Prefix || slot1,
-          slot2Short: state.labels.capsuleSlot2Prefix || slot2,
-          maxCols: process.stdout?.columns || 80,
-        }
-      );
-      lines = [capsuleText + pageTag];
+      // 坚持优雅左导轨树状架构与双模，末尾按 HARD_MAX_LINES 安全切片，绝不粗暴降级为单行胶囊与省略号！
+      lines = inlineLines.slice(0, HARD_MAX_LINES);
     }
   }
 
@@ -458,7 +452,7 @@ export default function (pi: ExtensionAPI) {
 
     state.sourceLang = newSource;
     state.targetLang = newTarget;
-    state.labels = resolveLabelsForLang(newSource);
+    state.labels = resolveLabelsForLang(newSource, undefined, newTarget);
     saveUserLingualConfig({ sourceLang: newSource, targetLang: newTarget });
     session.reset();
     globalLingualCache.clear();

@@ -479,9 +479,13 @@ export function renderCardLayout(
     lines.push(...formatTreeBranch("└", " ", labels.vocabLabel, card.vocab!, decMuted, decMuted, decMuted, decDim, maxCols));
   }
 
-  // 行数守卫与盒模型约束求解
+  // 行数守卫与盒模型约束求解 (坚持左导轨树状架构，绝不粗暴降级为单行胶囊)
   if (lines.length > maxLines) {
-    const inlineLines: string[] = [...sourceLines];
+    // 约束 Tier 1: 原文最多展示 2 行，防止长原文占用 5~6 行挤爆视窗
+    const clampedSourceLines = sourceLines.length > 2 ? sourceLines.slice(0, 2) : sourceLines;
+
+    // 约束 Tier 2: 将母语语感内联入括号，收缩纵向子导轨高度
+    const inlineLines: string[] = [...clampedSourceLines];
     const spInline = card.spokenMeaning ? `${card.spoken} (${card.spokenMeaning})` : card.spoken;
     inlineLines.push(...formatTreeBranch(branch1Char, cont1Char, labels.slot1Label, spInline, decMuted, decAccent, decMuted, s => s, maxCols));
 
@@ -499,12 +503,8 @@ export function renderCardLayout(
     if (inlineLines.length <= maxLines) {
       lines = inlineLines;
     } else {
-      const capsuleText = formatCapsuleLine(labels.hudTitle, card.spoken, card.written, {
-        slot1Short: labels.capsuleSlot1Prefix || labels.slot1Label || "Spk",
-        slot2Short: labels.capsuleSlot2Prefix || labels.slot2Label || "Wrt",
-        maxCols,
-      });
-      lines = [capsuleText + pageTag];
+      // 约束 Tier 3: 若依然微超，坚持完整树状架构与双模，末尾按 maxLines 保护，绝不粗暴降级为单行胶囊
+      lines = inlineLines.slice(0, maxLines);
     }
   }
 

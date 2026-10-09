@@ -355,13 +355,19 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
  */
 export function resolveLabelsForLang(
   lang: string,
-  overrides?: Partial<LingualI18nLabels>
+  overrides?: Partial<LingualI18nLabels>,
+  targetLang?: string
 ): LingualI18nLabels {
   const norm = (lang || "zh").toLowerCase().split("-")[0];
   const target = LANGUAGE_PRESETS[norm] || LANGUAGE_PRESETS.zh;
+  const actualTarget = targetLang || (norm === "en" ? "ja" : "en");
+  const pairTitle = `${norm} ⇄ ${actualTarget}`;
   return {
     ...LANGUAGE_PRESETS.en, // 1. 英文全量保底 (保证任何新增 key 不为空，不泄露中文)
     ...target,              // 2. 目标母语官方预设
+    hudTitle: pairTitle,
+    statusOriginal: pairTitle,
+    statusEnglish: pairTitle,
     ...(overrides || {}),   // 3. 用户显式覆盖
   };
 }
