@@ -81,7 +81,8 @@ export interface LingualConfig {
   labels?: Partial<LingualI18nLabels>;
   temperature?: number;
   timeoutMs?: number;
-  complete?: (text: string, systemPrompt: string) => Promise<string | null>;
+  complete?: (text: string, systemPrompt: string, signal?: AbortSignal) => Promise<string | null>;
+  signal?: AbortSignal;
 }
 export type LinguaConfig = LingualConfig;
 

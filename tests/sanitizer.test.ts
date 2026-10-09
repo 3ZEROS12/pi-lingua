@@ -131,3 +131,19 @@ test("sanitizePromptForTranslation - correctly identifies pure compiler diagnost
   const res = sanitizePromptForTranslation(input);
   assert.equal(res.hasNaturalLanguage, false, "Pure compiler error without question keywords must be flagged non-natural");
 });
+
+test("sanitizePromptForTranslation - preserves inline code at start of question", () => {
+  const input = "`const x = 1;` 帮我看看这段代码怎么优化？";
+  const res = sanitizePromptForTranslation(input);
+  assert.equal(res.hasNaturalLanguage, true);
+  assert.ok(res.distilledText.includes("`const x = 1;`"));
+  assert.ok(res.distilledText.includes("帮我看看这段代码怎么优化？"));
+});
+
+test("sanitizePromptForTranslation - safely strips clipboard paths with double backslashes", () => {
+  const input = "C:\\\\Users\\\\Jason\\\\AppData\\\\Local\\\\Temp\\\\pi-clipboard-abc-123.png 帮我排查下错误";
+  const res = sanitizePromptForTranslation(input);
+  assert.equal(res.hasNaturalLanguage, true);
+  assert.ok(!res.distilledText.includes("pi-clipboard"));
+  assert.ok(res.distilledText.includes("帮我排查下错误"));
+});

@@ -41,6 +41,15 @@ export class LingualLruCache<T> {
   }
 
   set(key: string, val: T): void {
+    // 内存安全防护：超长键 (如粘入整篇论文 > 256 字符) 不做缓存，防止内存膨胀
+    if (!key || key.length > 256) {
+      return;
+    }
+    // 内存安全防护：超大载荷 (> 2048 字符) 不做缓存
+    if (typeof val === "string" && val.length > 2048) {
+      return;
+    }
+
     if (this.cache.has(key)) {
       this.cache.delete(key);
     } else if (this.cache.size >= this.capacity) {

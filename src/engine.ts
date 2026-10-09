@@ -1,3 +1,32 @@
+import {
+  getVisualWidth,
+  truncateVisual,
+  wrapVisualText,
+  formatTreeBranch,
+  formatSubRail,
+  extractVocabPhrases,
+  spotlightPhrases,
+  formatTerminalAnnotation,
+  formatCapsuleLine,
+  renderCardLayout,
+  CANNOT_START_LINE_CHARS,
+  getEffectiveMaxCols,
+} from "./layout.js";
+
+export {
+  getVisualWidth,
+  truncateVisual,
+  wrapVisualText,
+  formatTreeBranch,
+  formatSubRail,
+  extractVocabPhrases,
+  spotlightPhrases,
+  formatTerminalAnnotation,
+  formatCapsuleLine,
+  renderCardLayout,
+  CANNOT_START_LINE_CHARS,
+  getEffectiveMaxCols,
+};
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -204,394 +233,6 @@ export function parseLlmResponse(raw: string): TranslationPayload | null {
 }
 
 /**
- * Truncate string based on visual cell width (CJK = 2 cols, ASCII = 1 col)
- * Guarantees that header text never exceeds visual column boundaries (including the "..." ellipsis).
- */
-export function truncateVisual(str: string, maxVisualCols: number): string {
-  if (maxVisualCols <= 0) return "";
-  const fullWidth = getVisualWidth(str);
-  if (fullWidth <= maxVisualCols) return str;
-
-  // 必须预留 3 列给省略号 "..."，确保拼接后总宽度严格 <= maxVisualCols (彻底修复 BUG-M4)
-  const targetCols = Math.max(1, maxVisualCols - 3);
-  let curWidth = 0;
-  let result = "";
-  for (const char of str) {
-    const w = getVisualWidth(char);
-    if (curWidth + w > targetCols) {
-      break;
-    }
-    result += char;
-    curWidth += w;
-  }
-  return result + "...";
-}
-
-/**
- * Accurate visual cell width calculation:
- * - ANSI escape codes = 0 visual width
- * - CJK characters, Fullwidth forms, emojis = 2 visual width
- * - ASCII characters = 1 visual width
- */
-export function getVisualWidth(str: string): number {
-  let width = 0;
-  const clean = str.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "");
-  for (const char of clean) {
-    const code = char.codePointAt(0) || 0;
-    if (
-      (code >= 0x1100 && code <= 0x115f) ||
-      (code >= 0x2e80 && code <= 0xa4cf) ||
-      (code >= 0xac00 && code <= 0xd7a3) ||
-      (code >= 0xf900 && code <= 0xfaff) ||
-      (code >= 0xfe10 && code <= 0xfe19) ||
-      (code >= 0xfe30 && code <= 0xfe6f) ||
-      (code >= 0xff00 && code <= 0xff60) ||
-      (code >= 0xffe0 && code <= 0xffe6) ||
-      (code >= 0x1f300 && code <= 0x1f64f) ||
-      (code >= 0x1f900 && code <= 0x1f9ff)
-    ) {
-      width += 2;
-    } else {
-      width += 1;
-    }
-  }
-  return width;
-}
-
-/**
- * 禁则处理标点集合：绝对禁止出现在行首的标点符号
- */
-const CANNOT_START_LINE_CHARS = new Set([
-  ",", ".", ";", "!", "?", ":",
-  "，", "。", "；", "！", "？", "：", "、",
-  ")", "]", "}", "）", "】", "”", "’", "»"
-]);
-
-/**
- * Robust ANSI-safe CJK & Latin visual text wrapper:
- * Breaks cleanly at word boundaries for Latin words, and character boundaries for CJK.
- * Implements strict Kinsoku Shori (标点禁则处理) to guarantee that punctuation marks never orphan at the start of a line!
- */
-export function wrapVisualText(text: string, maxWidth: number): string[] {
-  if (maxWidth <= 0) return [text];
-  const rawLines: string[] = [];
-  let currentLine = "";
-  let currentWidth = 0;
-
-  const tokenRegex = /\x1b\[[0-9;]*[a-zA-Z]|\s+|[\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af]|[^\s\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af\x1b]+/g;
-  let match: RegExpExecArray | null;
-
-  while ((match = tokenRegex.exec(text)) !== null) {
-    const token = match[0];
-    const tokenWidth = getVisualWidth(token);
-
-    if (tokenWidth === 0) {
-      currentLine += token;
-      continue;
-    }
-
-    if (currentWidth + tokenWidth <= maxWidth) {
-      currentLine += token;
-      currentWidth += tokenWidth;
-    } else {
-      if (currentLine === "") {
-        // 彻底修复 BUG-m2: 单个超长无空格 Token (长 URL / 路径) 强制按列宽平滑切片分行
-        if (tokenWidth > maxWidth) {
-          let curToken = token;
-          while (getVisualWidth(curToken) > maxWidth) {
-            let sliceIdx = 0;
-            let accW = 0;
-            for (const ch of curToken) {
-              const chW = getVisualWidth(ch);
-              if (accW + chW > maxWidth) break;
-              accW += chW;
-              sliceIdx += ch.length;
-            }
-            if (sliceIdx === 0) sliceIdx = 1;
-            rawLines.push(curToken.slice(0, sliceIdx));
-            curToken = curToken.slice(sliceIdx);
-          }
-          if (curToken.trim()) {
-            currentLine = curToken;
-            currentWidth = getVisualWidth(curToken);
-          }
-          continue;
-        }
-        rawLines.push(token);
-        continue;
-      }
-      rawLines.push(currentLine.trimEnd());
-      currentLine = token.trimStart();
-      currentWidth = getVisualWidth(currentLine);
-    }
-  }
-
-  if (currentLine.trim()) {
-    rawLines.push(currentLine.trimEnd());
-  }
-
-  // 标点禁则后处理：若某一行以标点符号开头，强行将其吸附到上一行行尾！
-  const lines: string[] = [];
-  for (let i = 0; i < rawLines.length; i++) {
-    let line = rawLines[i];
-    if (i > 0 && line.length > 0) {
-      const firstChar = line[0];
-      if (CANNOT_START_LINE_CHARS.has(firstChar)) {
-        // 将标点吸附到上一行
-        const prevIdx = lines.length - 1;
-        lines[prevIdx] = lines[prevIdx] + firstChar;
-        line = line.slice(1).trimStart();
-      }
-    }
-    if (line.trim()) {
-      lines.push(line);
-    }
-  }
-
-  return lines.length > 0 ? lines : [text];
-}
-
-/**
- * Format a tree branch with hanging indent (树状悬挂缩进):
- * Line 0: `  ┌ [口语] <content>`
- * Line 1+: `  │        <continuation>` (strictly aligned under text body)
- */
-/**
- * Format a tree branch with hanging indent (树状悬挂缩进):
- * Line 0: `  ┌ [口语] <content>`
- * Line 1+: `  │        <continuation>` (strictly aligned under text body)
- *
- * lineDecorator: function to style the content of each line independently (prevents ANSI reset desync / color breakage)
- */
-export function formatTreeBranch(
-  branchChar: string,
-  contChar: string,
-  tag: string,
-  content: string,
-  prefixDecorator: (p: string) => string = (s) => s,
-  tagDecorator: (t: string) => string = (s) => s,
-  contDecorator: (c: string) => string = (s) => s,
-  lineDecorator: ((l: string) => string) | number = (s) => s,
-  maxCols = (process.stdout.columns || 80) - 8
-): string[] {
-  const actualLineDecorator = typeof lineDecorator === "function" ? lineDecorator : (s: string) => s;
-  const actualMaxCols = typeof lineDecorator === "number" ? lineDecorator : (typeof maxCols === "number" ? maxCols : (process.stdout.columns || 80) - 8);
-
-  const rawPrefix = `  ${branchChar} [${tag}] `;
-  const prefixW = getVisualWidth(rawPrefix);
-  const rawCont = `  ${contChar}${" ".repeat(Math.max(1, prefixW - 3))}`;
-  const availW = Math.max(25, actualMaxCols - prefixW);
-
-  // Wrap clean text, then apply lineDecorator per line to prevent ANSI color desync!
-  const lines = wrapVisualText(content, availW);
-  if (lines.length === 0) {
-    return [prefixDecorator(`  ${branchChar} `) + tagDecorator(`[${tag}]`)];
-  }
-
-  return lines.map((line, idx) => {
-    if (idx === 0) {
-      return prefixDecorator(`  ${branchChar} `) + tagDecorator(`[${tag}] `) + actualLineDecorator(line);
-    }
-    return contDecorator(rawCont) + actualLineDecorator(line);
-  });
-}
-
-/**
- * Format a sub-rail line under a branch (子导轨释义行):
- * Preserves the vertical continuation rail (`  │ `) so the tree is never broken!
- * Line 0: `  │      ↳ (<nuance in Language A>)`
- * Line 1+: `  │        <continuation>`
- */
-export function formatSubRail(
-  contChar: string,
-  nuanceText: string,
-  arrow = "↳",
-  contDecorator: (c: string) => string = (s) => s,
-  lineDecorator: (l: string) => string = (s) => s,
-  maxCols = (process.stdout.columns || 80) - 8,
-  indentCols = 11
-): string[] {
-  if (!nuanceText || !nuanceText.trim()) return [];
-
-  const rawPrefix = `  ${contChar}${" ".repeat(Math.max(1, indentCols - 5))}${arrow} `;
-  const prefixW = getVisualWidth(rawPrefix);
-  const rawCont = `  ${contChar}${" ".repeat(Math.max(1, prefixW - 3))}`;
-  const availW = Math.max(20, maxCols - prefixW);
-
-  const cleanText = nuanceText.startsWith("(") && nuanceText.endsWith(")")
-    ? nuanceText
-    : `(${nuanceText})`;
-
-  const lines = wrapVisualText(cleanText, availW);
-  return lines.map((line, idx) => {
-    if (idx === 0) {
-      return contDecorator(rawPrefix) + lineDecorator(line);
-    }
-    return contDecorator(rawCont) + lineDecorator(line);
-  });
-}
-
-/**
- * 从 vocab 字符串中解析出纯净的目标短语列表 (由长到短排序)
- * 例如: "on board with (赞成/支持) · dive in (立刻着手/开搞)"
- * ➔ ["on board with", "dive in"]
- */
-export function extractVocabPhrases(vocab: string | undefined): string[] {
-  if (!vocab || !vocab.trim()) return [];
-  const items = vocab.split(/\s*(?:·|•|,)\s*/);
-  const phrases: string[] = [];
-
-  for (const raw of items) {
-    // 剥离末尾的括号释义: (释义) 或 （释义）
-    const clean = raw.replace(/\s*(?:\(.*?\)|（.*?）)\s*$/, "").trim();
-    if (clean.length >= 2 && !phrases.includes(clean)) {
-      phrases.push(clean);
-    }
-  }
-
-  // 按长度降序排序，确保长短语优先匹配 (例如 "on board with" 优先于 "board")
-  return phrases.sort((a, b) => b.length - a.length);
-}
-
-/**
- * 对目标文本中的指定短语进行非破坏性 ANSI 下划线瞄准点亮 (Spotlight Highlighting)
- * 大小写不敏感匹配，保留原始文本的大小写与排版
- * 原生支持 CJK (日文/中文) 以及 ASCII 西文字符 (彻底修复 BUG-M5)
- */
-export function spotlightPhrases(text: string, phrases: string[]): string {
-  if (!text || phrases.length === 0) return text;
-
-  let result = text;
-  for (const phrase of phrases) {
-    const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    // 只有当短语起止是 ASCII 单词字符时才应用 \b 边界；CJK 字符直接字面匹配，避免 \b 误杀
-    const startsWithAscii = /^[a-zA-Z0-9]/.test(phrase);
-    const endsWithAscii = /[a-zA-Z0-9]$/.test(phrase);
-    const pattern = `${startsWithAscii ? "(?<=\\b|^)" : ""}${escaped}${endsWithAscii ? "(?=\\b|$)" : ""}`;
-    const regex = new RegExp(pattern, "gi");
-    result = result.replace(regex, (matched) => `\x1b[4m${matched}\x1b[24m`);
-  }
-  return result;
-}
-
-/**
- * Format terminal output with Trifecta Tree Branch aesthetics (┌ ├ └)
- * Displays the original input anchor, dual registers with native language nuance, and vocab highlights.
- */
-export function formatTerminalAnnotation(
-  sourceText: string,
-  spoken: string,
-  written?: string,
-  vocab?: string,
-  options: {
-    spokenMeaning?: string;
-    writtenMeaning?: string;
-    slot1Label?: string;
-    slot2Label?: string;
-    vocabLabel?: string;
-    sourceLabel?: string;
-    spotlight?: boolean;
-  } = {}
-): string {
-  const slot1 = options.slot1Label || "Spoken";
-  const slot2 = options.slot2Label || "Written";
-  const vocabTag = options.vocabLabel || "Vocab";
-  const sourceTag = options.sourceLabel || "Original";
-
-  const hasSlot2 = Boolean(written && written.trim());
-  const hasVocab = Boolean(vocab && vocab.trim());
-
-  // 方向三：重点短语反光瞄准镜 (Spotlight Highlighting · 默认随重点词汇自适应点亮)
-  const spotlightEnabled = options.spotlight !== false;
-  const phrases = (hasVocab && spotlightEnabled) ? extractVocabPhrases(vocab) : [];
-  const displaySpoken = phrases.length > 0 ? spotlightPhrases(spoken, phrases) : spoken;
-  const displayWritten = (written && phrases.length > 0) ? spotlightPhrases(written, phrases) : written;
-
-  // 原文锚点：保留完整原句输入，严禁以省略号强行截断开发者语义
-  const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
-  const lines: string[] = [`  · [${sourceTag}] ${cleanSource}`];
-
-  // 1. 口语槽位：若无后续槽位则作为末端分支 └ 呈现；否则作为起始分支 ┌
-  const branch1Char = (hasSlot2 || hasVocab) ? "┌" : "└";
-  const cont1Char = (hasSlot2 || hasVocab) ? "│" : " ";
-  lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, displaySpoken));
-  if (options.spokenMeaning) {
-    lines.push(...formatSubRail(cont1Char, options.spokenMeaning));
-  }
-
-  // 2. 写作槽位
-  if (hasSlot2) {
-    const branchChar = hasVocab ? "├" : "└";
-    const contChar = hasVocab ? "│" : " ";
-    lines.push(...formatTreeBranch(branchChar, contChar, slot2, displayWritten!));
-    if (options.writtenMeaning) {
-      lines.push(...formatSubRail(contChar, options.writtenMeaning));
-    }
-  }
-
-  // 3. 重点词汇槽位
-  if (hasVocab) {
-    lines.push(...formatTreeBranch("└", " ", vocabTag, vocab!));
-  }
-
-  return lines.join("\n");
-}
-
-/**
- * 格式化极端分屏下的单行高密度胶囊流 (Single-Line Capsule Layout)
- * 严格限制在 1 行内，按终端列宽动态均衡截断，避免任何换行撕裂 (彻底修复 BUG-M3)
- */
-export function formatCapsuleLine(
-  hudTitle: string,
-  spoken: string,
-  written?: string,
-  options: {
-    slot1Short?: string;
-    slot2Short?: string;
-    maxCols?: number;
-  } = {}
-): string {
-  const maxCols = options.maxCols || (process.stdout?.columns ? Math.max(30, process.stdout.columns) : 80);
-  const slot1 = options.slot1Short || "Spk";
-  const slot2 = options.slot2Short || "Wrt";
-
-  const cleanSpoken = spoken.replace(/\r?\n+/g, " ").trim();
-  const cleanWritten = (written || "").replace(/\r?\n+/g, " ").trim();
-
-  const prefix = `⇄ [${hudTitle}] `;
-  const prefixW = getVisualWidth(prefix);
-  const hasSlot2 = Boolean(cleanWritten);
-
-  // 严格预算可分配给主体的列宽
-  const availW = Math.max(8, maxCols - prefixW);
-
-  let body = "";
-  if (hasSlot2) {
-    const s1PrefixW = getVisualWidth(`${slot1}: `);
-    const s2PrefixW = getVisualWidth(`${slot2}: `);
-    const fixedOverhead = s1PrefixW + 3 + s2PrefixW; // 包含中间间隔 " · "
-    const textAvail = Math.max(4, availW - fixedOverhead);
-    const halfW = Math.max(2, Math.floor(textAvail / 2));
-
-    const s1 = truncateVisual(cleanSpoken, halfW);
-    const s2 = truncateVisual(cleanWritten, halfW);
-    body = `${slot1}: ${s1} · ${slot2}: ${s2}`;
-  } else {
-    const s1PrefixW = getVisualWidth(`${slot1}: `);
-    const textAvail = Math.max(2, availW - s1PrefixW);
-    const s1 = truncateVisual(cleanSpoken, textAvail);
-    body = `${slot1}: ${s1}`;
-  }
-
-  // 终极保护：整行输出严格截断至 maxCols，绝对不溢出单行
-  const fullLine = prefix + body;
-  if (getVisualWidth(fullLine) > maxCols) {
-    return truncateVisual(fullLine, maxCols);
-  }
-  return fullLine;
-}
-
-/**
  * Strip annotations and recover purely clean text to prevent LLM prompt pollution
  * Robust against tree branch glyphs (┌ ├ └) and arrow annotations (↳)
  */
@@ -687,13 +328,21 @@ export async function translatePrompt(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), cfg.timeoutMs);
 
+  if (cfg.signal) {
+    if (cfg.signal.aborted) {
+      clearTimeout(timer);
+      return null;
+    }
+    cfg.signal.addEventListener("abort", () => controller.abort(), { once: true });
+  }
+
   try {
     let content: string | null = null;
     const sysPrompt = buildSystemPrompt(cfg.sourceLang, cfg.targetLang);
 
     // 1. If custom complete callback is provided (e.g. Pi native ModelRegistry / ctx.model):
     if (typeof cfg.complete === "function") {
-      content = await cfg.complete(trimmed, sysPrompt);
+      content = await cfg.complete(trimmed, sysPrompt, controller.signal);
     } else if (cfg.endpoint) {
       // 2. Otherwise fall back to custom OpenAI-compatible endpoint (BYOK / self-hosted proxy)
       const headers: Record<string, string> = {

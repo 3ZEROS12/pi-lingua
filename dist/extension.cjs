@@ -37,6 +37,251 @@ var import_node_fs2 = __toESM(require("fs"), 1);
 var import_node_path2 = __toESM(require("path"), 1);
 var import_node_os2 = __toESM(require("os"), 1);
 
+// src/layout.ts
+var CANNOT_START_LINE_CHARS = /* @__PURE__ */ new Set([
+  ",",
+  ".",
+  ";",
+  "!",
+  "?",
+  ":",
+  "\uFF0C",
+  "\u3002",
+  "\uFF1B",
+  "\uFF01",
+  "\uFF1F",
+  "\uFF1A",
+  "\u3001",
+  ")",
+  "]",
+  "}",
+  "\uFF09",
+  "\u3011",
+  "\u201D",
+  "\u2019",
+  "\xBB"
+]);
+function getVisualWidth(str) {
+  let width = 0;
+  const clean = str.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "");
+  for (const char of clean) {
+    const code = char.codePointAt(0) || 0;
+    if (code >= 4352 && code <= 4447 || code >= 11904 && code <= 42191 || code >= 44032 && code <= 55203 || code >= 63744 && code <= 64255 || code >= 65040 && code <= 65049 || code >= 65072 && code <= 65135 || code >= 65280 && code <= 65376 || code >= 65504 && code <= 65510 || code >= 127744 && code <= 128591 || code >= 129280 && code <= 129535) {
+      width += 2;
+    } else {
+      width += 1;
+    }
+  }
+  return width;
+}
+function truncateVisual(str, maxVisualCols) {
+  if (maxVisualCols <= 0) return "";
+  const fullWidth = getVisualWidth(str);
+  if (fullWidth <= maxVisualCols) return str;
+  const targetCols = Math.max(1, maxVisualCols - 3);
+  let curWidth = 0;
+  let result = "";
+  for (const char of str) {
+    const w = getVisualWidth(char);
+    if (curWidth + w > targetCols) {
+      break;
+    }
+    result += char;
+    curWidth += w;
+  }
+  return result + "...";
+}
+function wrapVisualText(text, maxWidth) {
+  if (maxWidth <= 0) return [text];
+  const rawLines = [];
+  let currentLine = "";
+  let currentWidth = 0;
+  const tokenRegex = /\x1b\[[0-9;]*[a-zA-Z]|\s+|[\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af]|[^\s\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af\x1b]+/g;
+  let match;
+  while ((match = tokenRegex.exec(text)) !== null) {
+    const token = match[0];
+    const tokenWidth = getVisualWidth(token);
+    if (tokenWidth === 0) {
+      currentLine += token;
+      continue;
+    }
+    if (currentWidth + tokenWidth <= maxWidth) {
+      currentLine += token;
+      currentWidth += tokenWidth;
+    } else {
+      if (currentLine === "") {
+        if (tokenWidth > maxWidth) {
+          let curToken = token;
+          while (getVisualWidth(curToken) > maxWidth) {
+            let sliceIdx = 0;
+            let accW = 0;
+            for (const ch of curToken) {
+              const chW = getVisualWidth(ch);
+              if (accW + chW > maxWidth) break;
+              accW += chW;
+              sliceIdx += ch.length;
+            }
+            if (sliceIdx === 0) sliceIdx = 1;
+            rawLines.push(curToken.slice(0, sliceIdx));
+            curToken = curToken.slice(sliceIdx);
+          }
+          if (curToken.trim()) {
+            currentLine = curToken;
+            currentWidth = getVisualWidth(curToken);
+          }
+          continue;
+        }
+        rawLines.push(token);
+        continue;
+      }
+      rawLines.push(currentLine.trimEnd());
+      currentLine = token.trimStart();
+      currentWidth = getVisualWidth(currentLine);
+    }
+  }
+  if (currentLine.trim()) {
+    rawLines.push(currentLine.trimEnd());
+  }
+  const lines = [];
+  for (let i = 0; i < rawLines.length; i++) {
+    let line = rawLines[i];
+    if (i > 0 && line.length > 0) {
+      const firstChar = line[0];
+      if (CANNOT_START_LINE_CHARS.has(firstChar)) {
+        const prevIdx = lines.length - 1;
+        lines[prevIdx] = lines[prevIdx] + firstChar;
+        line = line.slice(1).trimStart();
+      }
+    }
+    if (line.trim()) {
+      lines.push(line);
+    }
+  }
+  return lines.length > 0 ? lines : [text];
+}
+function formatTreeBranch(branchChar, contChar, tag, content, prefixDecorator = (s) => s, tagDecorator = (s) => s, contDecorator = (s) => s, lineDecorator = (s) => s, maxCols = (process.stdout?.columns || 80) - 8) {
+  const actualLineDecorator = typeof lineDecorator === "function" ? lineDecorator : (s) => s;
+  const actualMaxCols = typeof lineDecorator === "number" ? lineDecorator : typeof maxCols === "number" ? maxCols : (process.stdout?.columns || 80) - 8;
+  const rawPrefix = `  ${branchChar} [${tag}] `;
+  const prefixW = getVisualWidth(rawPrefix);
+  const rawCont = `  ${contChar}${" ".repeat(Math.max(1, prefixW - 3))}`;
+  const availW = Math.max(25, actualMaxCols - prefixW);
+  const lines = wrapVisualText(content, availW);
+  if (lines.length === 0) {
+    return [prefixDecorator(`  ${branchChar} `) + tagDecorator(`[${tag}]`)];
+  }
+  return lines.map((line, idx) => {
+    if (idx === 0) {
+      return prefixDecorator(`  ${branchChar} `) + tagDecorator(`[${tag}] `) + actualLineDecorator(line);
+    }
+    return contDecorator(rawCont) + actualLineDecorator(line);
+  });
+}
+function formatSubRail(contChar, nuanceText, arrow = "\u21B3", contDecorator = (s) => s, lineDecorator = (s) => s, maxCols = (process.stdout?.columns || 80) - 8, indentCols = 11) {
+  if (!nuanceText || !nuanceText.trim()) return [];
+  const rawPrefix = `  ${contChar}${" ".repeat(Math.max(1, indentCols - 5))}${arrow} `;
+  const prefixW = getVisualWidth(rawPrefix);
+  const rawCont = `  ${contChar}${" ".repeat(Math.max(1, prefixW - 3))}`;
+  const availW = Math.max(20, maxCols - prefixW);
+  const cleanText = nuanceText.startsWith("(") && nuanceText.endsWith(")") ? nuanceText : `(${nuanceText})`;
+  const lines = wrapVisualText(cleanText, availW);
+  return lines.map((line, idx) => {
+    if (idx === 0) {
+      return contDecorator(rawPrefix) + lineDecorator(line);
+    }
+    return contDecorator(rawCont) + lineDecorator(line);
+  });
+}
+function extractVocabPhrases(vocab) {
+  if (!vocab || !vocab.trim()) return [];
+  const items = vocab.split(/\s*(?:·|•|,)\s*/);
+  const phrases = [];
+  for (const raw of items) {
+    const clean = raw.replace(/\s*(?:\(.*?\)|（.*?）)\s*$/, "").trim();
+    if (clean.length >= 2 && !phrases.includes(clean)) {
+      phrases.push(clean);
+    }
+  }
+  return phrases.sort((a, b) => b.length - a.length);
+}
+function spotlightPhrases(text, phrases) {
+  if (!text || phrases.length === 0) return text;
+  let result = text;
+  for (const phrase of phrases) {
+    const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const startsWithAscii = /^[a-zA-Z0-9]/.test(phrase);
+    const endsWithAscii = /[a-zA-Z0-9]$/.test(phrase);
+    const pattern = `${startsWithAscii ? "(?<=\\b|^)" : ""}${escaped}${endsWithAscii ? "(?=\\b|$)" : ""}`;
+    const regex = new RegExp(pattern, "gi");
+    result = result.replace(regex, (matched) => `\x1B[4m${matched}\x1B[24m`);
+  }
+  return result;
+}
+function formatTerminalAnnotation(sourceText, spoken, written, vocab, options = {}) {
+  const slot1 = options.slot1Label || "Spoken";
+  const slot2 = options.slot2Label || "Written";
+  const vocabTag = options.vocabLabel || "Vocab";
+  const sourceTag = options.sourceLabel || "Original";
+  const hasSlot2 = Boolean(written && written.trim());
+  const hasVocab = Boolean(vocab && vocab.trim());
+  const spotlightEnabled = options.spotlight !== false;
+  const phrases = hasVocab && spotlightEnabled ? extractVocabPhrases(vocab) : [];
+  const displaySpoken = phrases.length > 0 ? spotlightPhrases(spoken, phrases) : spoken;
+  const displayWritten = written && phrases.length > 0 ? spotlightPhrases(written, phrases) : written;
+  const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
+  const lines = [`  \xB7 [${sourceTag}] ${cleanSource}`];
+  const branch1Char = hasSlot2 || hasVocab ? "\u250C" : "\u2514";
+  const cont1Char = hasSlot2 || hasVocab ? "\u2502" : " ";
+  lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, displaySpoken));
+  if (options.spokenMeaning) {
+    lines.push(...formatSubRail(cont1Char, options.spokenMeaning));
+  }
+  if (hasSlot2) {
+    const branchChar = hasVocab ? "\u251C" : "\u2514";
+    const contChar = hasVocab ? "\u2502" : " ";
+    lines.push(...formatTreeBranch(branchChar, contChar, slot2, displayWritten));
+    if (options.writtenMeaning) {
+      lines.push(...formatSubRail(contChar, options.writtenMeaning));
+    }
+  }
+  if (hasVocab) {
+    lines.push(...formatTreeBranch("\u2514", " ", vocabTag, vocab));
+  }
+  return lines.join("\n");
+}
+function formatCapsuleLine(hudTitle, spoken, written, options = {}) {
+  const maxCols = options.maxCols || (process.stdout?.columns ? Math.max(30, process.stdout.columns) : 80);
+  const slot1 = options.slot1Short || "Spk";
+  const slot2 = options.slot2Short || "Wrt";
+  const cleanSpoken = spoken.replace(/\r?\n+/g, " ").trim();
+  const cleanWritten = (written || "").replace(/\r?\n+/g, " ").trim();
+  const prefix = `\u21C4 [${hudTitle}] `;
+  const prefixW = getVisualWidth(prefix);
+  const hasSlot2 = Boolean(cleanWritten);
+  const availW = Math.max(8, maxCols - prefixW);
+  let body = "";
+  if (hasSlot2) {
+    const s1PrefixW = getVisualWidth(`${slot1}: `);
+    const s2PrefixW = getVisualWidth(`${slot2}: `);
+    const fixedOverhead = s1PrefixW + 3 + s2PrefixW;
+    const textAvail = Math.max(4, availW - fixedOverhead);
+    const halfW = Math.max(2, Math.floor(textAvail / 2));
+    const s1 = truncateVisual(cleanSpoken, halfW);
+    const s2 = truncateVisual(cleanWritten, halfW);
+    body = `${slot1}: ${s1} \xB7 ${slot2}: ${s2}`;
+  } else {
+    const s1PrefixW = getVisualWidth(`${slot1}: `);
+    const textAvail = Math.max(2, availW - s1PrefixW);
+    const s1 = truncateVisual(cleanSpoken, textAvail);
+    body = `${slot1}: ${s1}`;
+  }
+  const fullLine = prefix + body;
+  if (getVisualWidth(fullLine) > maxCols) {
+    return truncateVisual(fullLine, maxCols);
+  }
+  return fullLine;
+}
+
 // src/engine.ts
 var import_node_fs = __toESM(require("fs"), 1);
 var import_node_path = __toESM(require("path"), 1);
@@ -765,6 +1010,12 @@ var LingualLruCache = class {
     return val;
   }
   set(key, val) {
+    if (!key || key.length > 256) {
+      return;
+    }
+    if (typeof val === "string" && val.length > 2048) {
+      return;
+    }
     if (this.cache.has(key)) {
       this.cache.delete(key);
     } else if (this.cache.size >= this.capacity) {
@@ -925,249 +1176,6 @@ function parseLlmResponse(raw) {
     return null;
   }
 }
-function truncateVisual(str, maxVisualCols) {
-  if (maxVisualCols <= 0) return "";
-  const fullWidth = getVisualWidth(str);
-  if (fullWidth <= maxVisualCols) return str;
-  const targetCols = Math.max(1, maxVisualCols - 3);
-  let curWidth = 0;
-  let result = "";
-  for (const char of str) {
-    const w = getVisualWidth(char);
-    if (curWidth + w > targetCols) {
-      break;
-    }
-    result += char;
-    curWidth += w;
-  }
-  return result + "...";
-}
-function getVisualWidth(str) {
-  let width = 0;
-  const clean = str.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "");
-  for (const char of clean) {
-    const code = char.codePointAt(0) || 0;
-    if (code >= 4352 && code <= 4447 || code >= 11904 && code <= 42191 || code >= 44032 && code <= 55203 || code >= 63744 && code <= 64255 || code >= 65040 && code <= 65049 || code >= 65072 && code <= 65135 || code >= 65280 && code <= 65376 || code >= 65504 && code <= 65510 || code >= 127744 && code <= 128591 || code >= 129280 && code <= 129535) {
-      width += 2;
-    } else {
-      width += 1;
-    }
-  }
-  return width;
-}
-var CANNOT_START_LINE_CHARS = /* @__PURE__ */ new Set([
-  ",",
-  ".",
-  ";",
-  "!",
-  "?",
-  ":",
-  "\uFF0C",
-  "\u3002",
-  "\uFF1B",
-  "\uFF01",
-  "\uFF1F",
-  "\uFF1A",
-  "\u3001",
-  ")",
-  "]",
-  "}",
-  "\uFF09",
-  "\u3011",
-  "\u201D",
-  "\u2019",
-  "\xBB"
-]);
-function wrapVisualText(text, maxWidth) {
-  if (maxWidth <= 0) return [text];
-  const rawLines = [];
-  let currentLine = "";
-  let currentWidth = 0;
-  const tokenRegex = /\x1b\[[0-9;]*[a-zA-Z]|\s+|[\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af]|[^\s\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af\x1b]+/g;
-  let match;
-  while ((match = tokenRegex.exec(text)) !== null) {
-    const token = match[0];
-    const tokenWidth = getVisualWidth(token);
-    if (tokenWidth === 0) {
-      currentLine += token;
-      continue;
-    }
-    if (currentWidth + tokenWidth <= maxWidth) {
-      currentLine += token;
-      currentWidth += tokenWidth;
-    } else {
-      if (currentLine === "") {
-        if (tokenWidth > maxWidth) {
-          let curToken = token;
-          while (getVisualWidth(curToken) > maxWidth) {
-            let sliceIdx = 0;
-            let accW = 0;
-            for (const ch of curToken) {
-              const chW = getVisualWidth(ch);
-              if (accW + chW > maxWidth) break;
-              accW += chW;
-              sliceIdx += ch.length;
-            }
-            if (sliceIdx === 0) sliceIdx = 1;
-            rawLines.push(curToken.slice(0, sliceIdx));
-            curToken = curToken.slice(sliceIdx);
-          }
-          if (curToken.trim()) {
-            currentLine = curToken;
-            currentWidth = getVisualWidth(curToken);
-          }
-          continue;
-        }
-        rawLines.push(token);
-        continue;
-      }
-      rawLines.push(currentLine.trimEnd());
-      currentLine = token.trimStart();
-      currentWidth = getVisualWidth(currentLine);
-    }
-  }
-  if (currentLine.trim()) {
-    rawLines.push(currentLine.trimEnd());
-  }
-  const lines = [];
-  for (let i = 0; i < rawLines.length; i++) {
-    let line = rawLines[i];
-    if (i > 0 && line.length > 0) {
-      const firstChar = line[0];
-      if (CANNOT_START_LINE_CHARS.has(firstChar)) {
-        const prevIdx = lines.length - 1;
-        lines[prevIdx] = lines[prevIdx] + firstChar;
-        line = line.slice(1).trimStart();
-      }
-    }
-    if (line.trim()) {
-      lines.push(line);
-    }
-  }
-  return lines.length > 0 ? lines : [text];
-}
-function formatTreeBranch(branchChar, contChar, tag, content, prefixDecorator = (s) => s, tagDecorator = (s) => s, contDecorator = (s) => s, lineDecorator = (s) => s, maxCols = (process.stdout.columns || 80) - 8) {
-  const actualLineDecorator = typeof lineDecorator === "function" ? lineDecorator : (s) => s;
-  const actualMaxCols = typeof lineDecorator === "number" ? lineDecorator : typeof maxCols === "number" ? maxCols : (process.stdout.columns || 80) - 8;
-  const rawPrefix = `  ${branchChar} [${tag}] `;
-  const prefixW = getVisualWidth(rawPrefix);
-  const rawCont = `  ${contChar}${" ".repeat(Math.max(1, prefixW - 3))}`;
-  const availW = Math.max(25, actualMaxCols - prefixW);
-  const lines = wrapVisualText(content, availW);
-  if (lines.length === 0) {
-    return [prefixDecorator(`  ${branchChar} `) + tagDecorator(`[${tag}]`)];
-  }
-  return lines.map((line, idx) => {
-    if (idx === 0) {
-      return prefixDecorator(`  ${branchChar} `) + tagDecorator(`[${tag}] `) + actualLineDecorator(line);
-    }
-    return contDecorator(rawCont) + actualLineDecorator(line);
-  });
-}
-function formatSubRail(contChar, nuanceText, arrow = "\u21B3", contDecorator = (s) => s, lineDecorator = (s) => s, maxCols = (process.stdout.columns || 80) - 8, indentCols = 11) {
-  if (!nuanceText || !nuanceText.trim()) return [];
-  const rawPrefix = `  ${contChar}${" ".repeat(Math.max(1, indentCols - 5))}${arrow} `;
-  const prefixW = getVisualWidth(rawPrefix);
-  const rawCont = `  ${contChar}${" ".repeat(Math.max(1, prefixW - 3))}`;
-  const availW = Math.max(20, maxCols - prefixW);
-  const cleanText = nuanceText.startsWith("(") && nuanceText.endsWith(")") ? nuanceText : `(${nuanceText})`;
-  const lines = wrapVisualText(cleanText, availW);
-  return lines.map((line, idx) => {
-    if (idx === 0) {
-      return contDecorator(rawPrefix) + lineDecorator(line);
-    }
-    return contDecorator(rawCont) + lineDecorator(line);
-  });
-}
-function extractVocabPhrases(vocab) {
-  if (!vocab || !vocab.trim()) return [];
-  const items = vocab.split(/\s*(?:·|•|,)\s*/);
-  const phrases = [];
-  for (const raw of items) {
-    const clean = raw.replace(/\s*(?:\(.*?\)|（.*?）)\s*$/, "").trim();
-    if (clean.length >= 2 && !phrases.includes(clean)) {
-      phrases.push(clean);
-    }
-  }
-  return phrases.sort((a, b) => b.length - a.length);
-}
-function spotlightPhrases(text, phrases) {
-  if (!text || phrases.length === 0) return text;
-  let result = text;
-  for (const phrase of phrases) {
-    const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const startsWithAscii = /^[a-zA-Z0-9]/.test(phrase);
-    const endsWithAscii = /[a-zA-Z0-9]$/.test(phrase);
-    const pattern = `${startsWithAscii ? "(?<=\\b|^)" : ""}${escaped}${endsWithAscii ? "(?=\\b|$)" : ""}`;
-    const regex = new RegExp(pattern, "gi");
-    result = result.replace(regex, (matched) => `\x1B[4m${matched}\x1B[24m`);
-  }
-  return result;
-}
-function formatTerminalAnnotation(sourceText, spoken, written, vocab, options = {}) {
-  const slot1 = options.slot1Label || "Spoken";
-  const slot2 = options.slot2Label || "Written";
-  const vocabTag = options.vocabLabel || "Vocab";
-  const sourceTag = options.sourceLabel || "Original";
-  const hasSlot2 = Boolean(written && written.trim());
-  const hasVocab = Boolean(vocab && vocab.trim());
-  const spotlightEnabled = options.spotlight !== false;
-  const phrases = hasVocab && spotlightEnabled ? extractVocabPhrases(vocab) : [];
-  const displaySpoken = phrases.length > 0 ? spotlightPhrases(spoken, phrases) : spoken;
-  const displayWritten = written && phrases.length > 0 ? spotlightPhrases(written, phrases) : written;
-  const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
-  const lines = [`  \xB7 [${sourceTag}] ${cleanSource}`];
-  const branch1Char = hasSlot2 || hasVocab ? "\u250C" : "\u2514";
-  const cont1Char = hasSlot2 || hasVocab ? "\u2502" : " ";
-  lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, displaySpoken));
-  if (options.spokenMeaning) {
-    lines.push(...formatSubRail(cont1Char, options.spokenMeaning));
-  }
-  if (hasSlot2) {
-    const branchChar = hasVocab ? "\u251C" : "\u2514";
-    const contChar = hasVocab ? "\u2502" : " ";
-    lines.push(...formatTreeBranch(branchChar, contChar, slot2, displayWritten));
-    if (options.writtenMeaning) {
-      lines.push(...formatSubRail(contChar, options.writtenMeaning));
-    }
-  }
-  if (hasVocab) {
-    lines.push(...formatTreeBranch("\u2514", " ", vocabTag, vocab));
-  }
-  return lines.join("\n");
-}
-function formatCapsuleLine(hudTitle, spoken, written, options = {}) {
-  const maxCols = options.maxCols || (process.stdout?.columns ? Math.max(30, process.stdout.columns) : 80);
-  const slot1 = options.slot1Short || "Spk";
-  const slot2 = options.slot2Short || "Wrt";
-  const cleanSpoken = spoken.replace(/\r?\n+/g, " ").trim();
-  const cleanWritten = (written || "").replace(/\r?\n+/g, " ").trim();
-  const prefix = `\u21C4 [${hudTitle}] `;
-  const prefixW = getVisualWidth(prefix);
-  const hasSlot2 = Boolean(cleanWritten);
-  const availW = Math.max(8, maxCols - prefixW);
-  let body = "";
-  if (hasSlot2) {
-    const s1PrefixW = getVisualWidth(`${slot1}: `);
-    const s2PrefixW = getVisualWidth(`${slot2}: `);
-    const fixedOverhead = s1PrefixW + 3 + s2PrefixW;
-    const textAvail = Math.max(4, availW - fixedOverhead);
-    const halfW = Math.max(2, Math.floor(textAvail / 2));
-    const s1 = truncateVisual(cleanSpoken, halfW);
-    const s2 = truncateVisual(cleanWritten, halfW);
-    body = `${slot1}: ${s1} \xB7 ${slot2}: ${s2}`;
-  } else {
-    const s1PrefixW = getVisualWidth(`${slot1}: `);
-    const textAvail = Math.max(2, availW - s1PrefixW);
-    const s1 = truncateVisual(cleanSpoken, textAvail);
-    body = `${slot1}: ${s1}`;
-  }
-  const fullLine = prefix + body;
-  if (getVisualWidth(fullLine) > maxCols) {
-    return truncateVisual(fullLine, maxCols);
-  }
-  return fullLine;
-}
 async function translatePrompt(text, userConfig = {}) {
   const trimmed = text.trim();
   if (!trimmed) return null;
@@ -1186,11 +1194,18 @@ async function translatePrompt(text, userConfig = {}) {
   }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), cfg.timeoutMs);
+  if (cfg.signal) {
+    if (cfg.signal.aborted) {
+      clearTimeout(timer);
+      return null;
+    }
+    cfg.signal.addEventListener("abort", () => controller.abort(), { once: true });
+  }
   try {
     let content = null;
     const sysPrompt = buildSystemPrompt(cfg.sourceLang, cfg.targetLang);
     if (typeof cfg.complete === "function") {
-      content = await cfg.complete(trimmed, sysPrompt);
+      content = await cfg.complete(trimmed, sysPrompt, controller.signal);
     } else if (cfg.endpoint) {
       const headers = {
         "Content-Type": "application/json"
@@ -1345,6 +1360,152 @@ function splitSemanticChunks(text, maxChunkChars = 65) {
   }
   return chunks.length > 0 ? chunks : [trimmed];
 }
+
+// src/fsm.ts
+var LingualSessionController = class {
+  activeAbortController = null;
+  currentGeneration = 0;
+  // 分页状态管理
+  pagedResults = [];
+  currentPageIndex = 0;
+  totalExpectedPages = 1;
+  lastResult = null;
+  /**
+   * 启动一次新的会话请求：
+   * 1. 物理中断前序正在排队或流式传输的 HTTP 请求；
+   * 2. 生成单调递增的新世代号；
+   * 3. 绑定全新的 AbortSignal。
+   */
+  beginRequest() {
+    this.abortActive();
+    this.activeAbortController = new AbortController();
+    const generation = ++this.currentGeneration;
+    return {
+      generation,
+      signal: this.activeAbortController.signal
+    };
+  }
+  /**
+   * 物理中断当前正在活跃的网络请求
+   */
+  abortActive() {
+    if (this.activeAbortController) {
+      this.activeAbortController.abort();
+      this.activeAbortController = null;
+    }
+  }
+  /**
+   * 判定指定世代号是否仍为当前最新的活跃世代
+   */
+  isLatest(generation) {
+    return this.currentGeneration === generation;
+  }
+  /**
+   * 获取当前最新世代号
+   */
+  getCurrentGeneration() {
+    return this.currentGeneration;
+  }
+  /**
+   * 初始化分页池 (当输入被切分为多个意群分块时调用)
+   */
+  initPagination(totalExpectedPages) {
+    this.pagedResults = [];
+    this.currentPageIndex = 0;
+    this.totalExpectedPages = Math.max(1, totalExpectedPages);
+  }
+  /**
+   * 存入某个切片的翻译结果 (具备世代守卫，拒绝陈旧世代脏写)
+   */
+  setPageResult(chunkIndex, result, generation) {
+    if (!this.isLatest(generation)) {
+      return false;
+    }
+    this.pagedResults[chunkIndex] = result;
+    this.lastResult = result;
+    return true;
+  }
+  /**
+   * 获取当前展示页的翻译结果
+   */
+  getActiveResult() {
+    const readyList = this.getReadyPages();
+    if (readyList.length === 0) {
+      return this.lastResult;
+    }
+    if (this.currentPageIndex >= readyList.length) {
+      this.currentPageIndex = Math.max(0, readyList.length - 1);
+    }
+    return readyList[this.currentPageIndex] || null;
+  }
+  /**
+   * 获取所有已就绪的分页结果列表
+   */
+  getReadyPages() {
+    return this.pagedResults.filter((item) => Boolean(item));
+  }
+  /**
+   * 获取当前分页状态快照
+   */
+  getPaginationSnapshot() {
+    const readyCount = this.getReadyPages().length;
+    const totalPages = Math.max(readyCount, this.totalExpectedPages);
+    return {
+      pageIndex: this.currentPageIndex,
+      totalPages,
+      readyCount,
+      isMultiPage: totalPages > 1
+    };
+  }
+  /**
+   * 翻至下一页 (循环翻页)
+   * 返回 true 表示发生了有效翻页
+   */
+  nextPage() {
+    const readyList = this.getReadyPages();
+    if (readyList.length <= 1) return false;
+    this.currentPageIndex = (this.currentPageIndex + 1) % readyList.length;
+    return true;
+  }
+  /**
+   * 翻至上一页 (循环翻页)
+   * 返回 true 表示发生了有效翻页
+   */
+  prevPage() {
+    const readyList = this.getReadyPages();
+    if (readyList.length <= 1) return false;
+    this.currentPageIndex = (this.currentPageIndex - 1 + readyList.length) % readyList.length;
+    return true;
+  }
+  /**
+   * 清空分页池 (在遇到非自然语言输入、或关闭伴学时调用，杜绝幽灵卡片复活)
+   */
+  clearPagination() {
+    this.pagedResults = [];
+    this.currentPageIndex = 0;
+    this.totalExpectedPages = 1;
+  }
+  /**
+   * 获取上一条记录 (用于 /lingual-last 回显)
+   */
+  getLastResult() {
+    return this.lastResult;
+  }
+  /**
+   * 显式设置上一条记录
+   */
+  setLastResult(result) {
+    this.lastResult = result;
+  }
+  /**
+   * 彻底重置状态机
+   */
+  reset() {
+    this.abortActive();
+    this.clearPagination();
+    this.lastResult = null;
+  }
+};
 
 // src/sanitizer.ts
 var TARGETED_CLIPBOARD_PATH_REGEX = /(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png|\/(?:[^\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png|(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?)CURRENT_MISSION_STATE\.md)/gi;
@@ -1536,11 +1697,7 @@ function saveUserLingualConfig(patch) {
   } catch {
   }
 }
-var currentRequestId = 0;
-var lastResult = null;
-var pagedResults = [];
-var currentPageIndex = 0;
-var totalExpectedPages = 1;
+var session = new LingualSessionController();
 function updateFooter(ctx) {
   if (!ctx.hasUI) return;
   const pair = state.labels.statusOriginal || `${state.sourceLang} \u21C4 en`;
@@ -1660,12 +1817,10 @@ function renderHudWidget(ctx, sourceText, spoken, written, vocab, spokenMeaning,
   ctx.ui.setWidget("lingual_hud", lines, { placement: "aboveEditor" });
 }
 function renderActiveCard(ctx) {
-  const readyList = pagedResults.filter((r) => Boolean(r));
+  const readyList = session.getReadyPages();
   if (readyList.length === 0) return;
-  if (currentPageIndex >= readyList.length) {
-    currentPageIndex = 0;
-  }
-  const res = readyList[currentPageIndex];
+  const snapshot = session.getPaginationSnapshot();
+  const res = session.getActiveResult();
   if (!res) return;
   renderHudWidget(
     ctx,
@@ -1676,8 +1831,8 @@ function renderActiveCard(ctx) {
     res.spokenMeaning,
     res.writtenMeaning,
     {
-      pageIndex: currentPageIndex,
-      totalPages: readyList.length
+      pageIndex: snapshot.pageIndex,
+      totalPages: snapshot.readyCount
     }
   );
 }
@@ -1686,7 +1841,7 @@ function extension_default(pi) {
     updateFooter(ctx);
   });
   const setModeHandler = async (args, ctx) => {
-    currentRequestId++;
+    session.abortActive();
     const trimmed = args?.trim().toLowerCase();
     let nextMode;
     if (trimmed === "english" || trimmed === "en" || trimmed === "eng" || trimmed === "2") {
@@ -1791,6 +1946,7 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
     state.sourceLang = trimmed;
     state.labels = resolveLabelsForLang(trimmed);
     saveUserLingualConfig({ sourceLang: trimmed });
+    session.reset();
     globalLingualCache.clear();
     updateFooter(ctx);
     const template = state.labels.notifyLangSwitched || "Native language switched to: {lang}";
@@ -1809,17 +1965,18 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
     saveUserLingualConfig({ compact: state.compact });
     const msg = state.compact ? state.labels.notifyCompactOn || `[${state.labels.hudTitle}] \u5DF2\u5F00\u542F\u5355\u884C\u80F6\u56CA\u6A21\u5F0F` : state.labels.notifyCompactOff || `[${state.labels.hudTitle}] \u5DF2\u5207\u6362\u4E3A\u5DE6\u5BFC\u8F68\u6811\u72B6\u67B6\u6784`;
     ctx.ui.notify(msg, "info");
-    if (pagedResults.length > 0) {
+    if (session.getReadyPages().length > 0) {
       renderActiveCard(ctx);
-    } else if (lastResult) {
+    } else if (session.getLastResult()) {
+      const last = session.getLastResult();
       renderHudWidget(
         ctx,
-        lastResult.sourceText,
-        lastResult.spoken,
-        lastResult.written,
-        lastResult.vocab,
-        lastResult.spokenMeaning,
-        lastResult.writtenMeaning
+        last.sourceText,
+        last.spoken,
+        last.written,
+        last.vocab,
+        last.spokenMeaning,
+        last.writtenMeaning
       );
     }
   };
@@ -1853,23 +2010,24 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
     handler: showStatusHandler
   });
   const showLastHandler = async (_args, ctx) => {
-    if (pagedResults.length > 0) {
+    if (session.getReadyPages().length > 0) {
       renderActiveCard(ctx);
       ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] \u5DF2\u91CD\u65B0\u663E\u793A\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247`, "info");
       return;
     }
-    if (!lastResult) {
+    const last = session.getLastResult();
+    if (!last) {
       ctx.ui.notify(state.labels.notifyNoHistory || `[${state.labels.hudTitle}] \u6682\u65E0\u4E0A\u4E00\u6761\u4F34\u5B66\u8BB0\u5F55`, "info");
       return;
     }
     renderHudWidget(
       ctx,
-      lastResult.sourceText,
-      lastResult.spoken,
-      lastResult.written,
-      lastResult.vocab,
-      lastResult.spokenMeaning,
-      lastResult.writtenMeaning
+      last.sourceText,
+      last.spoken,
+      last.written,
+      last.vocab,
+      last.spokenMeaning,
+      last.writtenMeaning
     );
     ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] \u5DF2\u91CD\u65B0\u663E\u793A\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247`, "info");
   };
@@ -1885,24 +2043,22 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
     pi.registerShortcut("alt+.", {
       description: state.labels.shortcutNextPage || "\u5207\u6362\u81F3\u4E0B\u4E00\u6BB5\u4F34\u5B66\u5207\u7247",
       handler: async (ctx) => {
-        const readyList = pagedResults.filter((r) => Boolean(r));
-        if (readyList.length <= 1) return;
-        currentPageIndex = (currentPageIndex + 1) % readyList.length;
-        renderActiveCard(ctx);
+        if (session.nextPage()) {
+          renderActiveCard(ctx);
+        }
       }
     });
     pi.registerShortcut("alt+,", {
       description: state.labels.shortcutPrevPage || "\u5207\u6362\u81F3\u4E0A\u4E00\u6BB5\u4F34\u5B66\u5207\u7247",
       handler: async (ctx) => {
-        const readyList = pagedResults.filter((r) => Boolean(r));
-        if (readyList.length <= 1) return;
-        currentPageIndex = (currentPageIndex - 1 + readyList.length) % readyList.length;
-        renderActiveCard(ctx);
+        if (session.prevPage()) {
+          renderActiveCard(ctx);
+        }
       }
     });
   }
   const createModelCompleter = (ctx) => {
-    return async (text, systemPrompt) => {
+    return async (text, systemPrompt, signal) => {
       try {
         if (!ctx.modelRegistry) return null;
         let targetModel = ctx.model;
@@ -1934,7 +2090,11 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
         const timeoutPromise = new Promise(
           (_, reject) => setTimeout(() => reject(new Error("Lingual translation timed out")), 3e4)
         );
-        const res = await Promise.race([stream.result(), timeoutPromise]);
+        const abortPromise = new Promise((_, reject) => {
+          if (signal?.aborted) reject(new Error("Lingual translation aborted"));
+          signal?.addEventListener("abort", () => reject(new Error("Lingual translation aborted")), { once: true });
+        });
+        const res = await Promise.race([stream.result(), timeoutPromise, abortPromise]);
         if (!res) return null;
         const content = res.content?.filter((c) => c.type === "text")?.map((c) => c.text)?.join("");
         return content && content.trim() ? content.trim() : null;
@@ -1957,17 +2117,13 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
       if (ctx.hasUI) {
         ctx.ui.setWidget("lingual_hud", void 0);
       }
-      pagedResults = [];
-      currentPageIndex = 0;
-      totalExpectedPages = 1;
+      session.clearPagination();
       return { action: "continue" };
     }
-    const requestId = ++currentRequestId;
+    const { generation, signal } = session.beginRequest();
     const completer = createModelCompleter(ctx);
     const chunks = splitSemanticChunks(promptToTranslate);
-    totalExpectedPages = chunks.length;
-    currentPageIndex = 0;
-    pagedResults = [];
+    session.initPagination(chunks.length);
     if (state.mode === "original") {
       if (ctx.hasUI) {
         ctx.ui.setStatus("lingual", ctx.ui.theme.fg("accent", "\u21C4 [lingual] polishing..."));
@@ -1976,14 +2132,14 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
         translatePrompt(promptToTranslate, {
           sourceLang: state.sourceLang,
           labels: state.labels,
-          complete: completer
+          complete: completer,
+          signal
         }).then((result) => {
-          if (requestId !== currentRequestId || state.mode !== "original") {
+          if (!session.isLatest(generation) || state.mode !== "original") {
             return;
           }
           if (result) {
-            lastResult = result;
-            pagedResults = [result];
+            session.setPageResult(0, result, generation);
             if (ctx.hasUI) {
               renderHudWidget(
                 ctx,
@@ -1997,7 +2153,7 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
             }
           }
         }).finally(() => {
-          if (requestId === currentRequestId) {
+          if (session.isLatest(generation)) {
             updateFooter(ctx);
           }
         });
@@ -2005,35 +2161,36 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
         translatePrompt(chunks[0], {
           sourceLang: state.sourceLang,
           labels: state.labels,
-          complete: completer
+          complete: completer,
+          signal
         }).then((result0) => {
-          if (requestId !== currentRequestId || state.mode !== "original") {
+          if (!session.isLatest(generation) || state.mode !== "original") {
             return;
           }
           if (result0) {
-            lastResult = result0;
-            pagedResults[0] = result0;
+            session.setPageResult(0, result0, generation);
             if (ctx.hasUI) {
               renderActiveCard(ctx);
               ctx.ui.notify(state.labels.notifyPaging || `[${state.labels.hudTitle}] \u957F\u53E5\u5DF2\u5207\u5206\u591A\u6BB5\uFF0C\u6309 Alt+. \u7FFB\u9875\u6D4F\u89C8`, "info");
             }
           }
         }).finally(() => {
-          if (requestId === currentRequestId) {
+          if (session.isLatest(generation)) {
             updateFooter(ctx);
           }
         });
         (async () => {
           for (let i = 1; i < chunks.length; i++) {
-            if (requestId !== currentRequestId || state.mode !== "original") break;
+            if (!session.isLatest(generation) || state.mode !== "original") break;
             const res = await translatePrompt(chunks[i], {
               sourceLang: state.sourceLang,
               labels: state.labels,
-              complete: completer
+              complete: completer,
+              signal
             });
-            if (res && requestId === currentRequestId) {
-              pagedResults[i] = res;
-              if (ctx.hasUI && currentPageIndex === 0) {
+            if (res && session.isLatest(generation)) {
+              session.setPageResult(i, res, generation);
+              if (ctx.hasUI && session.getPaginationSnapshot().pageIndex === 0) {
                 renderActiveCard(ctx);
               }
             }
@@ -2056,9 +2213,10 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
         const result = await translatePrompt(promptToTranslate, {
           sourceLang: state.sourceLang,
           labels: state.labels,
-          complete: completer
+          complete: completer,
+          signal
         });
-        if (requestId !== currentRequestId) {
+        if (!session.isLatest(generation)) {
           return { action: "continue" };
         }
         if (!result) {
@@ -2068,8 +2226,7 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
           }
           return { action: "continue" };
         }
-        lastResult = result;
-        pagedResults = [result];
+        session.setPageResult(0, result, generation);
         if (ctx.hasUI) {
           renderHudWidget(
             ctx,
@@ -2085,14 +2242,20 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
       } else {
         const results = await Promise.all(
           chunks.map(
-            (chunk) => translatePrompt(chunk, {
+            (chunk, idx) => translatePrompt(chunk, {
               sourceLang: state.sourceLang,
               labels: state.labels,
-              complete: completer
+              complete: completer,
+              signal
+            }).then((res) => {
+              if (res && session.isLatest(generation)) {
+                session.setPageResult(idx, res, generation);
+              }
+              return res;
             })
           )
         );
-        if (requestId !== currentRequestId) return { action: "continue" };
+        if (!session.isLatest(generation)) return { action: "continue" };
         const validResults = results.filter((r) => r !== null);
         if (validResults.length === 0) {
           if (ctx.hasUI) {
@@ -2101,9 +2264,6 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
           }
           return { action: "continue" };
         }
-        pagedResults = validResults;
-        lastResult = validResults[0];
-        currentPageIndex = 0;
         if (ctx.hasUI) {
           renderActiveCard(ctx);
           ctx.ui.notify(state.labels.notifyPaging || `[${state.labels.hudTitle}] \u957F\u53E5\u5DF2\u5207\u5206\u591A\u6BB5\uFF0C\u6309 Alt+. \u7FFB\u9875\u6D4F\u89C8`, "info");
@@ -2125,7 +2285,7 @@ ${sanitized.rawPayload}` : combinedEnglish;
       }
       return { action: "continue" };
     } finally {
-      if (requestId === currentRequestId) {
+      if (session.isLatest(generation)) {
         updateFooter(ctx);
       }
     }

@@ -5,4 +5,6 @@ export * from "./prompts.js";
 export * from "./shield.js";
 export * from "./cache.js";
 export * from "./sanitizer.js";
+export * from "./layout.js";
+export * from "./fsm.js";
 export * from "./engine.js";

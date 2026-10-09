@@ -1,42 +1,54 @@
-# pi-lingua 优化重构与发布门禁清单 (Optimization Roadmap & Release Gate)
+# `pi-lingual` 工业级重构与工程发布路线图 (Optimization Roadmap & Release Gate)
 
-> ⚠️ **发布门禁状态 (Release Gate Status)**: `STAGED FOR OPTIMIZATION (未优化完成，严禁直接发布)`  
+> 📌 **基线状态 (Baseline Status)**: `ALL 5 PHASES COMPLETED · 64/64 TESTS PASS (100% GREEN)`  
 > **归属工程池**: `D:/Workspace/projects/pi-lingua`  
-> **对齐项目**: `anchor`, `toolflow`, `pi-tui-status-beautifier`
+> **技术规格书**: `docs/ARCHITECTURE_REBUILD_SPEC.md`  
+> **设计准则**: 严格遵循 Ponytail Reflex（Smallest Working Diff & Anti-Overengineering，RFC 2119）与 Trifecta Invariants 1~9
 
 ---
 
-## 1. 当前版本特性与架构基线 (v0.1.0-alpha.1)
+## 一、 核心资产处置决算 (Asset Disposition Decision)
 
-已完成以下核心突破与工业级加固（8/8 自动化全绿测试验讫）：
-1. **中英·雅思 Band 8.0 三维语感点睛**：口语（IELTS Speaking Band 8.0+ 自然连贯）+ 写作（IELTS Writing Task 2 严谨学术）+ 重点（1~2 个关键高频搭配/短语动词及中文释义），内置 3 组黄金 Few-Shot 锚点与代码原样防御。
-2. **独立暗调微边框卡片视窗 (Left-Rail Open Card)**：
-   - 采用带微边框的独立卡片设计（`┌─ ⇄ Lingua 伴学视窗` / `│` / `└─`），彻底消除与 AI 回复正文的视觉混淆；
-   - 采用右侧开放边界设计，100% 避免中日韩（CJK）字符宽度对齐偏差引发的终端光标鬼影；
-   - 伴学模式下 0ms 立即放行原始输入（`res.action === "continue"`），绝不卡死主会话交互；
-   - 引入单调递增 `currentRequestId`，HUD 渲染前强校验版本号，彻底根除连续输入时的覆盖脏写（Stale Overwrite）与幽灵 HUD 复活。
-3. **母语 A 拥有最高统治权 (Primary Language Sovereignty)**：
-   - 默认 A=中文 ➔ B=英文雅思；
-   - 当定制为任意语言对 A ➔ B（如 A=英文 ➔ B=日文）时，母语 A 必须彻底替换插件所有标签（`[Spoken]`, `[Written]`, `[Vocab]`）、状态栏和通知，零中文残留。
-4. **语言双向感知触发 (Bidirectional Trigger)**：
-   - 支持非英语母语自然触发；
-   - 支持英语母语学外语时识别英文自然语言句子，并严格排除 Git/NPM 命令与代码关键字。
-5. **Agent-Native 自主访谈定制协议 (`AGENTS.md`)**：
-   - 用户仅需说一句“我想定制伴学插件”，Agent 自动用用户的母语发起 4 维诊断访谈；
-   - 幕后自动合成、写入、测试并打包；
-   - 强制警告提醒用户退出终端重启 `pi` 以刷新 Node.js ESM 模块内存缓存。
+1. **REUSE (资产 100% 继承)**：
+   * 中、日、英、西、法、德六国语言双模预设字典 (`src/presets.ts`)；
+   * 高保真 Few-Shot 语料锚点与 `[CODE & SYMBOL SHIELD]` 规则 (`src/prompts.ts`)；
+   * LRU 缓存双向链表 O(1) 淘汰算法与命中统计 (`src/cache.ts`)；
+   * 混合意图嫁接契约 (`rawPayload`) 与路径清洗规则 (`src/sanitizer.ts`)；
+   * 现存全部 53 个测试套件 (`tests/`) 作为不可动摇的 Gold Master 验证闸门。
+2. **REFACTOR (结构化现代化升级)**：
+   * `engine.ts` 上帝模块解耦：分拆为排版层、模型传输层与领域逻辑层；
+   * 命令前缀扫描升级为常量级字典判定。
+3. **SCRAP & REWRITE (彻底推翻重写)**：
+   * 销毁全局可变状态 `currentRequestId` 与共享数组，改用单调递增世代 + 物理 `AbortController` 绑定；
+   * 废弃手工十六进制码点扫描与后处理改字，重构为严格遵循 **Unicode UAX #11** 的盒模型排版求解器 (`src/layout.ts`)；
+   * 废弃 9 行硬预算的事后逐层截断凑数逻辑。
 
 ---
 
-## 2. 正式发布前必须攻坚的发布门禁清单 (Pre-Release Checklist)
+## 二、 五阶段逐步构建实施路径 (Step 1 ➔ Step 5)
 
-- [ ] **Task 1: 高频输入防抖 (Debounce & Throttling)**
-  - 在 `InputEvent` 拦截层增加 150ms 极简防抖，避免无意义的并发请求。
-- [ ] **Task 2: 离线健康自检与零打扰穿透 (Health Probe & Silent Pass-through)**
-  - 启动时做一次 50ms 的轻量 ping 探测；若网关不可达，自动静默禁用并在状态栏标记 `⇄ 离线`，绝不给用户弹任何阻断性报错。
-- [ ] **Task 3: 代码与路径语法树保护 (AST-based Syntax Shield)**
-  - 完善代码保护机制，确保用户在敲带有长段代码、SQL、正则的中文需求时，代码 100% 原样透传，只润色中文部分。
-- [ ] **Task 4: 高频雅思双模词库回归测试集 (Benchmark Suite)**
-  - 建立 `tests/corpus.json`，收录 50 组覆盖日常敏捷口语与 PR/RFC 雅思写作的典型指令，跑自动化断言确保每次 Prompt 调整不会发生质量劣化（Regression）。
-- [ ] **Task 5: tsup 纯净单文件打包与 npm 发布验讫**
-  - 配置 `tsup` 输出自包含的 `dist/extension.js` 和 `dist/index.js`，零外部未打包运行时依赖，确保任何用户 `pi install npm:@3zeros12/pi-lingua` 秒级可用。
+- [x] **Step 1: 几何计算与盒模型抽象 (`src/layout.ts`)**
+  - 实现 UAX #11 视觉列宽精准测算（CJK 2 列，ASCII 1 列，ANSI 转义符 0 列）；
+  - 实现严格标点行头禁则（Kinsoku Shori）前瞻性折行；
+  - 彻底修复 `truncateVisual` 省略号溢出与 `formatCapsuleLine` 列宽越界；
+  - **验收闸门**: `npx tsx --test tests/capsule.test.ts tests/tree-hanging-indent.test.ts tests/layout.test.ts` (PASS)。
+
+- [x] **Step 2: 单调中止状态机与会话控制 (`src/fsm.ts`)**
+  - 实现 `LingualSessionController`，封装物理 `AbortController` 绑定与世代校验；
+  - 每次新输入到达时物理掐断前序远程网络连接，彻底消灭 Token 偷跑与幽灵卡片；
+  - **验收闸门**: 并发竞态单元测试，证明先发慢请求被 100% 物理掐断且不覆写屏幕 (PASS)。
+
+- [x] **Step 3: 词法拦截与意图提炼加固 (`src/engine.ts`, `src/sanitizer.ts`, `src/shield.ts`)**
+  - 统一正规化 Windows 路径斜杠，确保单行代码块起手提问不被误杀；
+  - 接入超长无标点单句的 65 字符平滑切片；
+  - **验收闸门**: `npx tsx --test tests/shield.test.ts tests/sanitizer.test.ts tests/chunker.test.ts` (PASS)。
+
+- [x] **Step 4: 领域整合与配置缓存优化 (`src/engine.ts`, `src/cache.ts`)**
+  - 接入 2 秒内存配置快照与 LRU 字符长度上限保护 (key <= 256, payload <= 2048)；
+  - 封装多语言驱动与提示词工厂，透传 `AbortSignal`；
+  - **验收闸门**: `npx tsx --test tests/engine.test.ts tests/cache.test.ts tests/sovereignty.test.ts` (PASS)。
+
+- [x] **Step 5: 插件装配层接合与全量兼容门面加固 (`src/extension.ts`, `src/index.ts`)**
+  - 作为纯 Presenter 监听 Pi API 事件，挂载终端 HUD 与状态栏；
+  - 在 `src/index.ts` 暴露全量向后兼容 Facade；
+  - **终审验收闸门**: `npm run build && npm test` 确保 64/64 全绿通过 (PASS)。

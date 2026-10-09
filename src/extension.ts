@@ -28,6 +28,7 @@ import {
   LANGUAGE_PRESETS,
 } from "./presets.js";
 import { splitSemanticChunks } from "./chunker.js";
+import { LingualSessionController } from "./fsm.js";
 import { sanitizePromptForTranslation } from "./sanitizer.js";
 import { globalLingualCache } from "./cache.js";
 
@@ -114,16 +115,8 @@ function saveUserLingualConfig(patch: Record<string, any>) {
   } catch {}
 }
 
-// 单调递增请求版本号，彻底根除连续输入并发竞态（Stale Overwrite）与幽灵 HUD 复活
-let currentRequestId = 0;
-
-// 内存暂存最近一次成功伴学结果，供 /2-last 与 /lingua-last 随时回看复盘
-let lastResult: LingualResult | null = null;
-
-// 多句切分原子卡片分页池与当前索引
-let pagedResults: LingualResult[] = [];
-let currentPageIndex = 0;
-let totalExpectedPages = 1;
+// 单调递增会话 FSM 控制器，彻底根除连续输入并发竞态与幽灵卡片，物理协同掐断上游 Socket
+const session = new LingualSessionController();
 
 function updateFooter(ctx: ExtensionContext) {
   if (!ctx.hasUI) return;
@@ -311,12 +304,10 @@ function renderHudWidget(
 
 function renderActiveCard(ctx: ExtensionContext) {
   // 只统计实际已经被翻译就绪的有效卡片，彻底杜绝未就绪切片导致的虚假总页数与跳页
-  const readyList = pagedResults.filter((r): r is LingualResult => Boolean(r));
+  const readyList = session.getReadyPages();
   if (readyList.length === 0) return;
-  if (currentPageIndex >= readyList.length) {
-    currentPageIndex = 0;
-  }
-  const res = readyList[currentPageIndex];
+  const snapshot = session.getPaginationSnapshot();
+  const res = session.getActiveResult();
   if (!res) return;
   renderHudWidget(
     ctx,
@@ -327,8 +318,8 @@ function renderActiveCard(ctx: ExtensionContext) {
     res.spokenMeaning,
     res.writtenMeaning,
     {
-      pageIndex: currentPageIndex,
-      totalPages: readyList.length,
+      pageIndex: snapshot.pageIndex,
+      totalPages: snapshot.readyCount,
     }
   );
 }
@@ -340,7 +331,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   const setModeHandler = async (args: string, ctx: ExtensionContext) => {
-    currentRequestId++;
+    session.abortActive();
     const trimmed = args?.trim().toLowerCase();
     let nextMode: LingualMode;
 
@@ -468,6 +459,7 @@ export default function (pi: ExtensionAPI) {
     state.sourceLang = trimmed;
     state.labels = resolveLabelsForLang(trimmed);
     saveUserLingualConfig({ sourceLang: trimmed });
+    session.reset();
     globalLingualCache.clear();
     updateFooter(ctx);
 
@@ -494,17 +486,18 @@ export default function (pi: ExtensionAPI) {
     ctx.ui.notify(msg, "info");
 
     // 若当前有活动卡片，立即就地刷新重绘
-    if (pagedResults.length > 0) {
+    if (session.getReadyPages().length > 0) {
       renderActiveCard(ctx);
-    } else if (lastResult) {
+    } else if (session.getLastResult()) {
+      const last = session.getLastResult()!;
       renderHudWidget(
         ctx,
-        lastResult.sourceText,
-        lastResult.spoken,
-        lastResult.written,
-        lastResult.vocab,
-        lastResult.spokenMeaning,
-        lastResult.writtenMeaning
+        last.sourceText,
+        last.spoken,
+        last.written,
+        last.vocab,
+        last.spokenMeaning,
+        last.writtenMeaning
       );
     }
   };
@@ -548,23 +541,24 @@ export default function (pi: ExtensionAPI) {
   });
 
   const showLastHandler = async (_args: string, ctx: ExtensionContext) => {
-    if (pagedResults.length > 0) {
+    if (session.getReadyPages().length > 0) {
       renderActiveCard(ctx);
       ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] 已重新显示上一条伴学卡片`, "info");
       return;
     }
-    if (!lastResult) {
+    const last = session.getLastResult();
+    if (!last) {
       ctx.ui.notify(state.labels.notifyNoHistory || `[${state.labels.hudTitle}] 暂无上一条伴学记录`, "info");
       return;
     }
     renderHudWidget(
       ctx,
-      lastResult.sourceText,
-      lastResult.spoken,
-      lastResult.written,
-      lastResult.vocab,
-      lastResult.spokenMeaning,
-      lastResult.writtenMeaning
+      last.sourceText,
+      last.spoken,
+      last.written,
+      last.vocab,
+      last.spokenMeaning,
+      last.writtenMeaning
     );
     ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] 已重新显示上一条伴学卡片`, "info");
   };
@@ -584,27 +578,25 @@ export default function (pi: ExtensionAPI) {
     pi.registerShortcut("alt+.", {
       description: state.labels.shortcutNextPage || "切换至下一段伴学切片",
       handler: async (ctx) => {
-        const readyList = pagedResults.filter((r): r is LingualResult => Boolean(r));
-        if (readyList.length <= 1) return;
-        currentPageIndex = (currentPageIndex + 1) % readyList.length;
-        renderActiveCard(ctx);
+        if (session.nextPage()) {
+          renderActiveCard(ctx);
+        }
       },
     });
 
     pi.registerShortcut("alt+,", {
       description: state.labels.shortcutPrevPage || "切换至上一段伴学切片",
       handler: async (ctx) => {
-        const readyList = pagedResults.filter((r): r is LingualResult => Boolean(r));
-        if (readyList.length <= 1) return;
-        currentPageIndex = (currentPageIndex - 1 + readyList.length) % readyList.length;
-        renderActiveCard(ctx);
+        if (session.prevPage()) {
+          renderActiveCard(ctx);
+        }
       },
     });
   }
 
   // 创建 Pi 宿主原生模型驱动器：0 配置开箱即用，优先复用 Pi 已授权的会话凭据，拒绝泄露本地私有 Token
   const createModelCompleter = (ctx: ExtensionContext) => {
-    return async (text: string, systemPrompt: string): Promise<string | null> => {
+    return async (text: string, systemPrompt: string, signal?: AbortSignal): Promise<string | null> => {
       try {
         if (!ctx.modelRegistry) return null;
 
@@ -643,11 +635,15 @@ export default function (pi: ExtensionAPI) {
           } as any
         );
 
-        // 【关键保护 2】：设置 30s 充裕超时保护，防止上游网络死锁或挂起阻塞用户终端输入，同时避免并发排队时虚假超时
+        // 【关键保护 2】：设置 30s 充裕超时保护，防止上游网络死锁或挂起阻塞用户终端输入，同时绑定协同中断信号
         const timeoutPromise = new Promise<null>((_, reject) =>
           setTimeout(() => reject(new Error("Lingual translation timed out")), 30000)
         );
-        const res = (await Promise.race([stream.result(), timeoutPromise])) as any;
+        const abortPromise = new Promise<null>((_, reject) => {
+          if (signal?.aborted) reject(new Error("Lingual translation aborted"));
+          signal?.addEventListener("abort", () => reject(new Error("Lingual translation aborted")), { once: true });
+        });
+        const res = (await Promise.race([stream.result(), timeoutPromise, abortPromise])) as any;
         if (!res) return null;
         const content = res.content
           ?.filter((c: any) => c.type === "text")
@@ -690,19 +686,15 @@ export default function (pi: ExtensionAPI) {
       if (ctx.hasUI) {
         ctx.ui.setWidget("lingual_hud", undefined);
       }
-      pagedResults = [];
-      currentPageIndex = 0;
-      totalExpectedPages = 1;
+      session.clearPagination();
       return { action: "continue" };
     }
 
-    const requestId = ++currentRequestId;
+    const { generation, signal } = session.beginRequest();
     const completer = createModelCompleter(ctx);
 
     const chunks = splitSemanticChunks(promptToTranslate);
-    totalExpectedPages = chunks.length;
-    currentPageIndex = 0;
-    pagedResults = [];
+    session.initPagination(chunks.length);
 
     // 【原文模式】(original · 默认)：彻底非阻塞 (0ms 立即放行原始输入)，后台异步微任务渲染卡片视窗
     if (state.mode === "original") {
@@ -716,14 +708,14 @@ export default function (pi: ExtensionAPI) {
           sourceLang: state.sourceLang,
           labels: state.labels,
           complete: completer,
+          signal,
         })
           .then((result) => {
-            if (requestId !== currentRequestId || state.mode !== "original") {
+            if (!session.isLatest(generation) || state.mode !== "original") {
               return;
             }
             if (result) {
-              lastResult = result;
-              pagedResults = [result];
+              session.setPageResult(0, result, generation);
               if (ctx.hasUI) {
                 renderHudWidget(
                   ctx,
@@ -738,7 +730,7 @@ export default function (pi: ExtensionAPI) {
             }
           })
           .finally(() => {
-            if (requestId === currentRequestId) {
+            if (session.isLatest(generation)) {
               updateFooter(ctx);
             }
           });
@@ -748,14 +740,14 @@ export default function (pi: ExtensionAPI) {
           sourceLang: state.sourceLang,
           labels: state.labels,
           complete: completer,
+          signal,
         })
           .then((result0) => {
-            if (requestId !== currentRequestId || state.mode !== "original") {
+            if (!session.isLatest(generation) || state.mode !== "original") {
               return;
             }
             if (result0) {
-              lastResult = result0;
-              pagedResults[0] = result0;
+              session.setPageResult(0, result0, generation);
               if (ctx.hasUI) {
                 renderActiveCard(ctx);
                 ctx.ui.notify(state.labels.notifyPaging || `[${state.labels.hudTitle}] 长句已切分多段，按 Alt+. 翻页浏览`, "info");
@@ -763,23 +755,24 @@ export default function (pi: ExtensionAPI) {
             }
           })
           .finally(() => {
-            if (requestId === currentRequestId) {
+            if (session.isLatest(generation)) {
               updateFooter(ctx);
             }
           });
 
-        // 后续切片后台异步并发预加载，就绪后当用户按 Alt+→ 即刻呈现
+        // 后续切片后台异步并发预加载，就绪后当用户按 Alt+. 即刻呈现
         (async () => {
           for (let i = 1; i < chunks.length; i++) {
-            if (requestId !== currentRequestId || state.mode !== "original") break;
+            if (!session.isLatest(generation) || state.mode !== "original") break;
             const res = await translatePrompt(chunks[i], {
               sourceLang: state.sourceLang,
               labels: state.labels,
               complete: completer,
+              signal,
             });
-            if (res && requestId === currentRequestId) {
-              pagedResults[i] = res;
-              if (ctx.hasUI && currentPageIndex === 0) {
+            if (res && session.isLatest(generation)) {
+              session.setPageResult(i, res, generation);
+              if (ctx.hasUI && session.getPaginationSnapshot().pageIndex === 0) {
                 renderActiveCard(ctx);
               }
             }
@@ -808,8 +801,9 @@ export default function (pi: ExtensionAPI) {
           sourceLang: state.sourceLang,
           labels: state.labels,
           complete: completer,
+          signal,
         });
-        if (requestId !== currentRequestId) {
+        if (!session.isLatest(generation)) {
           return { action: "continue" };
         }
 
@@ -821,8 +815,7 @@ export default function (pi: ExtensionAPI) {
           return { action: "continue" };
         }
 
-        lastResult = result;
-        pagedResults = [result];
+        session.setPageResult(0, result, generation);
         if (ctx.hasUI) {
           renderHudWidget(
             ctx,
@@ -838,15 +831,21 @@ export default function (pi: ExtensionAPI) {
       } else {
         // 并发执行所有切片的翻译，将多切片耗时从 N*Latency 降低至 1*Latency
         const results = await Promise.all(
-          chunks.map((chunk) =>
+          chunks.map((chunk, idx) =>
             translatePrompt(chunk, {
               sourceLang: state.sourceLang,
               labels: state.labels,
               complete: completer,
+              signal,
+            }).then((res) => {
+              if (res && session.isLatest(generation)) {
+                session.setPageResult(idx, res, generation);
+              }
+              return res;
             })
           )
         );
-        if (requestId !== currentRequestId) return { action: "continue" };
+        if (!session.isLatest(generation)) return { action: "continue" };
         const validResults = results.filter((r): r is LingualResult => r !== null);
         if (validResults.length === 0) {
           if (ctx.hasUI) {
@@ -855,9 +854,6 @@ export default function (pi: ExtensionAPI) {
           }
           return { action: "continue" };
         }
-        pagedResults = validResults;
-        lastResult = validResults[0];
-        currentPageIndex = 0;
         if (ctx.hasUI) {
           renderActiveCard(ctx);
           ctx.ui.notify(state.labels.notifyPaging || `[${state.labels.hudTitle}] 长句已切分多段，按 Alt+. 翻页浏览`, "info");
@@ -884,7 +880,7 @@ export default function (pi: ExtensionAPI) {
       }
       return { action: "continue" };
     } finally {
-      if (requestId === currentRequestId) {
+      if (session.isLatest(generation)) {
         updateFooter(ctx);
       }
     }
