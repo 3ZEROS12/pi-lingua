@@ -52,12 +52,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/3ZEROS12/pi-lingua.git"
+    "url": "git+https://github.com/3ZEROS12/pi-lingual.git"
   },
   "bugs": {
-    "url": "https://github.com/3ZEROS12/pi-lingua/issues"
+    "url": "https://github.com/3ZEROS12/pi-lingual/issues"
   },
-  "homepage": "https://github.com/3ZEROS12/pi-lingua#readme",
+  "homepage": "https://github.com/3ZEROS12/pi-lingual#readme",
   "devDependencies": {
     "@earendil-works/pi-coding-agent": "latest",
     "@types/node": "^26.6.2",
