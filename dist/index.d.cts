@@ -135,8 +135,9 @@ declare function splitSemanticChunks(text: string, maxChunkChars?: number): stri
 /**
  * 动态根据母语 A (sourceLang) 与目标学习语言 B (targetLang) 生成严格遵循【母语最高统治权】的系统提示词
  * 彻底替换提示词中的硬编码中文，使任意 A 语言使用者均获得 100% 本地化的语感解释与词汇注解。
+ * 当 isLongInput 为 true 时，额外注入意图凝练与浓缩总结指令，确保长命令始终以高密度单卡呈现，无需翻页。
  */
-declare function buildSystemPrompt(sourceLang?: string, targetLang?: string): string;
+declare function buildSystemPrompt(sourceLang?: string, targetLang?: string, isLongInput?: boolean): string;
 
 /**
  * Code & Shell Pass-through Shield (代码与纯命令行 0ms 旁路拦截器)

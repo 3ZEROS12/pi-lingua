@@ -213,8 +213,9 @@ const LANGUAGE_SPECS: Record<string, LanguageSpec> = {
 /**
  * 动态根据母语 A (sourceLang) 与目标学习语言 B (targetLang) 生成严格遵循【母语最高统治权】的系统提示词
  * 彻底替换提示词中的硬编码中文，使任意 A 语言使用者均获得 100% 本地化的语感解释与词汇注解。
+ * 当 isLongInput 为 true 时，额外注入意图凝练与浓缩总结指令，确保长命令始终以高密度单卡呈现，无需翻页。
  */
-export function buildSystemPrompt(sourceLang = "zh", targetLang = "en"): string {
+export function buildSystemPrompt(sourceLang = "zh", targetLang = "en", isLongInput = false): string {
   const normSource = (sourceLang || "zh").toLowerCase().split("-")[0];
   const spec = LANGUAGE_SPECS[normSource] || LANGUAGE_SPECS.zh;
   const targetName = targetLang === "ja" ? "Japanese" : targetLang === "zh" ? "Chinese" : "English";
@@ -233,6 +234,12 @@ Output:
     )
     .join("\n\n");
 
+  const condensationDirective = isLongInput
+    ? `\n\n[LONG INPUT CONDENSATION DIRECTIVE]:
+The user's input text is long (>90 chars). DO NOT translate verbatim line by line.
+Instead, distill and synthesize the core architectural/technical intent into concise, punchy spoken and written expressions (strictly under 25 words each) so that the translation fits cleanly on a single terminal HUD card without information bloat.`
+    : "";
+
   return `You are an elite bilingual developer language coach and senior software architect.
 Task:
 Translate the user's message from native ${spec.name} (language A) into TWO distinct authentic ${targetName} registers (language B), and provide the exact back-translation/nuance in native ${spec.name} for each register:
@@ -244,6 +251,7 @@ Translate the user's message from native ${spec.name} (language A) into TWO dist
 
 [CODE & SYMBOL SHIELD - STRICT RULE]:
 All inline code (\`foo()\`), file paths (@file, path/to/file), SQL keywords, variable names, and technical identifiers MUST be preserved 100% verbatim in both spoken and written outputs. Never translate, rephrase, or drop code tokens.
+${condensationDirective}
 
 [GOLDEN FEW-SHOT ANCHORS]:
 ${anchorText}

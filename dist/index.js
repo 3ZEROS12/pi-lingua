@@ -643,7 +643,7 @@ var LANGUAGE_SPECS = {
     ]
   }
 };
-function buildSystemPrompt(sourceLang = "zh", targetLang = "en") {
+function buildSystemPrompt(sourceLang = "zh", targetLang = "en", isLongInput = false) {
   const normSource = (sourceLang || "zh").toLowerCase().split("-")[0];
   const spec = LANGUAGE_SPECS[normSource] || LANGUAGE_SPECS.zh;
   const targetName = targetLang === "ja" ? "Japanese" : targetLang === "zh" ? "Chinese" : "English";
@@ -658,6 +658,11 @@ Output:
   "vocab": ${JSON.stringify(a.vocab)}
 }`
   ).join("\n\n");
+  const condensationDirective = isLongInput ? `
+
+[LONG INPUT CONDENSATION DIRECTIVE]:
+The user's input text is long (>90 chars). DO NOT translate verbatim line by line.
+Instead, distill and synthesize the core architectural/technical intent into concise, punchy spoken and written expressions (strictly under 25 words each) so that the translation fits cleanly on a single terminal HUD card without information bloat.` : "";
   return `You are an elite bilingual developer language coach and senior software architect.
 Task:
 Translate the user's message from native ${spec.name} (language A) into TWO distinct authentic ${targetName} registers (language B), and provide the exact back-translation/nuance in native ${spec.name} for each register:
@@ -669,6 +674,7 @@ Translate the user's message from native ${spec.name} (language A) into TWO dist
 
 [CODE & SYMBOL SHIELD - STRICT RULE]:
 All inline code (\`foo()\`), file paths (@file, path/to/file), SQL keywords, variable names, and technical identifiers MUST be preserved 100% verbatim in both spoken and written outputs. Never translate, rephrase, or drop code tokens.
+${condensationDirective}
 
 [GOLDEN FEW-SHOT ANCHORS]:
 ${anchorText}
@@ -1286,6 +1292,21 @@ function shouldTriggerTranslation(text, sourceLang = "zh") {
   }
   return /[a-zA-Z]{2,}/.test(trimmed);
 }
+function tryParseJson(str) {
+  try {
+    return JSON.parse(str);
+  } catch {
+    try {
+      const repaired = str.replace(/,\s*([}\]])/g, "$1").replace(
+        /("(?:spoken|spoken_meaning|written|written_meaning|vocab|casual|academic|slot1|slot2)"\s*:\s*")([\s\S]*?)("(?=\s*,\s*"|\s*\}))/g,
+        (_m, prefix, content, suffix) => prefix + content.replace(/(?<!\\)"/g, '\\"') + suffix
+      );
+      return JSON.parse(repaired);
+    } catch {
+      return null;
+    }
+  }
+}
 function parseLlmResponse(raw) {
   try {
     let cleaned = raw.replace(/<(?:think|thought)>[\s\S]*?<\/(?:think|thought)>/gi, "").trim();
@@ -1299,7 +1320,8 @@ function parseLlmResponse(raw) {
       return null;
     }
     const jsonSubstr = cleaned.slice(firstBrace, lastBrace + 1);
-    const parsed = JSON.parse(jsonSubstr);
+    const parsed = tryParseJson(jsonSubstr);
+    if (!parsed) return null;
     const spoken = (parsed.spoken || parsed.casual || parsed.slot1 || "").trim();
     const spokenMeaning = (parsed.spoken_meaning || parsed.spokenMeaning || "").trim();
     const written = (parsed.written || parsed.academic || parsed.slot2 || "").trim();
@@ -1388,7 +1410,8 @@ async function translatePrompt(text, userConfig = {}) {
   }
   try {
     let content = null;
-    const sysPrompt = buildSystemPrompt(cfg.sourceLang, cfg.targetLang);
+    const isLongInput = trimmed.length > 90;
+    const sysPrompt = buildSystemPrompt(cfg.sourceLang, cfg.targetLang, isLongInput);
     if (typeof cfg.complete === "function") {
       content = await cfg.complete(trimmed, sysPrompt, controller.signal);
     } else if (cfg.endpoint) {

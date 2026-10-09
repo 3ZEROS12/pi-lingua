@@ -191,6 +191,28 @@ export function shouldTriggerTranslation(text: string, sourceLang = "zh"): boole
 }
 
 /**
+ * 极简微型 JSON 修复器 (Featherweight JSON Repair):
+ * 当 LLM 吐出未转义的双引号或尾随逗号时，安全修补，杜绝静默失败
+ */
+function tryParseJson(str: string): any {
+  try {
+    return JSON.parse(str);
+  } catch {
+    try {
+      const repaired = str
+        .replace(/,\s*([}\]])/g, "$1")
+        .replace(
+          /("(?:spoken|spoken_meaning|written|written_meaning|vocab|casual|academic|slot1|slot2)"\s*:\s*")([\s\S]*?)("(?=\s*,\s*"|\s*\}))/g,
+          (_m, prefix, content, suffix) => prefix + content.replace(/(?<!\\)"/g, '\\"') + suffix
+        );
+      return JSON.parse(repaired);
+    } catch {
+      return null;
+    }
+  }
+}
+
+/**
  * Clean and parse LLM JSON responses safely
  * Uses robust brace-boundary slicing and thought stripping to be immune to markdown fences, thoughts, or prefix chatter
  */
@@ -209,7 +231,8 @@ export function parseLlmResponse(raw: string): TranslationPayload | null {
     }
 
     const jsonSubstr = cleaned.slice(firstBrace, lastBrace + 1);
-    const parsed = JSON.parse(jsonSubstr);
+    const parsed = tryParseJson(jsonSubstr);
+    if (!parsed) return null;
 
     const spoken = (parsed.spoken || parsed.casual || parsed.slot1 || "").trim();
     const spokenMeaning = (parsed.spoken_meaning || parsed.spokenMeaning || "").trim();
@@ -338,7 +361,8 @@ export async function translatePrompt(
 
   try {
     let content: string | null = null;
-    const sysPrompt = buildSystemPrompt(cfg.sourceLang, cfg.targetLang);
+    const isLongInput = trimmed.length > 90;
+    const sysPrompt = buildSystemPrompt(cfg.sourceLang, cfg.targetLang, isLongInput);
 
     // 1. If custom complete callback is provided (e.g. Pi native ModelRegistry / ctx.model):
     if (typeof cfg.complete === "function") {

@@ -2,39 +2,30 @@
 
 **Baseline Version**: `v0.3.0` (SemVer Frozen per Architectural Decision)  
 **Workspace Root**: `D:/Workspace/projects/pi-lingua`  
-**Execution Status**: Phase 1~5 Industrial Refactoring Completed & Verified  
-**Test Suite Health**: **64 / 64 PASS (100% Green)**  
-**Build Artifacts**: Clean dual-bundle output (`dist/extension.js`, `dist/extension.cjs`, `dist/index.js`, `dist/index.cjs` with `.d.ts` / `.d.cts`) via `tsup`
+**Execution Status**: Phase 1~5 Architecture + Featherweight Hardening & Pruning Completed  
+**Test Suite Health**: **65 / 65 PASS (100% Green)**  
+**Fleet Pre-Flight**: **Passed: 1 | Failed: 0**  
+**Bundle Efficiency**: Clean dual-bundle output (`dist/extension.js` 93.5 KB, `dist/index.js` 78.6 KB; 相比重构前减少 4.3 KB 冗余)
 
 ---
 
-## 一、 核心重构与第一性原理落地成果 (Delivered Capabilities)
+## 一、 架构加固与羽量级瘦身成果 (Featherweight Hardening & Slimming)
 
-### 1. 终端盒模型求解引擎 (`src/layout.ts`)
-- **严格遵循 Unicode Standard Annex #11**：高精度视觉单元格测算（CJK/全角/Emoji = 2 单元格，ASCII = 1 单元格，ANSI 转义序列 = 0 单元格）；
-- **行头标点禁则处理 (Kinsoku Shori)**：预设行首禁止标点集合，对折行后孤立标点自动吸附至上一行末尾；
-- **单行高密度胶囊流 (formatCapsuleLine)**：预先扣除前缀与省略号物理列宽，在极端窄屏 (< 40 列) 或高度受限时平滑降级，绝不折行撕裂；
-- **9 行硬预算求解器 (renderCardLayout)**：统一求解全展开树状分支、内联语感降级及单行胶囊降级，数学断言 `lines.length <= 9`；
-- **终端缩放防崩溃保底 (getEffectiveMaxCols)**：针对 `SIGWINCH` 终端缩放或列宽异常，物理保底 25 列，防止除零或负数溢出。
+### 1. 极简微型 JSON 容错修复 (Featherweight JSON Repair · 18 行代码)
+- **物理痛点消除**：大模型偶发在 `spoken_meaning` 中输出未转义双引号（如 `{"spoken_meaning": "用 "refactor" 重写"}`），导致 `JSON.parse` 抛出 `SyntaxError` 并静默丢失卡片；
+- **零依赖刀锋修复**：在 `parseLlmResponse` 中引入微型修复状态机，捕获后自动正规化修复内层未转义引号并安全剔除尾随逗号，测试断言 100% 自愈恢复。
 
-### 2. 单调会话状态机与协同掐断 (`src/fsm.ts`)
-- **世代守卫 (Generation Counter)**：单调递增世代号，任何陈旧回调或慢请求返回时严格校验 `isLatest(generation)`，彻底根治覆盖脏写与幽灵卡片；
-- **物理 AbortController 协同掐断**：每次新请求到达时调用 `beginRequest()`，瞬间触发 `abortActive()` 掐断上一轮排队中或传输中的远程网络 Socket，杜绝 Token 偷跑与连接挂起；
-- **封装式分页池管理**：将 `pagedResults`、`currentPageIndex`、`lastResult` 完全收敛进 `LingualSessionController`，对外提供 `nextPage()`、`prevPage()`、`clearPagination()` 与状态快照。
+### 2. 长命令模型意图凝练总结流 (Long-Input Condensation · 单卡直出)
+- **按需注入总结指令**：当输入长文本（> 90 字符）时，自动注入 `[LONG INPUT CONDENSATION DIRECTIVE]`，驱动大模型将核心架构意图凝炼为精悍的双语域表达（严格 < 25 词）；
+- **彻底消灭多页切片轮询**：摒弃复杂的背景并发预加载队列与 `Alt+.` / `Alt+,` 翻页心智负担，实现 **1 个提问轮次 = 1 个原子 HUD 卡片**，极致轻量，一目了然。
 
-### 3. 词法盾牌与意图提炼加固 (`src/sanitizer.ts`, `src/shield.ts`)
-- **Windows 路径与双反斜杠安全清洗**：安全剥离剪贴板截图路径，防止路径转义符污染自然语言切片；
-- **单行代码块起手保留**：对形如 `` `const x = 1` 怎么优化？ `` 的提问，准确保留行首行内代码与自然语言提问；
-- **纯报错/纯代码 0ms 旁路防御**：严格识别纯堆栈、纯编译器诊断并即时放行，0 网络开销。
+### 3. 终端窗口实时缩放自适应 (SIGWINCH 8 行防抖重绘)
+- 挂载 `process.stdout.on("resize", ...)` 120ms 防抖监听器；
+- 用户在卡片显示期间拖动缩放终端窗口时，自动按最新物理列宽重新执行盒模型求解与重绘，绝不产生换行撕裂。
 
-### 4. 领域引擎与两级缓存加固 (`src/engine.ts`, `src/cache.ts`)
-- **LRU 内存安全边界**：限制缓存键长 <= 256 字符，载荷长 <= 2048 字符，防止整篇长文注入引起内存泄漏；
-- **2 秒内存配置快照**：高频分块翻译期间零重复磁盘读取，防止并发 I/O 阻塞；
-- **流式推理中止透传**：`translatePrompt` 深度接入 `AbortSignal`，超时与用户打断时即刻释放模型连接。
-
-### 5. 扩展胶水装配与全量兼容门面 (`src/extension.ts`, `src/index.ts`)
-- **纯 Presenter 架构**：`extension.ts` 全面接入 `LingualSessionController`，所有快捷键与命令统一驱动状态机；
-- **100% 向后兼容门面**：`src/index.ts` 完整导出所有类型、预设、排版函数与引擎接口，对外 API 契约无破坏。
+### 4. 核心命令矩阵收敛与保留
+- 完整保留核心命令：`/lingual`（模式切换）、`/lingual-lang`（母语切换）、`/lingual-agent`（向 Agent 提问定制指南）、`/lingual-compact`、`/lingual-status`、`/lingual-last` 以及 `/2` 极速别名；
+- 避免冗余命令爆炸，保持终端 Tab 补全清单纯净。
 
 ---
 
@@ -66,6 +57,7 @@
 ✔ isNonEnglish - correctly identifies natural language scripts and ignores emojis & typography
 ✔ shouldTriggerTranslation - bidirectional language trigger logic
 ✔ parseLlmResponse - robustly handles prefix chatter, markdown fences, thoughts, nuance meanings and duality slots
+✔ parseLlmResponse - recovers cleanly from unescaped quotes and trailing commas via featherweight repair
 ✔ parseLlmResponse - supports proficiency-adaptive vocab with multiple (3+) expressions without rigid caps
 ✔ formatTerminalAnnotation - formats with source text anchor, native nuance, and Trifecta Left-Rail Tree Branch
 ✔ stripLingualAnnotation - cleanly recovers raw text and isolates parenthetical nuance
@@ -109,8 +101,8 @@
 ✔ getVisualWidth - handles ANSI escapes, CJK, and ASCII accurately
 ✔ formatTreeBranch - aligns wrapped text with hanging indent strictly behind heading
 
-ℹ tests 64
+ℹ tests 65
 ℹ suites 0
-ℹ pass 64
+ℹ pass 65
 ℹ fail 0
 ```

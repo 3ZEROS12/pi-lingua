@@ -72,6 +72,22 @@ Hope this helps!`;
   assert.equal(res.vocab, "on board with (赞成/支持) · dive in (立刻着手/开搞)");
 });
 
+test("parseLlmResponse - recovers cleanly from unescaped quotes and trailing commas via featherweight repair", () => {
+  // 模拟大模型常犯的错误：在 JSON 字符串值内部包含了未转义的双引号，且末尾带有多余逗号
+  const malformed = `{
+  "spoken": "Let's "refactor" the codebase.",
+  "spoken_meaning": "我们把代码库 "重构" 一下",
+  "written": "Initiate structural refactoring.",
+  "written_meaning": "实施结构性重构",
+  "vocab": "refactor (重构)",
+}`;
+
+  const res = parseLlmResponse(malformed);
+  assert.ok(res, "Must recover from unescaped inner quotes");
+  assert.ok(res.spoken.includes("refactor"));
+  assert.ok(res.spokenMeaning?.includes("重构"));
+});
+
 test("parseLlmResponse - supports proficiency-adaptive vocab with multiple (3+) expressions without rigid caps", () => {
   const payload = JSON.stringify({
     spoken: "This feels a bit over-engineered; we'd be much better off just sticking with the standard library.",

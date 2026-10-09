@@ -845,7 +845,7 @@ var LANGUAGE_SPECS = {
     ]
   }
 };
-function buildSystemPrompt(sourceLang = "zh", targetLang = "en") {
+function buildSystemPrompt(sourceLang = "zh", targetLang = "en", isLongInput = false) {
   const normSource = (sourceLang || "zh").toLowerCase().split("-")[0];
   const spec = LANGUAGE_SPECS[normSource] || LANGUAGE_SPECS.zh;
   const targetName = targetLang === "ja" ? "Japanese" : targetLang === "zh" ? "Chinese" : "English";
@@ -860,6 +860,11 @@ Output:
   "vocab": ${JSON.stringify(a.vocab)}
 }`
   ).join("\n\n");
+  const condensationDirective = isLongInput ? `
+
+[LONG INPUT CONDENSATION DIRECTIVE]:
+The user's input text is long (>90 chars). DO NOT translate verbatim line by line.
+Instead, distill and synthesize the core architectural/technical intent into concise, punchy spoken and written expressions (strictly under 25 words each) so that the translation fits cleanly on a single terminal HUD card without information bloat.` : "";
   return `You are an elite bilingual developer language coach and senior software architect.
 Task:
 Translate the user's message from native ${spec.name} (language A) into TWO distinct authentic ${targetName} registers (language B), and provide the exact back-translation/nuance in native ${spec.name} for each register:
@@ -871,6 +876,7 @@ Translate the user's message from native ${spec.name} (language A) into TWO dist
 
 [CODE & SYMBOL SHIELD - STRICT RULE]:
 All inline code (\`foo()\`), file paths (@file, path/to/file), SQL keywords, variable names, and technical identifiers MUST be preserved 100% verbatim in both spoken and written outputs. Never translate, rephrase, or drop code tokens.
+${condensationDirective}
 
 [GOLDEN FEW-SHOT ANCHORS]:
 ${anchorText}
@@ -1143,6 +1149,21 @@ function shouldTriggerTranslation(text, sourceLang = "zh") {
   }
   return /[a-zA-Z]{2,}/.test(trimmed);
 }
+function tryParseJson(str) {
+  try {
+    return JSON.parse(str);
+  } catch {
+    try {
+      const repaired = str.replace(/,\s*([}\]])/g, "$1").replace(
+        /("(?:spoken|spoken_meaning|written|written_meaning|vocab|casual|academic|slot1|slot2)"\s*:\s*")([\s\S]*?)("(?=\s*,\s*"|\s*\}))/g,
+        (_m, prefix, content, suffix) => prefix + content.replace(/(?<!\\)"/g, '\\"') + suffix
+      );
+      return JSON.parse(repaired);
+    } catch {
+      return null;
+    }
+  }
+}
 function parseLlmResponse(raw) {
   try {
     let cleaned = raw.replace(/<(?:think|thought)>[\s\S]*?<\/(?:think|thought)>/gi, "").trim();
@@ -1156,7 +1177,8 @@ function parseLlmResponse(raw) {
       return null;
     }
     const jsonSubstr = cleaned.slice(firstBrace, lastBrace + 1);
-    const parsed = JSON.parse(jsonSubstr);
+    const parsed = tryParseJson(jsonSubstr);
+    if (!parsed) return null;
     const spoken = (parsed.spoken || parsed.casual || parsed.slot1 || "").trim();
     const spokenMeaning = (parsed.spoken_meaning || parsed.spokenMeaning || "").trim();
     const written = (parsed.written || parsed.academic || parsed.slot2 || "").trim();
@@ -1203,7 +1225,8 @@ async function translatePrompt(text, userConfig = {}) {
   }
   try {
     let content = null;
-    const sysPrompt = buildSystemPrompt(cfg.sourceLang, cfg.targetLang);
+    const isLongInput = trimmed.length > 90;
+    const sysPrompt = buildSystemPrompt(cfg.sourceLang, cfg.targetLang, isLongInput);
     if (typeof cfg.complete === "function") {
       content = await cfg.complete(trimmed, sysPrompt, controller.signal);
     } else if (cfg.endpoint) {
@@ -1272,93 +1295,6 @@ async function translatePrompt(text, userConfig = {}) {
   } finally {
     clearTimeout(timer);
   }
-}
-
-// src/chunker.ts
-function splitSemanticChunks(text, maxChunkChars = 65) {
-  const trimmed = text.trim();
-  if (!trimmed) return [];
-  if (trimmed.length <= maxChunkChars) {
-    return [trimmed];
-  }
-  const rawSegments = trimmed.split(/([。！？；\n]|[.!?](?=\s|$))/);
-  const sentences = [];
-  let cur = "";
-  for (let i = 0; i < rawSegments.length; i++) {
-    const part = rawSegments[i];
-    if (!part) continue;
-    cur += part;
-    if (/[。！？；\n]/.test(part) || /[.!?]/.test(part)) {
-      if (cur.trim()) sentences.push(cur.trim());
-      cur = "";
-    }
-  }
-  if (cur.trim()) {
-    sentences.push(cur.trim());
-  }
-  if (sentences.length <= 1) {
-    if (trimmed.length <= maxChunkChars) {
-      return [trimmed];
-    }
-    const commaParts = [];
-    let lastIdx = 0;
-    const commaRegex = /[，,、]/g;
-    let match;
-    while ((match = commaRegex.exec(trimmed)) !== null) {
-      const end = match.index + 1;
-      commaParts.push(trimmed.slice(lastIdx, end).trim());
-      lastIdx = end;
-    }
-    if (lastIdx < trimmed.length) {
-      commaParts.push(trimmed.slice(lastIdx).trim());
-    }
-    const subChunks = [];
-    let subCur = "";
-    for (const cp of commaParts) {
-      if (!cp) continue;
-      if (subCur.length + cp.length <= maxChunkChars || subCur === "") {
-        subCur += cp;
-      } else {
-        if (subCur.trim()) subChunks.push(subCur.trim());
-        subCur = cp;
-      }
-    }
-    if (subCur.trim()) subChunks.push(subCur.trim());
-    const boundedChunks = [];
-    for (const chunk of subChunks) {
-      if (chunk.length <= maxChunkChars) {
-        boundedChunks.push(chunk);
-      } else {
-        let remain = chunk;
-        while (remain.length > maxChunkChars) {
-          const slicePoint = remain.lastIndexOf(" ", maxChunkChars);
-          const splitIdx = slicePoint > 10 ? slicePoint : maxChunkChars;
-          boundedChunks.push(remain.slice(0, splitIdx).trim());
-          remain = remain.slice(splitIdx).trim();
-        }
-        if (remain.trim()) {
-          boundedChunks.push(remain.trim());
-        }
-      }
-    }
-    return boundedChunks.length > 0 ? boundedChunks : [trimmed];
-  }
-  const chunks = [];
-  let chunkBuffer = "";
-  for (const s of sentences) {
-    const needSpace = chunkBuffer && !/[\u4e00-\u9fa5\u3040-\u30ff\uac00-\ud7af，。！？；]/.test(chunkBuffer.slice(-1));
-    const addedLen = s.length + (needSpace ? 1 : 0);
-    if (chunkBuffer.length + addedLen <= maxChunkChars || chunkBuffer === "") {
-      chunkBuffer += (needSpace ? " " : "") + s;
-    } else {
-      if (chunkBuffer.trim()) chunks.push(chunkBuffer.trim());
-      chunkBuffer = s;
-    }
-  }
-  if (chunkBuffer.trim()) {
-    chunks.push(chunkBuffer.trim());
-  }
-  return chunks.length > 0 ? chunks : [trimmed];
 }
 
 // src/fsm.ts
@@ -1698,6 +1634,7 @@ function saveUserLingualConfig(patch) {
   }
 }
 var session = new LingualSessionController();
+var lastContext = null;
 function updateFooter(ctx) {
   if (!ctx.hasUI) return;
   const pair = state.labels.statusOriginal || `${state.sourceLang} \u21C4 en`;
@@ -1837,7 +1774,19 @@ function renderActiveCard(ctx) {
   );
 }
 function extension_default(pi) {
+  let resizeTimer;
+  const onResize = () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      const active = session.getActiveResult() || session.getLastResult();
+      if (active && lastContext && lastContext.hasUI) {
+        renderActiveCard(lastContext);
+      }
+    }, 120);
+  };
+  process.stdout?.on("resize", onResize);
   pi.on("session_start", async (_event, ctx) => {
+    lastContext = ctx;
     updateFooter(ctx);
   });
   const setModeHandler = async (args, ctx) => {
@@ -2120,83 +2069,42 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
       session.clearPagination();
       return { action: "continue" };
     }
+    lastContext = ctx;
     const { generation, signal } = session.beginRequest();
     const completer = createModelCompleter(ctx);
-    const chunks = splitSemanticChunks(promptToTranslate);
-    session.initPagination(chunks.length);
+    session.initPagination(1);
     if (state.mode === "original") {
       if (ctx.hasUI) {
         ctx.ui.setStatus("lingual", ctx.ui.theme.fg("accent", "\u21C4 [lingual] polishing..."));
       }
-      if (chunks.length === 1) {
-        translatePrompt(promptToTranslate, {
-          sourceLang: state.sourceLang,
-          labels: state.labels,
-          complete: completer,
-          signal
-        }).then((result) => {
-          if (!session.isLatest(generation) || state.mode !== "original") {
-            return;
+      translatePrompt(promptToTranslate, {
+        sourceLang: state.sourceLang,
+        labels: state.labels,
+        complete: completer,
+        signal
+      }).then((result) => {
+        if (!session.isLatest(generation) || state.mode !== "original") {
+          return;
+        }
+        if (result) {
+          session.setPageResult(0, result, generation);
+          if (ctx.hasUI) {
+            renderHudWidget(
+              ctx,
+              result.sourceText,
+              result.spoken,
+              result.written,
+              result.vocab,
+              result.spokenMeaning,
+              result.writtenMeaning
+            );
           }
-          if (result) {
-            session.setPageResult(0, result, generation);
-            if (ctx.hasUI) {
-              renderHudWidget(
-                ctx,
-                result.sourceText,
-                result.spoken,
-                result.written,
-                result.vocab,
-                result.spokenMeaning,
-                result.writtenMeaning
-              );
-            }
-          }
-        }).finally(() => {
-          if (session.isLatest(generation)) {
-            updateFooter(ctx);
-          }
-        });
-      } else {
-        translatePrompt(chunks[0], {
-          sourceLang: state.sourceLang,
-          labels: state.labels,
-          complete: completer,
-          signal
-        }).then((result0) => {
-          if (!session.isLatest(generation) || state.mode !== "original") {
-            return;
-          }
-          if (result0) {
-            session.setPageResult(0, result0, generation);
-            if (ctx.hasUI) {
-              renderActiveCard(ctx);
-              ctx.ui.notify(state.labels.notifyPaging || `[${state.labels.hudTitle}] \u957F\u53E5\u5DF2\u5207\u5206\u591A\u6BB5\uFF0C\u6309 Alt+. \u7FFB\u9875\u6D4F\u89C8`, "info");
-            }
-          }
-        }).finally(() => {
-          if (session.isLatest(generation)) {
-            updateFooter(ctx);
-          }
-        });
-        (async () => {
-          for (let i = 1; i < chunks.length; i++) {
-            if (!session.isLatest(generation) || state.mode !== "original") break;
-            const res = await translatePrompt(chunks[i], {
-              sourceLang: state.sourceLang,
-              labels: state.labels,
-              complete: completer,
-              signal
-            });
-            if (res && session.isLatest(generation)) {
-              session.setPageResult(i, res, generation);
-              if (ctx.hasUI && session.getPaginationSnapshot().pageIndex === 0) {
-                renderActiveCard(ctx);
-              }
-            }
-          }
-        })();
-      }
+        }
+      }).finally(() => {
+        if (session.isLatest(generation)) {
+          updateFooter(ctx);
+        }
+      });
       return { action: "continue" };
     }
     if (ctx.hasUI) {
@@ -2208,68 +2116,35 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
       ctx.ui.setStatus("lingual", ctx.ui.theme.fg("accent", "\u21C4 [lingual] polishing..."));
     }
     try {
-      let combinedEnglish = "";
-      if (chunks.length === 1) {
-        const result = await translatePrompt(promptToTranslate, {
-          sourceLang: state.sourceLang,
-          labels: state.labels,
-          complete: completer,
-          signal
-        });
-        if (!session.isLatest(generation)) {
-          return { action: "continue" };
-        }
-        if (!result) {
-          if (ctx.hasUI) {
-            ctx.ui.setWidget("lingual_hud", void 0);
-            ctx.ui.notify(`[${state.labels.hudTitle}] \u82F1\u6587\u7FFB\u8BD1\u8BF7\u6C42\u672A\u5C31\u7EEA\u6216\u8D85\u65F6\uFF0C\u672C\u6B21\u5DF2\u653E\u884C\u539F\u6587`, "warning");
-          }
-          return { action: "continue" };
-        }
-        session.setPageResult(0, result, generation);
-        if (ctx.hasUI) {
-          renderHudWidget(
-            ctx,
-            result.sourceText,
-            result.spoken,
-            result.written,
-            result.vocab,
-            result.spokenMeaning,
-            result.writtenMeaning
-          );
-        }
-        combinedEnglish = result.written && result.written.trim() ? result.written : result.spoken;
-      } else {
-        const results = await Promise.all(
-          chunks.map(
-            (chunk, idx) => translatePrompt(chunk, {
-              sourceLang: state.sourceLang,
-              labels: state.labels,
-              complete: completer,
-              signal
-            }).then((res) => {
-              if (res && session.isLatest(generation)) {
-                session.setPageResult(idx, res, generation);
-              }
-              return res;
-            })
-          )
-        );
-        if (!session.isLatest(generation)) return { action: "continue" };
-        const validResults = results.filter((r) => r !== null);
-        if (validResults.length === 0) {
-          if (ctx.hasUI) {
-            ctx.ui.setWidget("lingual_hud", void 0);
-            ctx.ui.notify(`[${state.labels.hudTitle}] \u82F1\u6587\u7FFB\u8BD1\u8BF7\u6C42\u672A\u5C31\u7EEA\u6216\u8D85\u65F6\uFF0C\u672C\u6B21\u5DF2\u653E\u884C\u539F\u6587`, "warning");
-          }
-          return { action: "continue" };
-        }
-        if (ctx.hasUI) {
-          renderActiveCard(ctx);
-          ctx.ui.notify(state.labels.notifyPaging || `[${state.labels.hudTitle}] \u957F\u53E5\u5DF2\u5207\u5206\u591A\u6BB5\uFF0C\u6309 Alt+. \u7FFB\u9875\u6D4F\u89C8`, "info");
-        }
-        combinedEnglish = validResults.map((r) => r.written && r.written.trim() ? r.written : r.spoken).join(" ");
+      const result = await translatePrompt(promptToTranslate, {
+        sourceLang: state.sourceLang,
+        labels: state.labels,
+        complete: completer,
+        signal
+      });
+      if (!session.isLatest(generation)) {
+        return { action: "continue" };
       }
+      if (!result) {
+        if (ctx.hasUI) {
+          ctx.ui.setWidget("lingual_hud", void 0);
+          ctx.ui.notify(`[${state.labels.hudTitle}] \u82F1\u6587\u7FFB\u8BD1\u8BF7\u6C42\u672A\u5C31\u7EEA\u6216\u8D85\u65F6\uFF0C\u672C\u6B21\u5DF2\u653E\u884C\u539F\u6587`, "warning");
+        }
+        return { action: "continue" };
+      }
+      session.setPageResult(0, result, generation);
+      if (ctx.hasUI) {
+        renderHudWidget(
+          ctx,
+          result.sourceText,
+          result.spoken,
+          result.written,
+          result.vocab,
+          result.spokenMeaning,
+          result.writtenMeaning
+        );
+      }
+      const combinedEnglish = result.written && result.written.trim() ? result.written : result.spoken;
       const finalText = sanitized.rawPayload ? `${combinedEnglish}
 
 ${sanitized.rawPayload}` : combinedEnglish;

@@ -117,6 +117,7 @@ function saveUserLingualConfig(patch: Record<string, any>) {
 
 // 单调递增会话 FSM 控制器，彻底根除连续输入并发竞态与幽灵卡片，物理协同掐断上游 Socket
 const session = new LingualSessionController();
+let lastContext: ExtensionContext | null = null;
 
 function updateFooter(ctx: ExtensionContext) {
   if (!ctx.hasUI) return;
@@ -325,7 +326,20 @@ function renderActiveCard(ctx: ExtensionContext) {
 }
 
 export default function (pi: ExtensionAPI) {
+  let resizeTimer: NodeJS.Timeout | undefined;
+  const onResize = () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      const active = session.getActiveResult() || session.getLastResult();
+      if (active && lastContext && lastContext.hasUI) {
+        renderActiveCard(lastContext);
+      }
+    }, 120);
+  };
+  process.stdout?.on("resize", onResize);
+
   pi.on("session_start", async (_event, ctx) => {
+    lastContext = ctx;
     // 0 侵扰冷启动：静默点亮状态栏指示，绝不弹窗打断敲代码心流
     updateFooter(ctx);
   });
@@ -690,11 +704,12 @@ export default function (pi: ExtensionAPI) {
       return { action: "continue" };
     }
 
+    lastContext = ctx;
     const { generation, signal } = session.beginRequest();
     const completer = createModelCompleter(ctx);
 
-    const chunks = splitSemanticChunks(promptToTranslate);
-    session.initPagination(chunks.length);
+    // 【单卡高密度意图凝练流】：短句常规直译，长句由模型自动注入 Condensation 提炼为精悍单卡，彻底消除多切片轮询复杂性
+    session.initPagination(1);
 
     // 【原文模式】(original · 默认)：彻底非阻塞 (0ms 立即放行原始输入)，后台异步微任务渲染卡片视窗
     if (state.mode === "original") {
@@ -702,83 +717,36 @@ export default function (pi: ExtensionAPI) {
         ctx.ui.setStatus("lingual", ctx.ui.theme.fg("accent", "⇄ [lingual] polishing..."));
       }
 
-      if (chunks.length === 1) {
-        // 单句常规输入：秒级渲染单个卡片，不触发任何分页角标，保持最纯粹美感
-        translatePrompt(promptToTranslate, {
-          sourceLang: state.sourceLang,
-          labels: state.labels,
-          complete: completer,
-          signal,
-        })
-          .then((result) => {
-            if (!session.isLatest(generation) || state.mode !== "original") {
-              return;
-            }
-            if (result) {
-              session.setPageResult(0, result, generation);
-              if (ctx.hasUI) {
-                renderHudWidget(
-                  ctx,
-                  result.sourceText,
-                  result.spoken,
-                  result.written,
-                  result.vocab,
-                  result.spokenMeaning,
-                  result.writtenMeaning
-                );
-              }
-            }
-          })
-          .finally(() => {
-            if (session.isLatest(generation)) {
-              updateFooter(ctx);
-            }
-          });
-      } else {
-        // 多句超长输入：触发意群切片保底，第 1 句 200ms 极速呈现，后续句后台无感预加载
-        translatePrompt(chunks[0], {
-          sourceLang: state.sourceLang,
-          labels: state.labels,
-          complete: completer,
-          signal,
-        })
-          .then((result0) => {
-            if (!session.isLatest(generation) || state.mode !== "original") {
-              return;
-            }
-            if (result0) {
-              session.setPageResult(0, result0, generation);
-              if (ctx.hasUI) {
-                renderActiveCard(ctx);
-                ctx.ui.notify(state.labels.notifyPaging || `[${state.labels.hudTitle}] 长句已切分多段，按 Alt+. 翻页浏览`, "info");
-              }
-            }
-          })
-          .finally(() => {
-            if (session.isLatest(generation)) {
-              updateFooter(ctx);
-            }
-          });
-
-        // 后续切片后台异步并发预加载，就绪后当用户按 Alt+. 即刻呈现
-        (async () => {
-          for (let i = 1; i < chunks.length; i++) {
-            if (!session.isLatest(generation) || state.mode !== "original") break;
-            const res = await translatePrompt(chunks[i], {
-              sourceLang: state.sourceLang,
-              labels: state.labels,
-              complete: completer,
-              signal,
-            });
-            if (res && session.isLatest(generation)) {
-              session.setPageResult(i, res, generation);
-              if (ctx.hasUI && session.getPaginationSnapshot().pageIndex === 0) {
-                renderActiveCard(ctx);
-              }
+      translatePrompt(promptToTranslate, {
+        sourceLang: state.sourceLang,
+        labels: state.labels,
+        complete: completer,
+        signal,
+      })
+        .then((result) => {
+          if (!session.isLatest(generation) || state.mode !== "original") {
+            return;
+          }
+          if (result) {
+            session.setPageResult(0, result, generation);
+            if (ctx.hasUI) {
+              renderHudWidget(
+                ctx,
+                result.sourceText,
+                result.spoken,
+                result.written,
+                result.vocab,
+                result.spokenMeaning,
+                result.writtenMeaning
+              );
             }
           }
-        })();
-      }
+        })
+        .finally(() => {
+          if (session.isLatest(generation)) {
+            updateFooter(ctx);
+          }
+        });
 
       return { action: "continue" };
     }
@@ -794,72 +762,39 @@ export default function (pi: ExtensionAPI) {
     }
 
     try {
-      let combinedEnglish = "";
+      const result = await translatePrompt(promptToTranslate, {
+        sourceLang: state.sourceLang,
+        labels: state.labels,
+        complete: completer,
+        signal,
+      });
 
-      if (chunks.length === 1) {
-        const result = await translatePrompt(promptToTranslate, {
-          sourceLang: state.sourceLang,
-          labels: state.labels,
-          complete: completer,
-          signal,
-        });
-        if (!session.isLatest(generation)) {
-          return { action: "continue" };
-        }
-
-        if (!result) {
-          if (ctx.hasUI) {
-            ctx.ui.setWidget("lingual_hud", undefined);
-            ctx.ui.notify(`[${state.labels.hudTitle}] 英文翻译请求未就绪或超时，本次已放行原文`, "warning");
-          }
-          return { action: "continue" };
-        }
-
-        session.setPageResult(0, result, generation);
-        if (ctx.hasUI) {
-          renderHudWidget(
-            ctx,
-            result.sourceText,
-            result.spoken,
-            result.written,
-            result.vocab,
-            result.spokenMeaning,
-            result.writtenMeaning
-          );
-        }
-        combinedEnglish = result.written && result.written.trim() ? result.written : result.spoken;
-      } else {
-        // 并发执行所有切片的翻译，将多切片耗时从 N*Latency 降低至 1*Latency
-        const results = await Promise.all(
-          chunks.map((chunk, idx) =>
-            translatePrompt(chunk, {
-              sourceLang: state.sourceLang,
-              labels: state.labels,
-              complete: completer,
-              signal,
-            }).then((res) => {
-              if (res && session.isLatest(generation)) {
-                session.setPageResult(idx, res, generation);
-              }
-              return res;
-            })
-          )
-        );
-        if (!session.isLatest(generation)) return { action: "continue" };
-        const validResults = results.filter((r): r is LingualResult => r !== null);
-        if (validResults.length === 0) {
-          if (ctx.hasUI) {
-            ctx.ui.setWidget("lingual_hud", undefined);
-            ctx.ui.notify(`[${state.labels.hudTitle}] 英文翻译请求未就绪或超时，本次已放行原文`, "warning");
-          }
-          return { action: "continue" };
-        }
-        if (ctx.hasUI) {
-          renderActiveCard(ctx);
-          ctx.ui.notify(state.labels.notifyPaging || `[${state.labels.hudTitle}] 长句已切分多段，按 Alt+. 翻页浏览`, "info");
-        }
-        combinedEnglish = validResults.map((r) => (r.written && r.written.trim() ? r.written : r.spoken)).join(" ");
+      if (!session.isLatest(generation)) {
+        return { action: "continue" };
       }
+
+      if (!result) {
+        if (ctx.hasUI) {
+          ctx.ui.setWidget("lingual_hud", undefined);
+          ctx.ui.notify(`[${state.labels.hudTitle}] 英文翻译请求未就绪或超时，本次已放行原文`, "warning");
+        }
+        return { action: "continue" };
+      }
+
+      session.setPageResult(0, result, generation);
+      if (ctx.hasUI) {
+        renderHudWidget(
+          ctx,
+          result.sourceText,
+          result.spoken,
+          result.written,
+          result.vocab,
+          result.spokenMeaning,
+          result.writtenMeaning
+        );
+      }
+
+      const combinedEnglish = result.written && result.written.trim() ? result.written : result.spoken;
 
       // 【核心体验跃升 · 混合意图嫁接 (Hybrid Intent Grafting)】:
       // 若原始输入包含大段被折叠的堆栈追踪或代码块，将纯英文专业指令与原始真实堆栈缝合，
