@@ -334,82 +334,125 @@ export default function (pi: ExtensionAPI) {
     updateFooter(ctx);
   });
 
-  const cycleModeHandler = async (_args: string, ctx: ExtensionContext) => {
+  const setModeHandler = async (args: string, ctx: ExtensionContext) => {
     currentRequestId++;
+    const trimmed = args?.trim().toLowerCase();
+    let nextMode: LinguaMode;
 
-    if (state.mode === "original") {
-      state.mode = "english";
-      updateFooter(ctx);
+    if (trimmed === "english" || trimmed === "en" || trimmed === "eng" || trimmed === "2") {
+      nextMode = "english";
+    } else if (trimmed === "original" || trimmed === "orig" || trimmed === "1") {
+      nextMode = "original";
+    } else if (trimmed === "off" || trimmed === "0" || trimmed === "disable" || trimmed === "stop") {
+      nextMode = "off";
+    } else {
+      // 缺省或无参数时，平滑三态循环轮转
+      nextMode = state.mode === "original" ? "english" : state.mode === "english" ? "off" : "original";
+    }
+
+    state.mode = nextMode;
+    // 【核心根治 1 · 状态持久化落盘】：每次切换模式立即物理持久化到 settings.json，彻底杜绝重载时回退到 original！
+    saveUserLinguaConfig({ mode: nextMode });
+    updateFooter(ctx);
+
+    if (nextMode === "english") {
       ctx.ui.notify(state.labels.notifyEnglish || `[${state.labels.hudTitle}] 已切换至【英文模式】：发给 AI 的输入将自动转换为纯正技术英文`, "info");
-    } else if (state.mode === "english") {
-      state.mode = "off";
-      updateFooter(ctx);
-      ctx.ui.setWidget("lingua_hud", undefined);
+    } else if (nextMode === "off") {
+      if (ctx.hasUI && typeof ctx.ui.setWidget === "function") {
+        ctx.ui.setWidget("lingua_hud", undefined);
+      }
       ctx.ui.notify(state.labels.notifyOff || `[${state.labels.hudTitle}] 已关闭伴学`, "info");
     } else {
-      state.mode = "original";
-      updateFooter(ctx);
       ctx.ui.notify(state.labels.notifyOriginal || `[${state.labels.hudTitle}] 已切换至【原文模式】：输入保持纯净母语，上方 HUD 浮现伴学视窗`, "info");
     }
   };
 
-  pi.registerCommand("lingua", {
-    description: state.labels.cmdDescMode || "切换伴学模式 [二 ⇄ two]: [原文] ➔ [英文] ➔ [关]",
-    handler: cycleModeHandler,
+  // 全面标准化主命令为 lingual 族系，同时保留历史别名兼容映射
+  pi.registerCommand("lingual", {
+    description: state.labels.cmdDescMode || "切换或设置伴学模式: /lingual [original|english|off]",
+    handler: setModeHandler,
   });
 
-  pi.registerCommand("lingual", {
-    description: state.labels.cmdDescMode || "切换伴学模式 [二 ⇄ two] (别名)",
-    handler: cycleModeHandler,
+  pi.registerCommand("lingual-mode", {
+    description: state.labels.cmdDescMode || "设置伴学模式: /lingual-mode <original|english|off>",
+    handler: setModeHandler,
+  });
+
+  pi.registerCommand("lingua", {
+    description: state.labels.cmdDescMode || "切换伴学模式 (别名)",
+    handler: setModeHandler,
   });
 
   pi.registerCommand("translate", {
-    description: state.labels.cmdDescMode || "切换伴学模式 [二 ⇄ two] (别名)",
-    handler: cycleModeHandler,
+    description: state.labels.cmdDescMode || "切换伴学模式 (别名)",
+    handler: setModeHandler,
   });
 
   pi.registerCommand("2", {
-    description: state.labels.cmdDescMode || "切换伴学模式 [二 ⇄ two] (别名)",
-    handler: cycleModeHandler,
+    description: state.labels.cmdDescMode || "切换伴学模式 (别名)",
+    handler: setModeHandler,
   });
 
-  pi.registerCommand("lingua-agent", {
-    description: state.labels.cmdDescAgent || "查看 AI Coding Agent 自主定制本插件的方法",
+  pi.registerCommand("lingual-agent", {
+    description: state.labels.cmdDescAgent || "查看伴学定制与母语切换指南: /lingual-agent",
     handler: async (_args, ctx) => {
       ctx.ui.notify(
         state.labels.notifyAgentHelp ||
-          "💡 想要更换语言或风格？对你的 Agent 说一句话（如“我想定制这个伴学插件”），Agent 将自主为你完成诊断问卷与重新构建！⚠️ 注意：完成后请重启终端生效。",
+          "💡 切换母语？直接运行 /lingual-lang <zh|ja|en|es|fr|de> 即可实时切换并持久化；若需定制特殊风格，可直接向 Agent 描述你的定制偏好。",
         "info"
       );
     },
   });
 
-  pi.registerCommand("lingua-model", {
-    description: state.labels.cmdDescModel || "查看或切换伴学模型 [二 ⇄ two]: /lingua-model [model-id|auto]",
-    handler: async (args: string, ctx: ExtensionContext) => {
-      const trimmed = args.trim();
-      const followSessionDesc = state.labels.modelFollowSession || "跟随会话";
-      const currentActive = state.selectedModel === "auto"
-        ? (ctx.model ? `auto (${followSessionDesc}: ${ctx.model.provider}/${ctx.model.id})` : "auto")
-        : state.selectedModel;
-
-      if (!trimmed) {
-        const available = ctx.modelRegistry?.getAvailable?.() || [];
-        const availableList = available.length > 0
-          ? available.map((m) => `• ${m.provider}/${m.id}`).slice(0, 8).join("\n")
-          : undefined;
-
-        const msg = formatModelSelectionMessage(state.labels, currentActive || "auto", availableList);
-        ctx.ui.notify(msg, "info");
-        return;
-      }
-
-      state.selectedModel = trimmed;
-      saveUserLinguaConfig({ selectedModel: trimmed });
-      const switchTemplate = state.labels.notifyModelSwitched || "伴学模型已切换为: {model}";
-      const switchedMsg = `[${state.labels.hudTitle}] ` + switchTemplate.replace("{model}", trimmed);
-      ctx.ui.notify(switchedMsg, "info");
+  pi.registerCommand("lingua-agent", {
+    description: state.labels.cmdDescAgent || "查看伴学定制指南 (别名)",
+    handler: async (_args, ctx) => {
+      ctx.ui.notify(
+        state.labels.notifyAgentHelp ||
+          "💡 切换母语？直接运行 /lingual-lang <zh|ja|en|es|fr|de> 即可实时切换并持久化；若需定制特殊风格，可直接向 Agent 描述你的定制偏好。",
+        "info"
+      );
     },
+  });
+
+  const setModelHandler = async (args: string, ctx: ExtensionContext) => {
+    const trimmed = args.trim();
+    const followSessionDesc = state.labels.modelFollowSession || "跟随会话";
+    const currentActive = state.selectedModel === "auto"
+      ? (ctx.model ? `auto (${followSessionDesc}: ${ctx.model.provider}/${ctx.model.id})` : "auto")
+      : state.selectedModel;
+
+    if (!trimmed) {
+      const available = ctx.modelRegistry?.getAvailable?.() || [];
+      const availableList = available.length > 0
+        ? available.map((m) => `• ${m.provider}/${m.id}`).slice(0, 8).join("\n")
+        : undefined;
+
+      const msg = formatModelSelectionMessage(state.labels, currentActive || "auto", availableList);
+      ctx.ui.notify(msg, "info");
+      return;
+    }
+
+    state.selectedModel = trimmed;
+    saveUserLinguaConfig({ selectedModel: trimmed });
+    const switchTemplate = state.labels.notifyModelSwitched || "伴学模型已切换为: {model}";
+    const switchedMsg = `[${state.labels.hudTitle}] ` + switchTemplate.replace("{model}", trimmed);
+    ctx.ui.notify(switchedMsg, "info");
+  };
+
+  pi.registerCommand("lingual-model", {
+    description: state.labels.cmdDescModel || "查看或切换伴学模型: /lingual-model [model-id|auto]",
+    handler: setModelHandler,
+  });
+
+  pi.registerCommand("lingua-model", {
+    description: state.labels.cmdDescModel || "查看或切换伴学模型 (别名)",
+    handler: setModelHandler,
+  });
+
+  pi.registerCommand("2-model", {
+    description: state.labels.cmdDescModel || "查看或切换伴学模型 (别名)",
+    handler: setModelHandler,
   });
 
   const switchLangHandler = async (args: string, ctx: ExtensionContext) => {
@@ -520,8 +563,13 @@ export default function (pi: ExtensionAPI) {
     ctx.ui.notify(statusMsg, "info");
   };
 
+  pi.registerCommand("lingual-status", {
+    description: state.labels.cmdDescStatus || "查看伴学插件当前状态报告与模型诊断: /lingual-status",
+    handler: showStatusHandler,
+  });
+
   pi.registerCommand("lingua-status", {
-    description: state.labels.cmdDescStatus || "查看伴学插件当前状态报告与模型诊断: /lingua-status",
+    description: state.labels.cmdDescStatus || "查看伴学插件状态 (别名)",
     handler: showStatusHandler,
   });
 
@@ -552,8 +600,13 @@ export default function (pi: ExtensionAPI) {
     ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] 已重新显示上一条伴学卡片`, "info");
   };
 
+  pi.registerCommand("lingual-last", {
+    description: state.labels.cmdDescLast || "重新回看或重现上一条伴学卡片: /lingual-last",
+    handler: showLastHandler,
+  });
+
   pi.registerCommand("lingua-last", {
-    description: state.labels.cmdDescLast || "重新回看或重现上一条伴学卡片: /lingua-last",
+    description: state.labels.cmdDescLast || "重新回看上一条伴学卡片 (别名)",
     handler: showLastHandler,
   });
 
@@ -870,7 +923,9 @@ export default function (pi: ExtensionAPI) {
         }
 
         if (!result) {
-          if (ctx.hasUI) ctx.ui.setWidget("lingua_hud", undefined);
+          if (ctx.hasUI) {
+            ctx.ui.notify(`[${state.labels.hudTitle}] 英文翻译请求未就绪或超时，本次已放行原文`, "warning");
+          }
           return { action: "continue" };
         }
 
@@ -902,7 +957,9 @@ export default function (pi: ExtensionAPI) {
         if (requestId !== currentRequestId) return { action: "continue" };
         const validResults = results.filter((r): r is LinguaResult => r !== null);
         if (validResults.length === 0) {
-          if (ctx.hasUI) ctx.ui.setWidget("lingua_hud", undefined);
+          if (ctx.hasUI) {
+            ctx.ui.notify(`[${state.labels.hudTitle}] 英文翻译请求未就绪或超时，本次已放行原文`, "warning");
+          }
           return { action: "continue" };
         }
         pagedResults = validResults;
@@ -928,7 +985,9 @@ export default function (pi: ExtensionAPI) {
         images: event.images,
       };
     } catch {
-      if (ctx.hasUI) ctx.ui.setWidget("lingua_hud", undefined);
+      if (ctx.hasUI) {
+        ctx.ui.notify(`[${state.labels.hudTitle}] 英文翻译请求异常，本次已放行原文`, "warning");
+      }
       return { action: "continue" };
     } finally {
       if (requestId === currentRequestId) {

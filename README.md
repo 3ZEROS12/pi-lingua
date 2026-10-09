@@ -6,7 +6,7 @@
 [![npm version](https://img.shields.io/npm/v/pi-lingual?color=blue)](https://www.npmjs.com/package/pi-lingual)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Built for Pi](https://img.shields.io/badge/Built%20for-Pi%20Coding%20Agent-orange)](https://github.com/earendil-works/pi-coding-agent)
-[![Tests](https://img.shields.io/badge/Tests-36%2F36%20Pass-brightgreen)](tests/engine.test.ts)
+[![Tests](https://img.shields.io/badge/Tests-44%2F44%20Pass-brightgreen)](tests/engine.test.ts)
 
 **English** | [简体中文](./README_zh.md)
 
@@ -162,16 +162,16 @@ For fully offline or private environments, run a local 3B model (e.g. `qwen2.5:3
 
 ## Commands & Shortcuts Reference
 
-### In-Session Terminal Commands
-| Command | Aliases | Description |
+### In-Session Terminal Commands (Standardized on `/lingual`)
+| Standard Command | Compatibility Aliases | Description |
 | :--- | :--- | :--- |
-| `/2` | `/lingua`, `/lingual`, `/translate` | Cycle runtime modes: `[Original] ➔ [English] ➔ [Off]` |
-| `/2-lang <lang>` | `/lingua-lang`, `/lingual-lang` | Switch companion native language (`zh`, `ja`, `en`, `es`, `fr`, `de`) |
-| `/2-compact` | `/lingua-compact` | Toggle between single-line capsule mode and full tree HUD |
-| `/2-model <id>` | `/lingua-model` | View or switch companion model (`auto` or specific model ID) |
-| `/2-status` | `/lingua-status` | Display full diagnostic report, active model, and LRU cache statistics |
-| `/2-last` | `/lingua-last` | Replay the previous companion card in the terminal |
-| `/2-agent` | `/lingua-agent` | Display companion customization guide |
+| `/lingual [mode]` | `/lingual-mode`, `/2`, `/lingua`, `/translate` | Set or cycle mode: `/lingual [original\|english\|off]` |
+| `/lingual-lang <lang>` | `/2-lang`, `/lingua-lang` | Switch native language (`zh`, `ja`, `en`, `es`, `fr`, `de`) |
+| `/lingual-compact` | `/2-compact`, `/lingua-compact` | Toggle between single-line capsule mode and full tree HUD |
+| `/lingual-model <id>` | `/2-model`, `/lingua-model` | View or switch companion model (`auto` or specific model ID) |
+| `/lingual-status` | `/2-status`, `/lingua-status` | Display full diagnostic report, active model, and LRU cache statistics |
+| `/lingual-last` | `/2-last`, `/lingua-last` | Replay the previous companion card in the terminal |
+| `/lingual-agent` | `/2-agent`, `/lingua-agent` | Display companion customization guide |
 
 ### Keyboard Shortcuts (During Translation HUD Display)
 * **`Alt+.`** (`>`): Flip to the next semantic chunk.
@@ -180,8 +180,8 @@ For fully offline or private environments, run a local 3B model (e.g. `qwen2.5:3
 ### Standalone CLI
 Use `pi-lingual` directly from bash, zsh, or PowerShell:
 ```bash
-2 "这个方案有点过度设计了，不如直接用标准库实现"
-lingua "内存占用过高，排查一下是否有未释放的连接池句柄"
+lingual "这个方案有点过度设计了，不如直接用标准库实现"
+2 "内存占用过高，排查一下是否有未释放的连接池句柄"
 ```
 
 ---
@@ -202,7 +202,7 @@ pi install git:github.com/3ZEROS12/pi-lingua
 git clone https://github.com/3ZEROS12/pi-lingua.git
 cd pi-lingua
 npm install
-npm test            # 36/36 test suites pass
+npm test            # 44/44 test suites pass
 npm run typecheck   # 0 TypeScript errors
 ```
 

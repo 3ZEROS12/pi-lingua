@@ -4,7 +4,7 @@ import extensionFactory from "../dist/extension.js";
 import { formatStatusReport, resolveLabelsForLang } from "../src/presets.js";
 import { LinguaLruCache } from "../src/cache.js";
 
-test("extension command matrix - registers lingua-lang, lingual-lang, and 2-lang commands", () => {
+test("extension command matrix - registers standardized lingual command suite", () => {
   const registeredCommands: Record<string, any> = {};
 
   const mockPi: any = {
@@ -17,13 +17,64 @@ test("extension command matrix - registers lingua-lang, lingual-lang, and 2-lang
 
   extensionFactory(mockPi);
 
-  assert.ok(registeredCommands["lingua-lang"], "Must register /lingua-lang");
+  // Standardized lingual suite
+  assert.ok(registeredCommands["lingual"], "Must register /lingual");
+  assert.ok(registeredCommands["lingual-mode"], "Must register /lingual-mode");
   assert.ok(registeredCommands["lingual-lang"], "Must register /lingual-lang");
-  assert.ok(registeredCommands["2-lang"], "Must register /2-lang");
-  assert.ok(registeredCommands["lingua-compact"], "Must register /lingua-compact");
   assert.ok(registeredCommands["lingual-compact"], "Must register /lingual-compact");
-  assert.ok(registeredCommands["2-compact"], "Must register /2-compact");
-  assert.ok(registeredCommands["lingua-status"], "Must register /lingua-status");
+  assert.ok(registeredCommands["lingual-model"], "Must register /lingual-model");
+  assert.ok(registeredCommands["lingual-status"], "Must register /lingual-status");
+  assert.ok(registeredCommands["lingual-last"], "Must register /lingual-last");
+  assert.ok(registeredCommands["lingual-agent"], "Must register /lingual-agent");
+
+  // Compatibility aliases
+  assert.ok(registeredCommands["lingua"], "Must retain /lingua alias");
+  assert.ok(registeredCommands["2"], "Must retain /2 alias");
+  assert.ok(registeredCommands["2-lang"], "Must retain /2-lang alias");
+  assert.ok(registeredCommands["2-compact"], "Must retain /2-compact alias");
+});
+
+test("extension /lingual - supports explicit mode arguments and cycle fallback", async () => {
+  const registeredCommands: Record<string, any> = {};
+  const mockPi: any = {
+    on() {},
+    registerCommand(name: string, def: any) {
+      registeredCommands[name] = def;
+    },
+    registerShortcut() {},
+  };
+
+  extensionFactory(mockPi);
+
+  const notifications: string[] = [];
+  const mockCtx: any = {
+    ui: {
+      notify(msg: string) {
+        notifications.push(msg);
+      },
+      setStatus() {},
+      setWidget() {},
+    },
+  };
+
+  // 1. Explicitly switch to English mode
+  await registeredCommands["lingual"].handler("english", mockCtx);
+  assert.ok(notifications[notifications.length - 1].includes("英文") || notifications[notifications.length - 1].includes("English"));
+
+  // 2. Explicitly switch to Off mode
+  await registeredCommands["lingual-mode"].handler("off", mockCtx);
+  assert.ok(notifications[notifications.length - 1].includes("关闭") || notifications[notifications.length - 1].includes("disabled") || notifications[notifications.length - 1].includes("off"));
+
+  // 3. Explicitly switch to Original mode
+  await registeredCommands["lingual"].handler("original", mockCtx);
+  assert.ok(notifications[notifications.length - 1].includes("原文") || notifications[notifications.length - 1].includes("Original"));
+
+  // 4. Cycle without arguments: original -> english
+  await registeredCommands["lingual"].handler("", mockCtx);
+  assert.ok(notifications[notifications.length - 1].includes("英文") || notifications[notifications.length - 1].includes("English"));
+
+  // Teardown: back to original
+  await registeredCommands["lingual"].handler("original", mockCtx);
 });
 
 test("extension /lingua-compact - toggles capsule and tree layout with notification", async () => {

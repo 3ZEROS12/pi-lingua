@@ -1,6 +1,6 @@
 {
   "name": "pi-lingual",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "Zero-friction developer translator & bilingual companion (Spoken vs Written) for AI coding agents",
   "type": "module",
   "main": "dist/index.js",

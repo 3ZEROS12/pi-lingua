@@ -6,7 +6,7 @@
 [![npm version](https://img.shields.io/npm/v/pi-lingual?color=blue)](https://www.npmjs.com/package/pi-lingual)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Built for Pi](https://img.shields.io/badge/Built%20for-Pi%20Coding%20Agent-orange)](https://github.com/earendil-works/pi-coding-agent)
-[![Tests](https://img.shields.io/badge/Tests-36%2F36%20Pass-brightgreen)](tests/engine.test.ts)
+[![Tests](https://img.shields.io/badge/Tests-44%2F44%20Pass-brightgreen)](tests/engine.test.ts)
 
 [English](./README.md) | **简体中文**
 
@@ -160,18 +160,18 @@ zh ⇄ en · [Spoken] This feels over-engineered... │ [Written] Proposed appro
 
 ---
 
-## 完整命令与快捷键速查表
+## 完整命令与快捷键速查表 (全面标准化为 `/lingual`)
 
 ### 终端会话内交互命令
-| 命令 | 常用别名 | 功能说明 |
+| 标准命令 | 兼容别名 | 功能说明 |
 | :--- | :--- | :--- |
-| `/2` | `/lingua`, `/lingual`, `/translate` | 循环切换运行模式：`[原文] ➔ [英文] ➔ [关]` |
-| `/2-lang <lang>` | `/lingua-lang`, `/lingual-lang` | 秒切伴学母语（支持 `zh`, `ja`, `en`, `es`, `fr`, `de`） |
-| `/2-compact` | `/lingua-compact` | 切换单行胶囊模式与完整树状视窗 |
-| `/2-model <id>` | `/lingua-model` | 查看或切换轻量伴学模型（`auto` 或指定模型 ID） |
-| `/2-status` | `/lingua-status` | 查看完整系统健康诊断、语言流向与 LRU 缓存统计 |
-| `/2-last` | `/lingua-last` | 在终端中重新浮现上一条伴学卡片 |
-| `/2-agent` | `/lingua-agent` | 查看伴学定制与母语切换指南 |
+| `/lingual [mode]` | `/lingual-mode`, `/2`, `/lingua`, `/translate` | 切换或指定模式：`/lingual [original\|english\|off]` |
+| `/lingual-lang <lang>` | `/2-lang`, `/lingua-lang` | 秒切伴学母语（支持 `zh`, `ja`, `en`, `es`, `fr`, `de`） |
+| `/lingual-compact` | `/2-compact`, `/lingua-compact` | 切换单行胶囊模式与完整树状视窗 |
+| `/lingual-model <id>` | `/2-model`, `/lingua-model` | 查看或切换轻量伴学模型（`auto` 或指定模型 ID） |
+| `/lingual-status` | `/2-status`, `/lingua-status` | 查看完整系统健康诊断、语言流向与 LRU 缓存统计 |
+| `/lingual-last` | `/2-last`, `/lingua-last` | 在终端中重新浮现上一条伴学卡片 |
+| `/lingual-agent` | `/2-agent`, `/lingua-agent` | 查看伴学定制与母语切换指南 |
 
 ### 键盘快捷键（伴学卡片浮现时）
 * **`Alt+.`** (`>` 键)：切换到下一个语义分块卡片；
@@ -180,8 +180,8 @@ zh ⇄ en · [Spoken] This feels over-engineered... │ [Written] Proposed appro
 ### 独立系统 CLI
 在任何 Bash、Zsh 或 PowerShell 中直接使用全局 CLI：
 ```bash
-2 "这个方案有点过度设计了，不如直接用标准库实现"
-lingua "内存占用过高，排查一下是否有未释放的连接池句柄"
+lingual "这个方案有点过度设计了，不如直接用标准库实现"
+2 "内存占用过高，排查一下是否有未释放的连接池句柄"
 ```
 
 ---
@@ -202,7 +202,7 @@ pi install git:github.com/3ZEROS12/pi-lingua
 git clone https://github.com/3ZEROS12/pi-lingua.git
 cd pi-lingua
 npm install
-npm test            # 36/36 套件全部通过
+npm test            # 44/44 套件全部通过
 npm run typecheck   # 0 TypeScript 错误
 ```
 
