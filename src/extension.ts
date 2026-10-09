@@ -167,10 +167,10 @@ function renderHudWidget(
   const hasWritten = Boolean(written && written.trim());
   const hasVocab = Boolean(vocab && vocab.trim());
 
-  const slot1 = state.labels.slot1Label || state.labels.spokenLabel || "口语";
-  const slot2 = state.labels.slot2Label || state.labels.writtenLabel || "写作";
-  const vocabTag = state.labels.vocabLabel || "重点";
-  const sourceTag = state.labels.sourceLabel || "原文";
+  const slot1 = state.labels.slot1Label || state.labels.spokenLabel || "Spoken";
+  const slot2 = state.labels.slot2Label || state.labels.writtenLabel || "Written";
+  const vocabTag = state.labels.vocabLabel || "Vocab";
+  const sourceTag = state.labels.sourceLabel || "Source";
 
   // 极简美学原则：平时绝不显示任何繁杂的翻页长文，唯有触发长句切分多页时，才在角标微弱提示 [1/2 ⌥.]
   const pageTag = pagination && pagination.totalPages > 1
@@ -187,8 +187,8 @@ function renderHudWidget(
       spoken,
       written,
       {
-        slot1Short: state.labels.capsuleSlot1Prefix || "口",
-        slot2Short: state.labels.capsuleSlot2Prefix || "写",
+        slot1Short: state.labels.capsuleSlot1Prefix || "Spk",
+        slot2Short: state.labels.capsuleSlot2Prefix || "Wrt",
         maxCols: process.stdout?.columns || 80,
       }
     );
@@ -373,20 +373,20 @@ export default function (pi: ExtensionAPI) {
     updateFooter(ctx);
 
     if (nextMode === "english") {
-      ctx.ui.notify(state.labels.notifyEnglish || `[${state.labels.hudTitle}] 已切换至【英文模式】：发给 AI 的输入将自动转换为纯正技术英文`, "info");
+      ctx.ui.notify(state.labels.notifyEnglish || `[${state.labels.hudTitle}] Switched to [English] mode: Input to AI will be converted to technical English`, "info");
     } else if (nextMode === "off") {
       if (ctx.hasUI && typeof ctx.ui.setWidget === "function") {
         ctx.ui.setWidget("lingual_hud", undefined);
       }
-      ctx.ui.notify(state.labels.notifyOff || `[${state.labels.hudTitle}] 已关闭伴学`, "info");
+      ctx.ui.notify(state.labels.notifyOff || `[${state.labels.hudTitle}] Companion turned off`, "info");
     } else {
-      ctx.ui.notify(state.labels.notifyOriginal || `[${state.labels.hudTitle}] 已切换至【原文模式】：输入保持纯净母语，上方 HUD 浮现伴学视窗`, "info");
+      ctx.ui.notify(state.labels.notifyOriginal || `[${state.labels.hudTitle}] Switched to [Original] mode: Input kept in native language, translations shown above`, "info");
     }
   };
 
   const setModelHandler = async (args: string, ctx: ExtensionContext) => {
     const trimmed = args.trim();
-    const followSessionDesc = state.labels.modelFollowSession || "跟随会话";
+    const followSessionDesc = state.labels.modelFollowSession || "follow session";
     const currentActive = state.selectedModel === "auto"
       ? (ctx.model ? `auto (${followSessionDesc}: ${ctx.model.provider}/${ctx.model.id})` : "auto")
       : state.selectedModel;
@@ -404,7 +404,7 @@ export default function (pi: ExtensionAPI) {
 
     state.selectedModel = trimmed;
     saveUserLingualConfig({ selectedModel: trimmed });
-    const switchTemplate = state.labels.notifyModelSwitched || "伴学模型已切换为: {model}";
+    const switchTemplate = state.labels.notifyModelSwitched || "Companion model switched to: {model}";
     const switchedMsg = `[${state.labels.hudTitle}] ` + switchTemplate.replace("{model}", trimmed);
     ctx.ui.notify(switchedMsg, "info");
   };
@@ -490,7 +490,7 @@ export default function (pi: ExtensionAPI) {
   };
 
   const showStatusHandler = async (_args: string, ctx: ExtensionContext) => {
-    const followDesc = state.labels.modelFollowSession || "跟随会话";
+    const followDesc = state.labels.modelFollowSession || "follow session";
     const activeModel = state.selectedModel === "auto"
       ? (ctx.model ? `auto (${followDesc}: ${ctx.model.provider}/${ctx.model.id})` : "auto")
       : (state.selectedModel || "auto");
@@ -900,7 +900,8 @@ export default function (pi: ExtensionAPI) {
       if (!result) {
         if (ctx.hasUI) {
           ctx.ui.setWidget("lingual_hud", undefined);
-          ctx.ui.notify(`[${state.labels.hudTitle}] 英文翻译请求未就绪或超时，本次已放行原文`, "warning");
+          const timeoutTemplate = state.labels.notifyTimeout || "[{pair}] English translation timed out or not ready; original prompt passed";
+          ctx.ui.notify(timeoutTemplate.replace("{pair}", state.labels.hudTitle), "warning");
         }
         return { action: "continue" };
       }
@@ -935,7 +936,8 @@ export default function (pi: ExtensionAPI) {
     } catch {
       if (ctx.hasUI) {
         ctx.ui.setWidget("lingual_hud", undefined);
-        ctx.ui.notify(`[${state.labels.hudTitle}] 英文翻译请求异常，本次已放行原文`, "warning");
+        const errTemplate = state.labels.notifyError || "[{pair}] English translation request error; original prompt passed";
+        ctx.ui.notify(errTemplate.replace("{pair}", state.labels.hudTitle), "warning");
       }
       return { action: "continue" };
     } finally {

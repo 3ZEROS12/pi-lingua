@@ -22,6 +22,8 @@ interface LingualI18nLabels {
     notifyLangInvalid?: string;
     notifyCompactOn?: string;
     notifyCompactOff?: string;
+    notifyTimeout?: string;
+    notifyError?: string;
     cmdDescMode?: string;
     cmdDescStatus?: string;
     cmdDescModel?: string;

@@ -419,10 +419,10 @@ export async function translatePrompt(
     if (!payload || !payload.spoken) return null;
 
     const labels = resolveLabelsForLang(cfg.sourceLang || "zh", cfg.labels);
-    const slot1Label = labels.slot1Label || labels.spokenLabel || "口语";
-    const slot2Label = labels.slot2Label || labels.writtenLabel || "写作";
-    const vocabLabel = labels.vocabLabel || "重点";
-    const sourceLabel = labels.sourceLabel || "原文";
+    const slot1Label = labels.slot1Label || labels.spokenLabel || "Spoken";
+    const slot2Label = labels.slot2Label || labels.writtenLabel || "Written";
+    const vocabLabel = labels.vocabLabel || "Vocab";
+    const sourceLabel = labels.sourceLabel || "Source";
 
     const result: LingualResult = {
       spoken: payload.spoken,

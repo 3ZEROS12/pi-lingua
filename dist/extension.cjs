@@ -311,6 +311,8 @@ var LANGUAGE_PRESETS = {
     notifyLangInvalid: "\u65E0\u6548\u7684\u8BED\u8A00\u4EE3\u7801\u3002\u652F\u6301\u7684\u8BED\u8A00\u4EE3\u7801: zh, ja, en, es, fr, de",
     notifyCompactOn: "[zh \u21C4 en] \u5DF2\u5F00\u542F\u5355\u884C\u80F6\u56CA\u6A21\u5F0F\uFF1A\u6781\u7B80\u5360\u4F4D\uFF0C\u4FDD\u62A4\u5206\u5C4F\u89C6\u91CE",
     notifyCompactOff: "[zh \u21C4 en] \u5DF2\u5207\u6362\u4E3A\u5DE6\u5BFC\u8F68\u6811\u72B6\u67B6\u6784\uFF1A\u5C55\u793A\u5B8C\u6574\u53CC\u6A21\u4E0E\u8BED\u611F",
+    notifyTimeout: "[zh \u21C4 en] \u82F1\u6587\u7FFB\u8BD1\u8BF7\u6C42\u672A\u5C31\u7EEA\u6216\u8D85\u65F6\uFF0C\u672C\u6B21\u5DF2\u653E\u884C\u539F\u6587",
+    notifyError: "[zh \u21C4 en] \u82F1\u6587\u7FFB\u8BD1\u8BF7\u6C42\u5F02\u5E38\uFF0C\u672C\u6B21\u5DF2\u653E\u884C\u539F\u6587",
     cmdDescMode: "\u5207\u6362\u4F34\u5B66\u6A21\u5F0F [zh \u21C4 en]: [\u539F\u6587] \u2794 [\u82F1\u6587] \u2794 [\u5173]",
     cmdDescStatus: "\u67E5\u770B\u4F34\u5B66\u63D2\u4EF6\u5F53\u524D\u72B6\u6001\u62A5\u544A\u4E0E\u6A21\u578B\u8BCA\u65AD: /lingual-status",
     cmdDescModel: "\u67E5\u770B\u6216\u5207\u6362\u4F34\u5B66\u6A21\u578B [zh \u21C4 en]: /lingual-model [model-id|auto]",
@@ -372,6 +374,8 @@ var LANGUAGE_PRESETS = {
     notifyLangInvalid: "\u7121\u52B9\u306A\u8A00\u8A9E\u30B3\u30FC\u30C9\u3067\u3059\u3002\u5BFE\u5FDC\u8A00\u8A9E: zh, ja, en, es, fr, de",
     notifyCompactOn: "[ja \u21C4 en] 1\u884C\u30AB\u30D7\u30BB\u30EB\u30E2\u30FC\u30C9\u3092\u6709\u52B9\u306B\u3057\u307E\u3057\u305F\uFF1A\u753B\u9762\u9818\u57DF\u3092\u6700\u5927\u9650\u78BA\u4FDD",
     notifyCompactOff: "[ja \u21C4 en] \u30D5\u30EB\u30C4\u30EA\u30FC\u8868\u793A\u306B\u5207\u308A\u66FF\u3048\u307E\u3057\u305F\uFF1A\u8A73\u7D30\u306A\u30CB\u30E5\u30A2\u30F3\u30B9\u3092\u8868\u793A",
+    notifyTimeout: "[ja \u21C4 en] \u82F1\u8A9E\u7FFB\u8A33\u30EA\u30AF\u30A8\u30B9\u30C8\u304C\u30BF\u30A4\u30E0\u30A2\u30A6\u30C8\u3057\u307E\u3057\u305F\u3002\u539F\u6587\u3092\u9001\u4FE1\u3057\u307E\u3057\u305F",
+    notifyError: "[ja \u21C4 en] \u82F1\u8A9E\u7FFB\u8A33\u30EA\u30AF\u30A8\u30B9\u30C8\u3067\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F\u3002\u539F\u6587\u3092\u9001\u4FE1\u3057\u307E\u3057\u305F",
     cmdDescMode: "\u30E2\u30FC\u30C9\u5207\u66FF [ja \u21C4 en]: [\u539F\u6587] \u2794 [\u82F1\u8A9E] \u2794 [\u30AA\u30D5]",
     cmdDescStatus: "\u72B6\u614B\u30EC\u30DD\u30FC\u30C8\u3068\u30E2\u30C7\u30EB\u8A3A\u65AD\u3092\u8868\u793A: /lingual-status",
     cmdDescModel: "\u5B66\u7FD2\u30E2\u30C7\u30EB\u306E\u78BA\u8A8D\u30FB\u5207\u66FF: /lingual-model [model-id|auto]",
@@ -433,6 +437,8 @@ var LANGUAGE_PRESETS = {
     notifyLangInvalid: "Invalid language code. Supported: zh, ja, en, es, fr, de",
     notifyCompactOn: "[en \u21C4 ja] Single-line capsule mode enabled for compact split panes",
     notifyCompactOff: "[en \u21C4 ja] Full tree layout restored",
+    notifyTimeout: "[en \u21C4 ja] English translation timed out or not ready; original prompt passed",
+    notifyError: "[en \u21C4 ja] English translation request error; original prompt passed",
     cmdDescMode: "Cycle companion mode [en \u21C4 ja]: [Original] \u2794 [English] \u2794 [Off]",
     cmdDescStatus: "Display companion status report and model diagnosis: /lingual-status",
     cmdDescModel: "Inspect or switch companion model: /lingual-model [model-id|auto]",
@@ -494,6 +500,8 @@ var LANGUAGE_PRESETS = {
     notifyLangInvalid: "C\xF3digo de idioma no v\xE1lido. Admitidos: zh, ja, en, es, fr, de",
     notifyCompactOn: "[es \u21C4 en] Modo c\xE1psula de una l\xEDnea activado",
     notifyCompactOff: "[es \u21C4 en] Modo \xE1rbol completo restaurado",
+    notifyTimeout: "[es \u21C4 en] La traducci\xF3n al ingl\xE9s agot\xF3 el tiempo; se envi\xF3 el texto original",
+    notifyError: "[es \u21C4 en] Error en la traducci\xF3n al ingl\xE9s; se envi\xF3 el texto original",
     cmdDescMode: "Cambiar modo [es \u21C4 en]: [Original] \u2794 [Ingl\xE9s] \u2794 [Apagado]",
     cmdDescStatus: "Mostrar diagn\xF3stico y estado del modelo: /lingual-status",
     cmdDescModel: "Consultar o cambiar modelo: /lingual-model [model-id|auto]",
@@ -555,6 +563,8 @@ var LANGUAGE_PRESETS = {
     notifyLangInvalid: "Code de langue invalide. Pris en charge : zh, ja, en, es, fr, de",
     notifyCompactOn: "[fr \u21C4 en] Mode capsule sur une seule ligne activ\xE9",
     notifyCompactOff: "[fr \u21C4 en] Mode arborescence compl\xE8te restaur\xE9",
+    notifyTimeout: "[fr \u21C4 en] La traduction en anglais a expir\xE9 ; le prompt original a \xE9t\xE9 transmis",
+    notifyError: "[fr \u21C4 en] Erreur de traduction en anglais ; le prompt original a \xE9t\xE9 transmis",
     cmdDescMode: "Changer de mode [fr \u21C4 en]: [Original] \u2794 [Anglais] \u2794 [D\xE9sactiv\xE9]",
     cmdDescStatus: "Afficher le rapport d'\xE9tat et le diagnostic: /lingual-status",
     cmdDescModel: "Consulter ou changer de mod\xE8le: /lingual-model [model-id|auto]",
@@ -616,6 +626,8 @@ var LANGUAGE_PRESETS = {
     notifyLangInvalid: "Ung\xFCltiger Sprachcode. Unterst\xFCtzt: zh, ja, en, es, fr, de",
     notifyCompactOn: "[de \u21C4 en] Einzeiliger Kapselmodus aktiviert",
     notifyCompactOff: "[de \u21C4 en] Vollst\xE4ndige Baumansicht wiederhergestellt",
+    notifyTimeout: "[de \u21C4 en] Englische \xDCbersetzung hat das Zeitlimit \xFCberschritten; Originaltext wurde \xFCbergeben",
+    notifyError: "[de \u21C4 en] Fehler bei der englischen \xDCbersetzung; Originaltext wurde \xFCbergeben",
     cmdDescMode: "Modus umschalten [de \u21C4 en]: [Original] \u2794 [Englisch] \u2794 [Aus]",
     cmdDescStatus: "Statusbericht und Modell-Diagnose anzeigen: /lingual-status",
     cmdDescModel: "Modell pr\xFCfen oder wechseln: /lingual-model [model-id|auto]",
@@ -1331,10 +1343,10 @@ async function translatePrompt(text, userConfig = {}) {
     const payload = parseLlmResponse(content);
     if (!payload || !payload.spoken) return null;
     const labels = resolveLabelsForLang(cfg.sourceLang || "zh", cfg.labels);
-    const slot1Label = labels.slot1Label || labels.spokenLabel || "\u53E3\u8BED";
-    const slot2Label = labels.slot2Label || labels.writtenLabel || "\u5199\u4F5C";
-    const vocabLabel = labels.vocabLabel || "\u91CD\u70B9";
-    const sourceLabel = labels.sourceLabel || "\u539F\u6587";
+    const slot1Label = labels.slot1Label || labels.spokenLabel || "Spoken";
+    const slot2Label = labels.slot2Label || labels.writtenLabel || "Written";
+    const vocabLabel = labels.vocabLabel || "Vocab";
+    const sourceLabel = labels.sourceLabel || "Source";
     const result = {
       spoken: payload.spoken,
       spokenMeaning: payload.spokenMeaning,
@@ -1730,10 +1742,10 @@ function renderHudWidget(ctx, sourceText, spoken, written, vocab, spokenMeaning,
   if (!ctx.hasUI) return;
   const hasWritten = Boolean(written && written.trim());
   const hasVocab = Boolean(vocab && vocab.trim());
-  const slot1 = state.labels.slot1Label || state.labels.spokenLabel || "\u53E3\u8BED";
-  const slot2 = state.labels.slot2Label || state.labels.writtenLabel || "\u5199\u4F5C";
-  const vocabTag = state.labels.vocabLabel || "\u91CD\u70B9";
-  const sourceTag = state.labels.sourceLabel || "\u539F\u6587";
+  const slot1 = state.labels.slot1Label || state.labels.spokenLabel || "Spoken";
+  const slot2 = state.labels.slot2Label || state.labels.writtenLabel || "Written";
+  const vocabTag = state.labels.vocabLabel || "Vocab";
+  const sourceTag = state.labels.sourceLabel || "Source";
   const pageTag = pagination && pagination.totalPages > 1 ? ctx.ui.theme.fg("muted", ` [${pagination.pageIndex + 1}/${pagination.totalPages} \u2325.]`) : "";
   const pairTitle = `${state.sourceLang} \u21C4 ${state.targetLang}`;
   const isCompact = state.compact || (process.stdout?.rows ? process.stdout.rows < 22 : false);
@@ -1743,8 +1755,8 @@ function renderHudWidget(ctx, sourceText, spoken, written, vocab, spokenMeaning,
       spoken,
       written,
       {
-        slot1Short: state.labels.capsuleSlot1Prefix || "\u53E3",
-        slot2Short: state.labels.capsuleSlot2Prefix || "\u5199",
+        slot1Short: state.labels.capsuleSlot1Prefix || "Spk",
+        slot2Short: state.labels.capsuleSlot2Prefix || "Wrt",
         maxCols: process.stdout?.columns || 80
       }
     );
@@ -1876,19 +1888,19 @@ function extension_default(pi) {
     saveUserLingualConfig({ mode: nextMode });
     updateFooter(ctx);
     if (nextMode === "english") {
-      ctx.ui.notify(state.labels.notifyEnglish || `[${state.labels.hudTitle}] \u5DF2\u5207\u6362\u81F3\u3010\u82F1\u6587\u6A21\u5F0F\u3011\uFF1A\u53D1\u7ED9 AI \u7684\u8F93\u5165\u5C06\u81EA\u52A8\u8F6C\u6362\u4E3A\u7EAF\u6B63\u6280\u672F\u82F1\u6587`, "info");
+      ctx.ui.notify(state.labels.notifyEnglish || `[${state.labels.hudTitle}] Switched to [English] mode: Input to AI will be converted to technical English`, "info");
     } else if (nextMode === "off") {
       if (ctx.hasUI && typeof ctx.ui.setWidget === "function") {
         ctx.ui.setWidget("lingual_hud", void 0);
       }
-      ctx.ui.notify(state.labels.notifyOff || `[${state.labels.hudTitle}] \u5DF2\u5173\u95ED\u4F34\u5B66`, "info");
+      ctx.ui.notify(state.labels.notifyOff || `[${state.labels.hudTitle}] Companion turned off`, "info");
     } else {
-      ctx.ui.notify(state.labels.notifyOriginal || `[${state.labels.hudTitle}] \u5DF2\u5207\u6362\u81F3\u3010\u539F\u6587\u6A21\u5F0F\u3011\uFF1A\u8F93\u5165\u4FDD\u6301\u7EAF\u51C0\u6BCD\u8BED\uFF0C\u4E0A\u65B9 HUD \u6D6E\u73B0\u4F34\u5B66\u89C6\u7A97`, "info");
+      ctx.ui.notify(state.labels.notifyOriginal || `[${state.labels.hudTitle}] Switched to [Original] mode: Input kept in native language, translations shown above`, "info");
     }
   };
   const setModelHandler = async (args, ctx) => {
     const trimmed = args.trim();
-    const followSessionDesc = state.labels.modelFollowSession || "\u8DDF\u968F\u4F1A\u8BDD";
+    const followSessionDesc = state.labels.modelFollowSession || "follow session";
     const currentActive = state.selectedModel === "auto" ? ctx.model ? `auto (${followSessionDesc}: ${ctx.model.provider}/${ctx.model.id})` : "auto" : state.selectedModel;
     if (!trimmed) {
       const available = ctx.modelRegistry?.getAvailable?.() || [];
@@ -1899,7 +1911,7 @@ function extension_default(pi) {
     }
     state.selectedModel = trimmed;
     saveUserLingualConfig({ selectedModel: trimmed });
-    const switchTemplate = state.labels.notifyModelSwitched || "\u4F34\u5B66\u6A21\u578B\u5DF2\u5207\u6362\u4E3A: {model}";
+    const switchTemplate = state.labels.notifyModelSwitched || "Companion model switched to: {model}";
     const switchedMsg = `[${state.labels.hudTitle}] ` + switchTemplate.replace("{model}", trimmed);
     ctx.ui.notify(switchedMsg, "info");
   };
@@ -1975,7 +1987,7 @@ ${usage}`,
     }
   };
   const showStatusHandler = async (_args, ctx) => {
-    const followDesc = state.labels.modelFollowSession || "\u8DDF\u968F\u4F1A\u8BDD";
+    const followDesc = state.labels.modelFollowSession || "follow session";
     const activeModel = state.selectedModel === "auto" ? ctx.model ? `auto (${followDesc}: ${ctx.model.provider}/${ctx.model.id})` : "auto" : state.selectedModel || "auto";
     const statusMsg = formatStatusReport(state.labels, {
       mode: state.mode,
@@ -2274,7 +2286,8 @@ ${usage}`,
       if (!result) {
         if (ctx.hasUI) {
           ctx.ui.setWidget("lingual_hud", void 0);
-          ctx.ui.notify(`[${state.labels.hudTitle}] \u82F1\u6587\u7FFB\u8BD1\u8BF7\u6C42\u672A\u5C31\u7EEA\u6216\u8D85\u65F6\uFF0C\u672C\u6B21\u5DF2\u653E\u884C\u539F\u6587`, "warning");
+          const timeoutTemplate = state.labels.notifyTimeout || "[{pair}] English translation timed out or not ready; original prompt passed";
+          ctx.ui.notify(timeoutTemplate.replace("{pair}", state.labels.hudTitle), "warning");
         }
         return { action: "continue" };
       }
@@ -2302,7 +2315,8 @@ ${sanitized.rawPayload}` : combinedEnglish;
     } catch {
       if (ctx.hasUI) {
         ctx.ui.setWidget("lingual_hud", void 0);
-        ctx.ui.notify(`[${state.labels.hudTitle}] \u82F1\u6587\u7FFB\u8BD1\u8BF7\u6C42\u5F02\u5E38\uFF0C\u672C\u6B21\u5DF2\u653E\u884C\u539F\u6587`, "warning");
+        const errTemplate = state.labels.notifyError || "[{pair}] English translation request error; original prompt passed";
+        ctx.ui.notify(errTemplate.replace("{pair}", state.labels.hudTitle), "warning");
       }
       return { action: "continue" };
     } finally {

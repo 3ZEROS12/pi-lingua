@@ -28,6 +28,8 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     notifyLangInvalid: "无效的语言代码。支持的语言代码: zh, ja, en, es, fr, de",
     notifyCompactOn: "[zh ⇄ en] 已开启单行胶囊模式：极简占位，保护分屏视野",
     notifyCompactOff: "[zh ⇄ en] 已切换为左导轨树状架构：展示完整双模与语感",
+    notifyTimeout: "[zh ⇄ en] 英文翻译请求未就绪或超时，本次已放行原文",
+    notifyError: "[zh ⇄ en] 英文翻译请求异常，本次已放行原文",
 
     cmdDescMode: "切换伴学模式 [zh ⇄ en]: [原文] ➔ [英文] ➔ [关]",
     cmdDescStatus: "查看伴学插件当前状态报告与模型诊断: /lingual-status",
@@ -95,6 +97,8 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     notifyLangInvalid: "無効な言語コードです。対応言語: zh, ja, en, es, fr, de",
     notifyCompactOn: "[ja ⇄ en] 1行カプセルモードを有効にしました：画面領域を最大限確保",
     notifyCompactOff: "[ja ⇄ en] フルツリー表示に切り替えました：詳細なニュアンスを表示",
+    notifyTimeout: "[ja ⇄ en] 英語翻訳リクエストがタイムアウトしました。原文を送信しました",
+    notifyError: "[ja ⇄ en] 英語翻訳リクエストでエラーが発生しました。原文を送信しました",
 
     cmdDescMode: "モード切替 [ja ⇄ en]: [原文] ➔ [英語] ➔ [オフ]",
     cmdDescStatus: "状態レポートとモデル診断を表示: /lingual-status",
@@ -162,6 +166,8 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     notifyLangInvalid: "Invalid language code. Supported: zh, ja, en, es, fr, de",
     notifyCompactOn: "[en ⇄ ja] Single-line capsule mode enabled for compact split panes",
     notifyCompactOff: "[en ⇄ ja] Full tree layout restored",
+    notifyTimeout: "[en ⇄ ja] English translation timed out or not ready; original prompt passed",
+    notifyError: "[en ⇄ ja] English translation request error; original prompt passed",
 
     cmdDescMode: "Cycle companion mode [en ⇄ ja]: [Original] ➔ [English] ➔ [Off]",
     cmdDescStatus: "Display companion status report and model diagnosis: /lingual-status",
@@ -229,6 +235,8 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     notifyLangInvalid: "Código de idioma no válido. Admitidos: zh, ja, en, es, fr, de",
     notifyCompactOn: "[es ⇄ en] Modo cápsula de una línea activado",
     notifyCompactOff: "[es ⇄ en] Modo árbol completo restaurado",
+    notifyTimeout: "[es ⇄ en] La traducción al inglés agotó el tiempo; se envió el texto original",
+    notifyError: "[es ⇄ en] Error en la traducción al inglés; se envió el texto original",
 
     cmdDescMode: "Cambiar modo [es ⇄ en]: [Original] ➔ [Inglés] ➔ [Apagado]",
     cmdDescStatus: "Mostrar diagnóstico y estado del modelo: /lingual-status",
@@ -296,6 +304,8 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     notifyLangInvalid: "Code de langue invalide. Pris en charge : zh, ja, en, es, fr, de",
     notifyCompactOn: "[fr ⇄ en] Mode capsule sur une seule ligne activé",
     notifyCompactOff: "[fr ⇄ en] Mode arborescence complète restauré",
+    notifyTimeout: "[fr ⇄ en] La traduction en anglais a expiré ; le prompt original a été transmis",
+    notifyError: "[fr ⇄ en] Erreur de traduction en anglais ; le prompt original a été transmis",
 
     cmdDescMode: "Changer de mode [fr ⇄ en]: [Original] ➔ [Anglais] ➔ [Désactivé]",
     cmdDescStatus: "Afficher le rapport d'état et le diagnostic: /lingual-status",
@@ -363,6 +373,8 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     notifyLangInvalid: "Ungültiger Sprachcode. Unterstützt: zh, ja, en, es, fr, de",
     notifyCompactOn: "[de ⇄ en] Einzeiliger Kapselmodus aktiviert",
     notifyCompactOff: "[de ⇄ en] Vollständige Baumansicht wiederhergestellt",
+    notifyTimeout: "[de ⇄ en] Englische Übersetzung hat das Zeitlimit überschritten; Originaltext wurde übergeben",
+    notifyError: "[de ⇄ en] Fehler bei der englischen Übersetzung; Originaltext wurde übergeben",
 
     cmdDescMode: "Modus umschalten [de ⇄ en]: [Original] ➔ [Englisch] ➔ [Aus]",
     cmdDescStatus: "Statusbericht und Modell-Diagnose anzeigen: /lingual-status",

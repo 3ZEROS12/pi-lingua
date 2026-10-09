@@ -25,6 +25,8 @@ export interface LingualI18nLabels {
   notifyLangInvalid?: string;
   notifyCompactOn?: string;
   notifyCompactOff?: string;
+  notifyTimeout?: string;
+  notifyError?: string;
 
   // Localized command descriptions
   cmdDescMode?: string;
