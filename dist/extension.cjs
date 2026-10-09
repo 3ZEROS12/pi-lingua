@@ -1220,7 +1220,7 @@ async function translatePrompt(text, userConfig = {}) {
 }
 
 // src/chunker.ts
-function splitSemanticChunks(text, maxChunkChars = 90) {
+function splitSemanticChunks(text, maxChunkChars = 65) {
   const trimmed = text.trim();
   if (!trimmed) return [];
   if (trimmed.length <= maxChunkChars) {
@@ -1277,7 +1277,8 @@ function splitSemanticChunks(text, maxChunkChars = 90) {
 }
 
 // src/sanitizer.ts
-var CLIPBOARD_IMAGE_REGEX = /^(?:[a-zA-Z]:\\[^\r\n\t]+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf)|(?:\/[^\r\n\t]+)+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf))\s*/i;
+var CLIPBOARD_IMAGE_REGEX = /^(?:[a-zA-Z]:\\[^\s\r\n\t]+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf)|(?:\/[^\s\r\n\t]+)+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf))\s*/i;
+var INLINE_MEDIA_AND_TEMP_PATH_REGEX = /(?:[a-zA-Z]:\\[^\s\r\n\t]+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf|md)|(?:\/[^\s\r\n\t]+)+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf|md))/gi;
 var STACK_LINE_REGEX = /^\s*(?:at\s+(?:[\w$.<>]+|[^\s]+)\s*\(.*:\d+:\d+\)|at\s+.*:\d+:\d+|File\s+".*", line \d+, in\s+.*|goroutine \d+ \[.*\]:|Caused by:.*|^\s*\d+:\s+0x[0-9a-f]+)/;
 var COMPILER_DIAGNOSTIC_REGEX = /^(?:[a-zA-Z]:[\\\/]|\.{0,2}[\\\/]|[a-zA-Z0-9_\-\.]+)[^:\r\n]+:\d+:\d+:\s*(?:error|warning|fatal error|note):/i;
 function sanitizePromptForTranslation(raw) {
@@ -1294,12 +1295,19 @@ function sanitizePromptForTranslation(raw) {
   while (CLIPBOARD_IMAGE_REGEX.test(text)) {
     text = text.replace(CLIPBOARD_IMAGE_REGEX, "").trim();
   }
+  const inlinePathMatches = text.match(INLINE_MEDIA_AND_TEMP_PATH_REGEX);
+  let trailingPathPayload;
+  if (inlinePathMatches && inlinePathMatches.length > 0) {
+    trailingPathPayload = inlinePathMatches.join("\n");
+    text = text.replace(INLINE_MEDIA_AND_TEMP_PATH_REGEX, "").trim();
+  }
   if (!text) {
     return {
       distilledText: "",
       hasNaturalLanguage: false,
       hasCollapsedContent: false,
-      naturalCharsLength: 0
+      naturalCharsLength: 0,
+      rawPayload: trailingPathPayload
     };
   }
   let hasCollapsed = false;
@@ -1359,8 +1367,11 @@ function sanitizePromptForTranslation(raw) {
   const hasQuestionKeywords = /(?:为什么|怎么|如何|帮我|排查|优化|修改|修复|为何|报错|explain|why|how|please|help|could you|fix)/i.test(distilledText);
   const hasNaturalLanguage = hasCJK || hasQuestionKeywords || withoutPlaceholders.length > 5;
   let rawPayload;
+  const payloadParts = [];
+  if (trailingPathPayload) {
+    payloadParts.push(trailingPathPayload);
+  }
   if (hasCollapsed) {
-    const payloadParts = [];
     const codeMatch = trimmed.match(/```[\w\-]*\r?\n([\s\S]*?)\r?\n```/g);
     if (codeMatch) {
       payloadParts.push(...codeMatch);
@@ -1371,9 +1382,9 @@ function sanitizePromptForTranslation(raw) {
     if (stackLines.length > 0 && !codeMatch) {
       payloadParts.push(stackLines.join("\n"));
     }
-    if (payloadParts.length > 0) {
-      rawPayload = payloadParts.join("\n\n").trim();
-    }
+  }
+  if (payloadParts.length > 0) {
+    rawPayload = payloadParts.join("\n\n").trim();
   }
   return {
     distilledText,
@@ -1578,8 +1589,12 @@ function renderHudWidget(ctx, sourceText, spoken, written, vocab, spokenMeaning,
   ctx.ui.setWidget("lingual_hud", lines, { placement: "aboveEditor" });
 }
 function renderActiveCard(ctx) {
-  if (pagedResults.length === 0) return;
-  const res = pagedResults[currentPageIndex];
+  const readyList = pagedResults.filter((r) => Boolean(r));
+  if (readyList.length === 0) return;
+  if (currentPageIndex >= readyList.length) {
+    currentPageIndex = 0;
+  }
+  const res = readyList[currentPageIndex];
   if (!res) return;
   renderHudWidget(
     ctx,
@@ -1591,7 +1606,7 @@ function renderActiveCard(ctx) {
     res.writtenMeaning,
     {
       pageIndex: currentPageIndex,
-      totalPages: Math.max(pagedResults.length, totalExpectedPages)
+      totalPages: readyList.length
     }
   );
 }
@@ -1799,16 +1814,18 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
     pi.registerShortcut("alt+.", {
       description: state.labels.shortcutNextPage || "\u5207\u6362\u81F3\u4E0B\u4E00\u6BB5\u4F34\u5B66\u5207\u7247",
       handler: async (ctx) => {
-        if (pagedResults.length <= 1) return;
-        currentPageIndex = (currentPageIndex + 1) % pagedResults.length;
+        const readyList = pagedResults.filter((r) => Boolean(r));
+        if (readyList.length <= 1) return;
+        currentPageIndex = (currentPageIndex + 1) % readyList.length;
         renderActiveCard(ctx);
       }
     });
     pi.registerShortcut("alt+,", {
       description: state.labels.shortcutPrevPage || "\u5207\u6362\u81F3\u4E0A\u4E00\u6BB5\u4F34\u5B66\u5207\u7247",
       handler: async (ctx) => {
-        if (pagedResults.length <= 1) return;
-        currentPageIndex = (currentPageIndex - 1 + pagedResults.length) % pagedResults.length;
+        const readyList = pagedResults.filter((r) => Boolean(r));
+        if (readyList.length <= 1) return;
+        currentPageIndex = (currentPageIndex - 1 + readyList.length) % readyList.length;
         renderActiveCard(ctx);
       }
     });

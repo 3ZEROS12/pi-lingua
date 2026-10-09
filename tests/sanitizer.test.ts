@@ -108,3 +108,14 @@ const a: number = "string";
   assert.ok(res.rawPayload, "Must extract raw code payload");
   assert.ok(res.rawPayload.includes("const a: number"), "Payload must contain original code for AI context");
 });
+
+test("sanitizePromptForTranslation - strips trailing and inline clipboard images and temp files", () => {
+  const input = "不知道为什么，想要背诵一首古诗，床前明月关，疑是地上霜。日照香炉生紫烟，要看瀑布挂前川。C:\\Users\\Jason\\Desktop\\CURRENT_MISSION_STATE.mdC:\\Users\\Jason\\AppData\\Local\\Temp\\pi-clipboard-3372a8e2-6500-45a5-87b4-6749a6f85d60.png";
+
+  const res = sanitizePromptForTranslation(input);
+  assert.equal(res.hasNaturalLanguage, true);
+  assert.ok(!res.distilledText.includes("pi-clipboard"), "Trailing clipboard image path must be stripped");
+  assert.ok(!res.distilledText.includes("CURRENT_MISSION_STATE.md"), "Trailing temp state path must be stripped");
+  assert.ok(res.distilledText.endsWith("要看瀑布挂前川。"), "Distilled text must cleanly end with natural text");
+  assert.ok(res.rawPayload, "Stripped paths must be preserved in rawPayload");
+});

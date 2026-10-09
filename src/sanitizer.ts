@@ -12,8 +12,9 @@
 
 import { isNonEnglish } from "./engine.js";
 
-// 常见剪贴板临时图片路径正则
-const CLIPBOARD_IMAGE_REGEX = /^(?:[a-zA-Z]:\\[^\r\n\t]+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf)|(?:\/[^\r\n\t]+)+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf))\s*/i;
+// 常见剪贴板临时图片及附件文件路径正则 (支持行首及行内全局剥离)
+const CLIPBOARD_IMAGE_REGEX = /^(?:[a-zA-Z]:\\[^\s\r\n\t]+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf)|(?:\/[^\s\r\n\t]+)+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf))\s*/i;
+const INLINE_MEDIA_AND_TEMP_PATH_REGEX = /(?:[a-zA-Z]:\\[^\s\r\n\t]+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf|md)|(?:\/[^\s\r\n\t]+)+\.(?:png|jpe?g|webp|gif|bmp|svg|pdf|md))/gi;
 
 // 堆栈跟踪特征正则
 const STACK_LINE_REGEX = /^\s*(?:at\s+(?:[\w$.<>]+|[^\s]+)\s*\(.*:\d+:\d+\)|at\s+.*:\d+:\d+|File\s+".*", line \d+, in\s+.*|goroutine \d+ \[.*\]:|Caused by:.*|^\s*\d+:\s+0x[0-9a-f]+)/;
@@ -48,17 +49,27 @@ export function sanitizePromptForTranslation(raw: string): SanitizedPromptResult
     };
   }
 
-  // 1. 循环剥离所有图片/附件路径前缀 (支持连续排队多张截图)
+  // 1. 循环剥离所有图片/附件路径前缀，并安全滤除文本末尾或夹带的剪贴板图片路径
   let text = trimmed;
   while (CLIPBOARD_IMAGE_REGEX.test(text)) {
     text = text.replace(CLIPBOARD_IMAGE_REGEX, "").trim();
   }
+  
+  // 提取夹带在行内或尾部的截图/临时文件路径，存入 rawPayload 供 AI 上下文使用，不污染自然语言切片
+  const inlinePathMatches = text.match(INLINE_MEDIA_AND_TEMP_PATH_REGEX);
+  let trailingPathPayload: string | undefined;
+  if (inlinePathMatches && inlinePathMatches.length > 0) {
+    trailingPathPayload = inlinePathMatches.join("\n");
+    text = text.replace(INLINE_MEDIA_AND_TEMP_PATH_REGEX, "").trim();
+  }
+
   if (!text) {
     return {
       distilledText: "",
       hasNaturalLanguage: false,
       hasCollapsedContent: false,
       naturalCharsLength: 0,
+      rawPayload: trailingPathPayload,
     };
   }
 
@@ -146,8 +157,11 @@ export function sanitizePromptForTranslation(raw: string): SanitizedPromptResult
 
   // 5. 提取可能被折叠的原始代码块与堆栈追踪附件 (供 english 模式嫁接保留真实排障上下文)
   let rawPayload: string | undefined;
+  const payloadParts: string[] = [];
+  if (trailingPathPayload) {
+    payloadParts.push(trailingPathPayload);
+  }
   if (hasCollapsed) {
-    const payloadParts: string[] = [];
     const codeMatch = trimmed.match(/```[\w\-]*\r?\n([\s\S]*?)\r?\n```/g);
     if (codeMatch) {
       payloadParts.push(...codeMatch);
@@ -158,9 +172,9 @@ export function sanitizePromptForTranslation(raw: string): SanitizedPromptResult
     if (stackLines.length > 0 && !codeMatch) {
       payloadParts.push(stackLines.join("\n"));
     }
-    if (payloadParts.length > 0) {
-      rawPayload = payloadParts.join("\n\n").trim();
-    }
+  }
+  if (payloadParts.length > 0) {
+    rawPayload = payloadParts.join("\n\n").trim();
   }
 
   return {

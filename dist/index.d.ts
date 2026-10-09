@@ -124,12 +124,10 @@ declare function formatModelSelectionMessage(labels: LingualI18nLabels, currentA
  * Preserves punctuation (。！？；\n and .!?\n).
  *
  * Line Budget & Ergonomics:
- * 切分仅作为防超出 Pi 10 行硬截断的兜底防线，绝不过度拆碎用户意图。
- * 结合 9 行硬预算折叠守卫（超行时语感子导轨自动内联进括号），单卡可容纳 80~100 字符的自然句群。
- * 默认预算提高至 90 字符：
- * - 80 字以内日常长句：100% 单卡完整呈现，0 翻页；
- * - 120~180 字中长句：顶多分为 2 页，杜绝因每个句号碎成 4 页；
- * - 只有真正多段大篇幅文本才适度切分为 3+ 页。
+ * 结合 9 行硬预算折叠守卫与树状全景舒展度，单卡最舒适自然容量为 60~70 字符（约 30~35 汉字）。
+ * 默认预算校准至 65 字符：
+ * - 确保多句诗文/长段落切分后，每一卡均能以 6~8 行完整树状形式优雅展开，绝不触发单行胶囊降级；
+ * - 绝不过度粉碎短句，保留自然停顿。
  */
 declare function splitSemanticChunks(text: string, maxChunkChars?: number): string[];
 

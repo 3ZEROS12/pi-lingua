@@ -310,8 +310,13 @@ function renderHudWidget(
 }
 
 function renderActiveCard(ctx: ExtensionContext) {
-  if (pagedResults.length === 0) return;
-  const res = pagedResults[currentPageIndex];
+  // 只统计实际已经被翻译就绪的有效卡片，彻底杜绝未就绪切片导致的虚假总页数与跳页
+  const readyList = pagedResults.filter((r): r is LingualResult => Boolean(r));
+  if (readyList.length === 0) return;
+  if (currentPageIndex >= readyList.length) {
+    currentPageIndex = 0;
+  }
+  const res = readyList[currentPageIndex];
   if (!res) return;
   renderHudWidget(
     ctx,
@@ -323,7 +328,7 @@ function renderActiveCard(ctx: ExtensionContext) {
     res.writtenMeaning,
     {
       pageIndex: currentPageIndex,
-      totalPages: Math.max(pagedResults.length, totalExpectedPages),
+      totalPages: readyList.length,
     }
   );
 }
@@ -579,8 +584,9 @@ export default function (pi: ExtensionAPI) {
     pi.registerShortcut("alt+.", {
       description: state.labels.shortcutNextPage || "切换至下一段伴学切片",
       handler: async (ctx) => {
-        if (pagedResults.length <= 1) return;
-        currentPageIndex = (currentPageIndex + 1) % pagedResults.length;
+        const readyList = pagedResults.filter((r): r is LingualResult => Boolean(r));
+        if (readyList.length <= 1) return;
+        currentPageIndex = (currentPageIndex + 1) % readyList.length;
         renderActiveCard(ctx);
       },
     });
@@ -588,8 +594,9 @@ export default function (pi: ExtensionAPI) {
     pi.registerShortcut("alt+,", {
       description: state.labels.shortcutPrevPage || "切换至上一段伴学切片",
       handler: async (ctx) => {
-        if (pagedResults.length <= 1) return;
-        currentPageIndex = (currentPageIndex - 1 + pagedResults.length) % pagedResults.length;
+        const readyList = pagedResults.filter((r): r is LingualResult => Boolean(r));
+        if (readyList.length <= 1) return;
+        currentPageIndex = (currentPageIndex - 1 + readyList.length) % readyList.length;
         renderActiveCard(ctx);
       },
     });
