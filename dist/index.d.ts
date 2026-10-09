@@ -273,6 +273,10 @@ declare function extractVocabPhrases(vocab: string | undefined): string[];
  */
 declare function spotlightPhrases(text: string, phrases: string[]): string;
 /**
+ * 按原子短语 (Item-level) 格式化重点词汇单行流，绝不把任何词汇项砍成半截或留下未闭合的 "(" (彻底解决 BUG-VOCAB-TRUNCATION)
+ */
+declare function formatVocabItemsAtomic(vocab: string, prefix: string, maxCols: number): string;
+/**
  * 格式化终端树状全景输出 (formatTerminalAnnotation)
  */
 declare function formatTerminalAnnotation(sourceText: string, spoken: string, written?: string, vocab?: string, options?: {
@@ -455,6 +459,13 @@ declare function stripLingualAnnotation(annotatedText: string): {
     vocab?: string;
 };
 /**
+ * 动态判定是否需要触发长输入凝练与意图大标题总结 (彻底解决 45~90 字符/多句"中间状态"截断隐患)
+ * 核心物理事实：CJK (中日韩) 为高密度表意文字，信息密度为西文 2.5 倍。
+ * 45 汉字通常包含 2~3 个分句，直译为英文达 180~220 字符 (3 行 Spoken + 3 行 Written)，
+ * 必然冲垮 9 行卡片盒模型预算并挤爆重点词汇。
+ */
+declare function isDynamicLongInput(text: string, sourceLang?: string): boolean;
+/**
  * Translate a user prompt into idiomatic English with dual registers, native nuance, and vocabulary highlights
  */
 declare function translatePrompt(text: string, userConfig?: Partial<LingualConfig>): Promise<LingualResult | null>;
@@ -462,4 +473,4 @@ declare const LINGUA_SYSTEM_PROMPT: string;
 declare const stripLinguaAnnotation: typeof stripLingualAnnotation;
 declare const loadUserConfig: typeof loadUserLingualConfig;
 
-export { CANNOT_START_LINE_CHARS, type CacheStats, DEFAULT_CONFIG, LANGUAGE_PRESETS, LINGUAL_SYSTEM_PROMPT, LINGUA_SYSTEM_PROMPT, type LinguaConfig, type LinguaI18nLabels, LinguaLruCache, type LinguaMode, type LinguaResult, type LingualConfig, type LingualI18nLabels, LingualLruCache, type LingualMode, type LingualResult, LingualSessionController, MAX_TRANSLATION_CHARS, MAX_TRANSLATION_LINES, type PaginationSnapshot, type SanitizedPromptResult, type SessionRequestToken, type TranslationPayload, buildSystemPrompt, extractVocabPhrases, formatCapsuleLine, formatModelSelectionMessage, formatStatusReport, formatSubRail, formatTerminalAnnotation, formatTreeBranch, getEffectiveMaxCols, getVisualWidth, globalLinguaCache, globalLingualCache, invalidateUserConfigCache, isNonEnglish, loadUserConfig, loadUserLingualConfig, parseLlmResponse, renderCardLayout, resolveLabelsForLang, sanitizePromptForTranslation, shouldShieldBypass, shouldTriggerTranslation, splitSemanticChunks, spotlightPhrases, stripLinguaAnnotation, stripLingualAnnotation, translatePrompt, truncateVisual, wrapVisualText };
+export { CANNOT_START_LINE_CHARS, type CacheStats, DEFAULT_CONFIG, LANGUAGE_PRESETS, LINGUAL_SYSTEM_PROMPT, LINGUA_SYSTEM_PROMPT, type LinguaConfig, type LinguaI18nLabels, LinguaLruCache, type LinguaMode, type LinguaResult, type LingualConfig, type LingualI18nLabels, LingualLruCache, type LingualMode, type LingualResult, LingualSessionController, MAX_TRANSLATION_CHARS, MAX_TRANSLATION_LINES, type PaginationSnapshot, type SanitizedPromptResult, type SessionRequestToken, type TranslationPayload, buildSystemPrompt, extractVocabPhrases, formatCapsuleLine, formatModelSelectionMessage, formatStatusReport, formatSubRail, formatTerminalAnnotation, formatTreeBranch, formatVocabItemsAtomic, getEffectiveMaxCols, getVisualWidth, globalLinguaCache, globalLingualCache, invalidateUserConfigCache, isDynamicLongInput, isNonEnglish, loadUserConfig, loadUserLingualConfig, parseLlmResponse, renderCardLayout, resolveLabelsForLang, sanitizePromptForTranslation, shouldShieldBypass, shouldTriggerTranslation, splitSemanticChunks, spotlightPhrases, stripLinguaAnnotation, stripLingualAnnotation, translatePrompt, truncateVisual, wrapVisualText };

@@ -3,7 +3,7 @@
 **Baseline Version**: `v0.3.0` (SemVer Frozen per Architectural Decision)  
 **Workspace Root**: `D:/Workspace/projects/pi-lingua`  
 **Execution Status**: Final End-to-End Audit & Complete Hardening Completed  
-**Test Suite Health**: **71 / 71 PASS (100% Green)**  
+**Test Suite Health**: **74 / 74 PASS (100% Green)**  
 **Fleet Pre-Flight**: **Passed: 1 | Failed: 0**  
 **Host Mount**: Direct link to local repository in `~/.pi/agent/settings.json`
 
@@ -90,6 +90,23 @@
   * **大模型意图大标题双保险（`prompts.ts`, `types.ts`, `engine.ts`）**：
     长输入（$>90$ 字符）时恢复大模型输出 `<20` 字的 `"summary"` 核心意图大标题，若生成成功优先作为极简新闻大标题展示，与下方的精炼英文 100% 意图对齐；若生成失败则无缝平滑回退至客户端折叠提炼结果。
 
+### 12. 攻克多句/长句“中间状态”（Intermediate Gap）截断盲区与重点词汇原子守卫
+- **发现场景**：用户在实机压力测试会话 (`01a12087-bb1a-7429-867e-6056ad32fa7f`) 中，逐句递增测试压缩临界值（从 26 字递增到 89 字）。在 64 字符（3 句话）时，精准暴露了极为微妙的**中间状态排版截断盲区**：
+  * 由于原先采用静态 `trimmed.length > 90` 作为总结触发门槛，64 字符（未达 90）被判定为短句而不触发浓缩总结；
+  * 大模型将 3 句话逐句直译，英文长达 200 字符，口语占 3 行，写作占 3 行，加上原文 2 行已累计达 8 行；
+  * 盒模型硬预算被迫将重点词汇压缩至 1 行，且粗暴截断产生了带有未闭合括号的残缺词汇：`└ [重点] trigger (触发) · compression (压缩 ...`。
+- **第一性原理彻底根治**：
+  * **动态语言密度感知浓缩触发器 (`isDynamicLongInput`)**：
+    * 彻底抛弃死板的静态 90 字符阈值；
+    * 考虑中日韩（CJK）高密度表意特征（信息密度为西文 2.5 倍），只要满足 `字符数 >= 45` 或 `终止分句数 >= 2（句长 >= 30）`，即刻动态启动意图凝练指令；
+    * 驱使大模型在该“中间状态”主动输出精悍的 2 行以内表达和 `summary` 意图大标题，从源头消灭 3 行臃肿翻译；
+  * **重点词汇原子短语截断守卫 (`formatVocabItemsAtomic`)**：
+    * 彻底废弃对重点词汇折行数组的机械字符切片；
+    * 以 `·` 分隔的短语项（Item-level）为最小原子单元进行单行排版：如果下一个短语无法完整容纳，坚决不切开括号，而是以当前完整短语收尾（必要时追加 `· ...`）；
+    * 100% 物理保证呈现在终端上的每一个短语都是合规闭合的 `term (完整释义)`，彻底消灭 `compression (压缩 ...` 式残缺；
+  * **中间状态动态预算等比兜底 (Intermediate Slot Budgeting)**：
+    * 在卡片空间极端紧凑时，将口语与写作单项平滑收紧为最多 2 行（末行带 `...`），确保为重点词汇稳固保留 2 行黄金展示空间，彻底根除重点词汇被挤成碎片的窘境。
+
 ---
 
 ## 🧪 物理执行与验证数据 (Physical Proof)
@@ -103,20 +120,22 @@
 ✔ extension command matrix - registers standardized lingual command suite
 ✔ standalone /lang and language normalization - switches languages and handles pairs & aliases
 ✔ master command dispatcher - routes subcommands in /lingual and /2 smoothly
-✔ parseLlmResponse - parses distilled summary headline for long inputs when present [NEW]
+✔ parseLlmResponse - parses distilled summary headline for long inputs when present
+✔ isDynamicLongInput - dynamically detects intermediate multi-sentence gap and language density [NEW]
 ✔ renderCardLayout - renders tree branch for normal inputs within 9 lines
 ✔ renderCardLayout - guarantees output <= 9 lines on long multi-clause inputs with fallback
 ✔ renderCardLayout - target language integrity: no dangling open parentheses or severed sentences
-✔ renderCardLayout - clamps multi-line source text to max 2 lines with clean visual ellipsis [NEW]
-✔ sanitizePromptForTranslation - folds multi-line bullet lists into concise [items ...] and preserves trailing questions [NEW]
+✔ renderCardLayout - clamps multi-line source text to max 2 lines with clean visual ellipsis
+✔ formatVocabItemsAtomic - preserves atomic term definitions and prevents dangling unclosed parentheses [NEW]
+✔ renderCardLayout - intermediate gap multi-sentence: preserves complete vocab without clipping into 'compression (压缩 ...' [NEW]
 ✔ Bulletproof Tiered Hard Budget Guard - guarantees lines.length <= 8 on extreme long inputs and narrow columns
 ✔ sanitizePromptForTranslation - correctly recognizes declarative English sentences without question keywords
 ...
-ℹ tests 71
+ℹ tests 74
 ℹ suites 0
-ℹ pass 71
+ℹ pass 74
 ℹ fail 0
-ℹ duration_ms 31973.8748
+ℹ duration_ms 31895.3758
 
 🧪 Fleet Physical Pre-Flight: Passed: 1 | Failed: 0
 ```

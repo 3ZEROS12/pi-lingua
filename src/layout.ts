@@ -274,6 +274,47 @@ export function spotlightPhrases(text: string, phrases: string[]): string {
 }
 
 /**
+ * 按原子短语 (Item-level) 格式化重点词汇单行流，绝不把任何词汇项砍成半截或留下未闭合的 "(" (彻底解决 BUG-VOCAB-TRUNCATION)
+ */
+export function formatVocabItemsAtomic(
+  vocab: string,
+  prefix: string,
+  maxCols: number
+): string {
+  if (!vocab || !vocab.trim()) return prefix.trimEnd();
+
+  const items = vocab.split(/\s*(?:·|•)\s*/);
+  const prefixW = getVisualWidth(prefix);
+  const availW = Math.max(20, maxCols - prefixW);
+
+  const keptItems: string[] = [];
+  let curW = 0;
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i].trim();
+    if (!item) continue;
+    const itemW = getVisualWidth(item);
+    const sepW = keptItems.length > 0 ? 3 : 0; // " · "
+
+    if (curW + sepW + itemW <= availW) {
+      keptItems.push(item);
+      curW += sepW + itemW;
+    } else {
+      if (keptItems.length === 0) {
+        return prefix + truncateVisual(item, availW);
+      } else {
+        if (curW + 5 <= availW) {
+          return prefix + keptItems.join(" · ") + " · ...";
+        }
+        return prefix + keptItems.join(" · ");
+      }
+    }
+  }
+
+  return prefix + keptItems.join(" · ");
+}
+
+/**
  * 格式化终端树状全景输出 (formatTerminalAnnotation)
  */
 export function formatTerminalAnnotation(
@@ -537,35 +578,39 @@ export function renderCardLayout(
           lines = [...clampedSourceLines, ...pureSpLines, ...pureWrLines, ...pureVocabLines];
         }
       } else {
-        // 约束 Tier 4: 超窄屏或超长文安全有界分配
-        // 优先收缩重点词汇为 1 行 (以省略号结尾)
+        // 约束 Tier 4: 超长文/中间状态多句安全有界分配
+        // 优先保障四分支齐全，绝不压缩掉重点词汇或砍断词汇项：
+        // 保证口语 (max 2) + 写作 (max 2) + 原文 (max 2) = 6 行，为重点词汇稳固留出 2~3 行充足空间！
+        const remForText = Math.max(4, maxLines - clampedSourceLines.length - Math.min(2, pureVocabLines.length));
+        const spBudget = Math.max(1, Math.min(pureSpLines.length, Math.floor(remForText / 2)));
+        const wrBudget = Math.max(1, Math.min(pureWrLines.length, remForText - spBudget));
+
+        const clampLines = (arr: string[], budget: number): string[] => {
+          if (arr.length <= budget) return arr;
+          const res = arr.slice(0, budget);
+          const last = res.length - 1;
+          res[last] = truncateVisual(res[last] + "...", maxCols);
+          return res;
+        };
+
+        const spSafe = clampLines(pureSpLines, spBudget);
+        const wrSafe = clampLines(pureWrLines, wrBudget);
+
+        // 计算留给重点词汇的剩余可用行数
+        const remForVocab = Math.max(1, maxLines - clampedSourceLines.length - spSafe.length - wrSafe.length);
         let vLines = pureVocabLines;
-        if (vLines.length > 1) {
-          vLines = [truncateVisual(vLines[0] + " · ...", maxCols)];
+        if (vLines.length > remForVocab) {
+          if (remForVocab === 1) {
+            const vPrefix = `  └ [${labels.vocabLabel}] `;
+            vLines = [formatVocabItemsAtomic(card.vocab || "", vPrefix, maxCols)];
+          } else {
+            vLines = vLines.slice(0, remForVocab);
+          }
         }
 
-        if (clampedSourceLines.length + pureSpLines.length + pureWrLines.length + vLines.length <= maxLines) {
-          lines = [...clampedSourceLines, ...pureSpLines, ...pureWrLines, ...vLines];
-        } else {
-          // 对纯目标语按剩余预算均衡分配，末行采用视觉省略号收尾，绝不生硬断句
-          const rem = Math.max(2, maxLines - clampedSourceLines.length - vLines.length);
-          const spBudget = Math.max(1, Math.floor(rem / 2));
-          const wrBudget = Math.max(1, rem - spBudget);
-
-          const clampLines = (arr: string[], budget: number): string[] => {
-            if (arr.length <= budget) return arr;
-            const res = arr.slice(0, budget);
-            const last = res.length - 1;
-            res[last] = truncateVisual(res[last], maxCols);
-            return res;
-          };
-
-          const spSafe = clampLines(pureSpLines, spBudget);
-          const wrSafe = clampLines(pureWrLines, wrBudget);
-          lines = [...clampedSourceLines, ...spSafe, ...wrSafe, ...vLines];
-          if (lines.length > maxLines) {
-            lines = lines.slice(0, maxLines);
-          }
+        lines = [...clampedSourceLines, ...spSafe, ...wrSafe, ...vLines];
+        if (lines.length > maxLines) {
+          lines = lines.slice(0, maxLines);
         }
       }
     }

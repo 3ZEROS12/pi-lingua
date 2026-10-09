@@ -20,6 +20,7 @@ import {
   spotlightPhrases,
   getVisualWidth,
   wrapVisualText,
+  formatVocabItemsAtomic,
 } from "./engine.js";
 import {
   resolveLabelsForLang,
@@ -330,35 +331,39 @@ function renderHudWidget(
           lines = [...clampedSourceLines, ...pureSpLines, ...pureWrLines, ...pureVocabLines];
         }
       } else {
-        // 约束 Tier 4: 超窄屏或超长文安全有界分配
-        // 优先收缩重点词汇为 1 行 (以省略号结尾)
+        // 约束 Tier 4: 超长文/中间状态多句安全有界分配
+        // 优先保障四分支齐全，绝不压缩掉重点词汇或砍断词汇项：
+        // 保证口语 (max 2) + 写作 (max 2) + 原文 (max 2) = 6 行，为重点词汇稳固留出 2~3 行充足空间！
+        const remForText = Math.max(4, HARD_MAX_LINES - clampedSourceLines.length - Math.min(2, pureVocabLines.length));
+        const spBudget = Math.max(1, Math.min(pureSpLines.length, Math.floor(remForText / 2)));
+        const wrBudget = Math.max(1, Math.min(pureWrLines.length, remForText - spBudget));
+
+        const clampLines = (arr: string[], budget: number): string[] => {
+          if (arr.length <= budget) return arr;
+          const res = arr.slice(0, budget);
+          const last = res.length - 1;
+          res[last] = truncateVisual(res[last] + "...", maxCols);
+          return res;
+        };
+
+        const spSafe = clampLines(pureSpLines, spBudget);
+        const wrSafe = clampLines(pureWrLines, wrBudget);
+
+        // 计算留给重点词汇的剩余可用行数
+        const remForVocab = Math.max(1, HARD_MAX_LINES - clampedSourceLines.length - spSafe.length - wrSafe.length);
         let vLines = pureVocabLines;
-        if (vLines.length > 1) {
-          vLines = [truncateVisual(vLines[0] + " · ...", maxCols)];
+        if (vLines.length > remForVocab) {
+          if (remForVocab === 1) {
+            const vPrefix = `  └ [${vocabTag}] `;
+            vLines = [formatVocabItemsAtomic(vocab || "", vPrefix, maxCols)];
+          } else {
+            vLines = vLines.slice(0, remForVocab);
+          }
         }
 
-        if (clampedSourceLines.length + pureSpLines.length + pureWrLines.length + vLines.length <= HARD_MAX_LINES) {
-          lines = [...clampedSourceLines, ...pureSpLines, ...pureWrLines, ...vLines];
-        } else {
-          // 对纯目标语按剩余预算均衡分配，末行采用视觉省略号收尾，绝不生硬断句
-          const rem = Math.max(2, HARD_MAX_LINES - clampedSourceLines.length - vLines.length);
-          const spBudget = Math.max(1, Math.floor(rem / 2));
-          const wrBudget = Math.max(1, rem - spBudget);
-
-          const clampLines = (arr: string[], budget: number): string[] => {
-            if (arr.length <= budget) return arr;
-            const res = arr.slice(0, budget);
-            const last = res.length - 1;
-            res[last] = truncateVisual(res[last], maxCols);
-            return res;
-          };
-
-          const spSafe = clampLines(pureSpLines, spBudget);
-          const wrSafe = clampLines(pureWrLines, wrBudget);
-          lines = [...clampedSourceLines, ...spSafe, ...wrSafe, ...vLines];
-          if (lines.length > HARD_MAX_LINES) {
-            lines = lines.slice(0, HARD_MAX_LINES);
-          }
+        lines = [...clampedSourceLines, ...spSafe, ...wrSafe, ...vLines];
+        if (lines.length > HARD_MAX_LINES) {
+          lines = lines.slice(0, HARD_MAX_LINES);
         }
       }
     }

@@ -7,6 +7,7 @@ import {
   translatePrompt,
   isNonEnglish,
   shouldTriggerTranslation,
+  isDynamicLongInput,
 } from "../src/engine.js";
 
 test("isNonEnglish - correctly identifies natural language scripts and ignores emojis & typography", () => {
@@ -118,6 +119,23 @@ test("parseLlmResponse - parses distilled summary headline for long inputs when 
   assert.ok(res);
   assert.equal(res.summary, "探讨黄仁勋的草莽韧性与EE学业背景是否为成功根本");
   assert.ok(res.spoken.includes("Jensen blends"));
+});
+
+test("isDynamicLongInput - dynamically detects intermediate multi-sentence gap and language density", () => {
+  // 1. Single short clause (pure short input)
+  assert.equal(isDynamicLongInput("今天开会讨论重构方案", "zh"), false);
+  assert.equal(isDynamicLongInput("赞成，开始吧", "zh"), false);
+
+  // 2. Intermediate gap multi-sentence (64 chars, 3 sentences from real user test session)
+  const userStressPrompt = "我现在可能正在做的事情是测试到底什么时候会触发压缩。难道是现在吗？还是说需要到了现在。我再添加一句话呢？不知道现在是否会触发亚索";
+  assert.equal(isDynamicLongInput(userStressPrompt, "zh"), true, "Must trigger condensation for 64-char 3-sentence intermediate prompt");
+
+  // 3. Dense multi-clause sentences
+  assert.equal(isDynamicLongInput("架构重构需要解耦模块。消除事件循环阻塞瓶颈。引入令牌桶限流。", "zh"), true);
+
+  // 4. English short vs long
+  assert.equal(isDynamicLongInput("Please review the PR.", "en"), false);
+  assert.equal(isDynamicLongInput("Architecture refactoring directive: eliminate event loop blocking bottlenecks by decoupling routing pipeline and integrating rate limiters.", "en"), true);
 });
 
 test("formatTerminalAnnotation - formats with source text anchor, native nuance, and Trifecta Left-Rail Tree Branch", () => {

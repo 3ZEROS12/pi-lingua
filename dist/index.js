@@ -1126,6 +1126,34 @@ function spotlightPhrases(text, phrases) {
   }
   return result;
 }
+function formatVocabItemsAtomic(vocab, prefix, maxCols) {
+  if (!vocab || !vocab.trim()) return prefix.trimEnd();
+  const items = vocab.split(/\s*(?:·|•)\s*/);
+  const prefixW = getVisualWidth(prefix);
+  const availW = Math.max(20, maxCols - prefixW);
+  const keptItems = [];
+  let curW = 0;
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i].trim();
+    if (!item) continue;
+    const itemW = getVisualWidth(item);
+    const sepW = keptItems.length > 0 ? 3 : 0;
+    if (curW + sepW + itemW <= availW) {
+      keptItems.push(item);
+      curW += sepW + itemW;
+    } else {
+      if (keptItems.length === 0) {
+        return prefix + truncateVisual(item, availW);
+      } else {
+        if (curW + 5 <= availW) {
+          return prefix + keptItems.join(" \xB7 ") + " \xB7 ...";
+        }
+        return prefix + keptItems.join(" \xB7 ");
+      }
+    }
+  }
+  return prefix + keptItems.join(" \xB7 ");
+}
 function formatTerminalAnnotation(sourceText, spoken, written, vocab, options = {}) {
   const slot1 = options.slot1Label || "Spoken";
   const slot2 = options.slot2Label || "Written";
@@ -1287,29 +1315,31 @@ function renderCardLayout(card, labels, options = {}) {
           lines = [...clampedSourceLines, ...pureSpLines, ...pureWrLines, ...pureVocabLines];
         }
       } else {
+        const remForText = Math.max(4, maxLines - clampedSourceLines.length - Math.min(2, pureVocabLines.length));
+        const spBudget = Math.max(1, Math.min(pureSpLines.length, Math.floor(remForText / 2)));
+        const wrBudget = Math.max(1, Math.min(pureWrLines.length, remForText - spBudget));
+        const clampLines = (arr, budget) => {
+          if (arr.length <= budget) return arr;
+          const res = arr.slice(0, budget);
+          const last = res.length - 1;
+          res[last] = truncateVisual(res[last] + "...", maxCols);
+          return res;
+        };
+        const spSafe = clampLines(pureSpLines, spBudget);
+        const wrSafe = clampLines(pureWrLines, wrBudget);
+        const remForVocab = Math.max(1, maxLines - clampedSourceLines.length - spSafe.length - wrSafe.length);
         let vLines = pureVocabLines;
-        if (vLines.length > 1) {
-          vLines = [truncateVisual(vLines[0] + " \xB7 ...", maxCols)];
-        }
-        if (clampedSourceLines.length + pureSpLines.length + pureWrLines.length + vLines.length <= maxLines) {
-          lines = [...clampedSourceLines, ...pureSpLines, ...pureWrLines, ...vLines];
-        } else {
-          const rem = Math.max(2, maxLines - clampedSourceLines.length - vLines.length);
-          const spBudget = Math.max(1, Math.floor(rem / 2));
-          const wrBudget = Math.max(1, rem - spBudget);
-          const clampLines = (arr, budget) => {
-            if (arr.length <= budget) return arr;
-            const res = arr.slice(0, budget);
-            const last = res.length - 1;
-            res[last] = truncateVisual(res[last], maxCols);
-            return res;
-          };
-          const spSafe = clampLines(pureSpLines, spBudget);
-          const wrSafe = clampLines(pureWrLines, wrBudget);
-          lines = [...clampedSourceLines, ...spSafe, ...wrSafe, ...vLines];
-          if (lines.length > maxLines) {
-            lines = lines.slice(0, maxLines);
+        if (vLines.length > remForVocab) {
+          if (remForVocab === 1) {
+            const vPrefix = `  \u2514 [${labels.vocabLabel}] `;
+            vLines = [formatVocabItemsAtomic(card.vocab || "", vPrefix, maxCols)];
+          } else {
+            vLines = vLines.slice(0, remForVocab);
           }
+        }
+        lines = [...clampedSourceLines, ...spSafe, ...wrSafe, ...vLines];
+        if (lines.length > maxLines) {
+          lines = lines.slice(0, maxLines);
         }
       }
     }
@@ -1518,6 +1548,21 @@ function stripLingualAnnotation(annotatedText) {
     vocab
   };
 }
+function isDynamicLongInput(text, sourceLang = "zh") {
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+  const isCjk = sourceLang === "zh" || sourceLang === "ja" || isNonEnglish(trimmed);
+  if (isCjk) {
+    if (trimmed.length >= 45) return true;
+    const sentenceCount = (trimmed.match(/[。！？；\n]/g) || []).length;
+    if (sentenceCount >= 2 && trimmed.length >= 30) return true;
+  } else {
+    if (trimmed.length >= 85) return true;
+    const sentenceCount = (trimmed.match(/[.!?](\s+|$)|[\n;]/g) || []).length;
+    if (sentenceCount >= 2 && trimmed.length >= 50) return true;
+  }
+  return trimmed.length >= 85;
+}
 async function translatePrompt(text, userConfig = {}) {
   const trimmed = text.trim();
   if (!trimmed) return null;
@@ -1545,7 +1590,7 @@ async function translatePrompt(text, userConfig = {}) {
   }
   try {
     let content = null;
-    const isLongInput = trimmed.length > 90;
+    const isLongInput = isDynamicLongInput(trimmed, cfg.sourceLang);
     const sysPrompt = buildSystemPrompt(cfg.sourceLang, cfg.targetLang, isLongInput);
     if (typeof cfg.complete === "function") {
       content = await cfg.complete(trimmed, sysPrompt, controller.signal);
@@ -1939,11 +1984,13 @@ export {
   formatSubRail,
   formatTerminalAnnotation,
   formatTreeBranch,
+  formatVocabItemsAtomic,
   getEffectiveMaxCols,
   getVisualWidth,
   globalLinguaCache,
   globalLingualCache,
   invalidateUserConfigCache,
+  isDynamicLongInput,
   isNonEnglish,
   loadUserConfig,
   loadUserLingualConfig,

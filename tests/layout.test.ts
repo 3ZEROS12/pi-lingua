@@ -6,6 +6,7 @@ import {
   truncateVisual,
   getVisualWidth,
   wrapVisualText,
+  formatVocabItemsAtomic,
 } from "../src/layout.js";
 import { resolveLabelsForLang } from "../src/presets.js";
 import type { LingualResult } from "../src/types.js";
@@ -137,4 +138,61 @@ test("renderCardLayout - clamps multi-line source text to max 2 lines with clean
   const sourceLines = lines.filter(l => l.includes("· [原文]") || l.startsWith("          "));
   assert.ok(sourceLines.length <= 2, "Source text must be bounded to max 2 lines");
   assert.ok(sourceLines[sourceLines.length - 1].endsWith("..."), "The final source line must end with clean visual ellipsis '...'");
+});
+
+test("formatVocabItemsAtomic - preserves atomic term definitions and prevents dangling unclosed parentheses", () => {
+  const vocab = "trigger (触发) · compression (压缩) · threshold (临界值)";
+
+  // 1. Full width: all 3 items complete
+  const line80 = formatVocabItemsAtomic(vocab, "  └ [重点] ", 80);
+  assert.ok(line80.includes("trigger (触发)"));
+  assert.ok(line80.includes("compression (压缩)"));
+  assert.ok(line80.includes("threshold (临界值)"));
+
+  // 2. Narrow width (50 cols): cleanly drops 3rd item without amputating parenthesis
+  const line50 = formatVocabItemsAtomic(vocab, "  └ [重点] ", 50);
+  assert.ok(line50.includes("trigger (触发)"));
+  assert.ok(line50.includes("compression (压缩)"));
+  assert.equal(line50.includes("threshold"), false);
+  const openCount = (line50.match(/\(/g) || []).length;
+  const closeCount = (line50.match(/\)/g) || []).length;
+  assert.equal(openCount, closeCount, "All opened parentheses must be closed");
+
+  // 3. Very narrow width (35 cols): retains 1 complete item, appends ' · ...', no unclosed parenthesis
+  const line35 = formatVocabItemsAtomic(vocab, "  └ [重点] ", 35);
+  assert.ok(line35.includes("trigger (触发)"));
+  const open35 = (line35.match(/\(/g) || []).length;
+  const close35 = (line35.match(/\)/g) || []).length;
+  assert.equal(open35, close35, "All opened parentheses must be closed in narrow width");
+});
+
+test("renderCardLayout - intermediate gap multi-sentence: preserves complete vocab without clipping into 'compression (压缩 ...'", () => {
+  const labels = resolveLabelsForLang("zh");
+  // Exact user stress-test case from session 01a12087-bb1a-7429-867e-6056ad32fa7f
+  const card: LingualResult = {
+    sourceText: "我现在可能正在做的事情是测试到底什么时候会触发压缩。难道是现在吗？还是说需要到了现在。我再添加一句话呢？不知道现在是否会触发亚索",
+    spoken: "I guess what I'm doing right now is testing what actually triggers the compression. Is it right now? Or does it take until now? What if I add one more sentence? Still not sure if this will trigger the compression.",
+    written: "Current testing aims to determine the exact threshold that triggers compression. It remains unclear whether it activates at this point or requires further input; adding another sentence to verify if compression is initiated.",
+    vocab: "trigger (触发) · compression (压缩)",
+    annotated: "",
+  };
+
+  const lines = renderCardLayout(card, labels, { maxCols: 85, maxLines: 9 });
+  assert.ok(lines.length <= 9, `Lines must be <= 9 (got ${lines.length})`);
+
+  // All 4 branches must exist
+  assert.ok(lines.some(l => l.includes("· [原文]")), "Must retain · [原文]");
+  assert.ok(lines.some(l => l.includes("┌ [口语]")), "Must retain ┌ [口语]");
+  assert.ok(lines.some(l => l.includes("├ [写作]")), "Must retain ├ [写作]");
+  assert.ok(lines.some(l => l.includes("└ [重点]")), "Must retain └ [重点]");
+
+  // Vocab line MUST NOT end with broken 'compression (压缩 ...'
+  const vocabLine = lines.find(l => l.includes("└ [重点]")) || "";
+  assert.ok(vocabLine.includes("trigger (触发)"), "Must include complete trigger");
+  assert.ok(!vocabLine.includes("compression (压缩 ..."), "Must NOT cut off into dangling unclosed 'compression (压缩 ...'");
+
+  const fullText = lines.join("\n");
+  const openCount = (fullText.match(/\(/g) || []).length;
+  const closeCount = (fullText.match(/\)/g) || []).length;
+  assert.equal(openCount, closeCount, "All opened parentheses must be closed in the card");
 });

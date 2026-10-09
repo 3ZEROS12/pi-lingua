@@ -9,6 +9,7 @@ import {
   formatTerminalAnnotation,
   formatCapsuleLine,
   renderCardLayout,
+  formatVocabItemsAtomic,
   CANNOT_START_LINE_CHARS,
   getEffectiveMaxCols,
 } from "./layout.js";
@@ -24,6 +25,7 @@ export {
   formatTerminalAnnotation,
   formatCapsuleLine,
   renderCardLayout,
+  formatVocabItemsAtomic,
   CANNOT_START_LINE_CHARS,
   getEffectiveMaxCols,
 };
@@ -333,6 +335,30 @@ export function stripLingualAnnotation(annotatedText: string): {
 }
 
 /**
+ * 动态判定是否需要触发长输入凝练与意图大标题总结 (彻底解决 45~90 字符/多句"中间状态"截断隐患)
+ * 核心物理事实：CJK (中日韩) 为高密度表意文字，信息密度为西文 2.5 倍。
+ * 45 汉字通常包含 2~3 个分句，直译为英文达 180~220 字符 (3 行 Spoken + 3 行 Written)，
+ * 必然冲垮 9 行卡片盒模型预算并挤爆重点词汇。
+ */
+export function isDynamicLongInput(text: string, sourceLang = "zh"): boolean {
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+
+  const isCjk = sourceLang === "zh" || sourceLang === "ja" || isNonEnglish(trimmed);
+  if (isCjk) {
+    if (trimmed.length >= 45) return true;
+    const sentenceCount = (trimmed.match(/[。！？；\n]/g) || []).length;
+    if (sentenceCount >= 2 && trimmed.length >= 30) return true;
+  } else {
+    if (trimmed.length >= 85) return true;
+    const sentenceCount = (trimmed.match(/[.!?](\s+|$)|[\n;]/g) || []).length;
+    if (sentenceCount >= 2 && trimmed.length >= 50) return true;
+  }
+
+  return trimmed.length >= 85;
+}
+
+/**
  * Translate a user prompt into idiomatic English with dual registers, native nuance, and vocabulary highlights
  */
 export async function translatePrompt(
@@ -375,7 +401,7 @@ export async function translatePrompt(
 
   try {
     let content: string | null = null;
-    const isLongInput = trimmed.length > 90;
+    const isLongInput = isDynamicLongInput(trimmed, cfg.sourceLang);
     const sysPrompt = buildSystemPrompt(cfg.sourceLang, cfg.targetLang, isLongInput);
 
     // 1. If custom complete callback is provided (e.g. Pi native ModelRegistry / ctx.model):
