@@ -26,19 +26,19 @@ var LANGUAGE_PRESETS = {
     notifyPaging: "[zh \u21C4 en] \u957F\u53E5\u5DF2\u5207\u5206\u591A\u6BB5\uFF0C\u6309 Alt+. \u6216 Alt+, \u7FFB\u9875\u6D4F\u89C8",
     notifyNoHistory: "[zh \u21C4 en] \u6682\u65E0\u4E0A\u4E00\u6761\u4F34\u5B66\u8BB0\u5F55",
     notifyHistoryRestored: "[zh \u21C4 en] \u5DF2\u91CD\u65B0\u663E\u793A\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247",
-    notifyAgentHelp: "\u{1F4A1} \u5207\u6362\u6BCD\u8BED\uFF1F\u76F4\u63A5\u8FD0\u884C /lingua-lang <zh|ja|en|es|fr|de> \u5373\u53EF\u5B9E\u65F6\u5207\u6362\u5E76\u6301\u4E45\u5316\uFF1B\u82E5\u9700\u5B9A\u5236\u7279\u6B8A\u98CE\u683C\uFF0C\u53EF\u76F4\u63A5\u5411 Agent \u63CF\u8FF0\u4F60\u7684\u5B9A\u5236\u504F\u597D\u3002",
+    notifyAgentHelp: "\u{1F4A1} \u5207\u6362\u6BCD\u8BED\uFF1F\u76F4\u63A5\u8FD0\u884C /lingual-lang <zh|ja|en|es|fr|de> \u5373\u53EF\u5B9E\u65F6\u5207\u6362\u5E76\u6301\u4E45\u5316\uFF1B\u82E5\u9700\u5B9A\u5236\u7279\u6B8A\u98CE\u683C\uFF0C\u53EF\u76F4\u63A5\u5411 Agent \u63CF\u8FF0\u4F60\u7684\u5B9A\u5236\u504F\u597D\u3002",
     notifyModelSwitched: "\u4F34\u5B66\u6A21\u578B\u5DF2\u5207\u6362\u4E3A: {model}",
     notifyLangSwitched: "\u4F34\u5B66\u6BCD\u8BED\u5DF2\u5207\u6362\u4E3A: {lang}",
     notifyLangInvalid: "\u65E0\u6548\u7684\u8BED\u8A00\u4EE3\u7801\u3002\u652F\u6301\u7684\u8BED\u8A00\u4EE3\u7801: zh, ja, en, es, fr, de",
     notifyCompactOn: "[zh \u21C4 en] \u5DF2\u5F00\u542F\u5355\u884C\u80F6\u56CA\u6A21\u5F0F\uFF1A\u6781\u7B80\u5360\u4F4D\uFF0C\u4FDD\u62A4\u5206\u5C4F\u89C6\u91CE",
     notifyCompactOff: "[zh \u21C4 en] \u5DF2\u5207\u6362\u4E3A\u5DE6\u5BFC\u8F68\u6811\u72B6\u67B6\u6784\uFF1A\u5C55\u793A\u5B8C\u6574\u53CC\u6A21\u4E0E\u8BED\u611F",
     cmdDescMode: "\u5207\u6362\u4F34\u5B66\u6A21\u5F0F [zh \u21C4 en]: [\u539F\u6587] \u2794 [\u82F1\u6587] \u2794 [\u5173]",
-    cmdDescStatus: "\u67E5\u770B\u4F34\u5B66\u63D2\u4EF6\u5F53\u524D\u72B6\u6001\u62A5\u544A\u4E0E\u6A21\u578B\u8BCA\u65AD: /lingua-status",
-    cmdDescModel: "\u67E5\u770B\u6216\u5207\u6362\u4F34\u5B66\u6A21\u578B [zh \u21C4 en]: /lingua-model [model-id|auto]",
-    cmdDescLang: "\u67E5\u770B\u6216\u5207\u6362\u4F34\u5B66\u6BCD\u8BED [zh \u21C4 en]: /lingua-lang [zh|ja|en|es|fr|de]",
-    cmdDescCompact: "\u5207\u6362\u5355\u884C\u80F6\u56CA\u6A21\u5F0F\u4E0E\u5B8C\u6574\u6811\u72B6\u56FE: /lingua-compact",
-    cmdDescLast: "\u91CD\u65B0\u56DE\u770B\u6216\u91CD\u73B0\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247: /lingua-last",
-    cmdDescAgent: "\u67E5\u770B\u4F34\u5B66\u5B9A\u5236\u4E0E\u6BCD\u8BED\u5207\u6362\u6307\u5357: /lingua-agent",
+    cmdDescStatus: "\u67E5\u770B\u4F34\u5B66\u63D2\u4EF6\u5F53\u524D\u72B6\u6001\u62A5\u544A\u4E0E\u6A21\u578B\u8BCA\u65AD: /lingual-status",
+    cmdDescModel: "\u67E5\u770B\u6216\u5207\u6362\u4F34\u5B66\u6A21\u578B [zh \u21C4 en]: /lingual-model [model-id|auto]",
+    cmdDescLang: "\u67E5\u770B\u6216\u5207\u6362\u4F34\u5B66\u6BCD\u8BED [zh \u21C4 en]: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "\u5207\u6362\u5355\u884C\u80F6\u56CA\u6A21\u5F0F\u4E0E\u5B8C\u6574\u6811\u72B6\u56FE: /lingual-compact",
+    cmdDescLast: "\u91CD\u65B0\u56DE\u770B\u6216\u91CD\u73B0\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247: /lingual-last",
+    cmdDescAgent: "\u67E5\u770B\u4F34\u5B66\u5B9A\u5236\u4E0E\u6BCD\u8BED\u5207\u6362\u6307\u5357: /lingual-agent",
     shortcutNextPage: "\u5207\u6362\u81F3\u4E0B\u4E00\u6BB5\u4F34\u5B66\u5207\u7247",
     shortcutPrevPage: "\u5207\u6362\u81F3\u4E0A\u4E00\u6BB5\u4F34\u5B66\u5207\u7247",
     capsuleSlot1Prefix: "\u53E3",
@@ -52,15 +52,15 @@ var LANGUAGE_PRESETS = {
     statusReportCache: "\u4F1A\u8BDD\u7F13\u5B58",
     statusReportLayout: "HUD\u5E03\u5C40: Trifecta \u5F00\u653E\u5F0F\u5DE6\u5BFC\u8F68\u6811\u72B6\u67B6\u6784 (\xB7 \u250C \u251C \u2514)",
     statusReportAuth: "\u51ED\u636E\u6A21\u5F0F: Pi \u539F\u751F\u8FDB\u7A0B\u5185\u8BA4\u8BC1 (Zero Config \xB7 \u96F6Token\u6CC4\u9732)",
-    statusReportShortcuts: "\u5FEB\u6377\u64CD\u4F5C: /2 (\u5207\u6362\u6A21\u5F0F) \xB7 /lingua-lang (\u5207\u6BCD\u8BED) \xB7 /lingua-model (\u5207\u6A21\u578B) \xB7 /lingua-agent (\u5B9A\u5236\u8BED\u8A00)",
+    statusReportShortcuts: "\u5FEB\u6377\u64CD\u4F5C: /2 (\u5207\u6362\u6A21\u5F0F) \xB7 /lingual-lang (\u5207\u6BCD\u8BED) \xB7 /lingual-model (\u5207\u6A21\u578B) \xB7 /lingual-agent (\u5B9A\u5236\u8BED\u8A00)",
     modeDescOriginal: "\u539F\u6587\u76F4\u901A \xB7 0ms\u975E\u963B\u585E",
     modeDescEnglish: "\u82F1\u6587\u6A21\u5F0F \xB7 \u6DF1\u5EA6\u4EE3\u7801\u63A8\u7406",
     modeDescOff: "\u5DF2\u5173\u95ED",
     modelCurrentLabel: "\u5F53\u524D\u4F34\u5B66\u6A21\u578B",
     modelFollowSession: "\u8DDF\u968F\u4F1A\u8BDD",
-    modelAvailableListHeader: "\u53EF\u7528\u6A21\u578B (\u8F93\u5165 /lingua-model <id> \u5207\u6362):",
+    modelAvailableListHeader: "\u53EF\u7528\u6A21\u578B (\u8F93\u5165 /lingual-model <id> \u5207\u6362):",
     modelAutoFollowDesc: "auto (\u81EA\u52A8\u8DDF\u968F\u5F53\u524D\u4F1A\u8BDD\u4E3B\u6A21\u578B)",
-    modelSelectHint: "\u53EF\u8F93\u5165 /lingua-model <model-id> \u6216 auto \u6307\u5B9A\u4F34\u5B66\u6A21\u578B\u3002"
+    modelSelectHint: "\u53EF\u8F93\u5165 /lingual-model <model-id> \u6216 auto \u6307\u5B9A\u4F34\u5B66\u6A21\u578B\u3002"
   },
   ja: {
     slot1Label: "\u53E3\u8A9E",
@@ -78,19 +78,19 @@ var LANGUAGE_PRESETS = {
     notifyPaging: "[ja \u21C4 en] \u9577\u6587\u3092\u5206\u5272\u3057\u307E\u3057\u305F\u3002Alt+. \u307E\u305F\u306F Alt+, \u3067\u30DA\u30FC\u30B8\u9001\u308A",
     notifyNoHistory: "[ja \u21C4 en] \u524D\u56DE\u306E\u8A18\u9332\u306F\u3042\u308A\u307E\u305B\u3093",
     notifyHistoryRestored: "[ja \u21C4 en] \u524D\u56DE\u306E\u30AB\u30FC\u30C9\u3092\u5FA9\u5143\u3057\u307E\u3057\u305F",
-    notifyAgentHelp: "\u{1F4A1} \u6BCD\u8A9E\u306E\u5909\u66F4\u306F /lingua-lang <zh|ja|en|es|fr|de> \u3067\u5373\u6642\u5207\u308A\u66FF\u3048\u30FB\u4FDD\u5B58\u3067\u304D\u307E\u3059\u3002\u7279\u5225\u306A\u6587\u4F53\u3084\u8A9E\u57DF\u306E\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA\u304C\u5FC5\u8981\u306A\u5834\u5408\u306F\u3001Agent \u306B\u76F4\u63A5\u3054\u8981\u671B\u3092\u304A\u4F1D\u3048\u304F\u3060\u3055\u3044\u3002",
+    notifyAgentHelp: "\u{1F4A1} \u6BCD\u8A9E\u306E\u5909\u66F4\u306F /lingual-lang <zh|ja|en|es|fr|de> \u3067\u5373\u6642\u5207\u308A\u66FF\u3048\u30FB\u4FDD\u5B58\u3067\u304D\u307E\u3059\u3002\u7279\u5225\u306A\u6587\u4F53\u3084\u8A9E\u57DF\u306E\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA\u304C\u5FC5\u8981\u306A\u5834\u5408\u306F\u3001Agent \u306B\u76F4\u63A5\u3054\u8981\u671B\u3092\u304A\u4F1D\u3048\u304F\u3060\u3055\u3044\u3002",
     notifyModelSwitched: "\u30E2\u30C7\u30EB\u3092\u5207\u308A\u66FF\u3048\u307E\u3057\u305F: {model}",
     notifyLangSwitched: "\u6BCD\u8A9E\u3092\u5207\u308A\u66FF\u3048\u307E\u3057\u305F: {lang}",
     notifyLangInvalid: "\u7121\u52B9\u306A\u8A00\u8A9E\u30B3\u30FC\u30C9\u3067\u3059\u3002\u5BFE\u5FDC\u8A00\u8A9E: zh, ja, en, es, fr, de",
     notifyCompactOn: "[ja \u21C4 en] 1\u884C\u30AB\u30D7\u30BB\u30EB\u30E2\u30FC\u30C9\u3092\u6709\u52B9\u306B\u3057\u307E\u3057\u305F\uFF1A\u753B\u9762\u9818\u57DF\u3092\u6700\u5927\u9650\u78BA\u4FDD",
     notifyCompactOff: "[ja \u21C4 en] \u30D5\u30EB\u30C4\u30EA\u30FC\u8868\u793A\u306B\u5207\u308A\u66FF\u3048\u307E\u3057\u305F\uFF1A\u8A73\u7D30\u306A\u30CB\u30E5\u30A2\u30F3\u30B9\u3092\u8868\u793A",
     cmdDescMode: "\u30E2\u30FC\u30C9\u5207\u66FF [ja \u21C4 en]: [\u539F\u6587] \u2794 [\u82F1\u8A9E] \u2794 [\u30AA\u30D5]",
-    cmdDescStatus: "\u72B6\u614B\u30EC\u30DD\u30FC\u30C8\u3068\u30E2\u30C7\u30EB\u8A3A\u65AD\u3092\u8868\u793A: /lingua-status",
-    cmdDescModel: "\u5B66\u7FD2\u30E2\u30C7\u30EB\u306E\u78BA\u8A8D\u30FB\u5207\u66FF: /lingua-model [model-id|auto]",
-    cmdDescLang: "\u4F34\u8D70\u306E\u6BCD\u8A9E\u3092\u78BA\u8A8D\u30FB\u5909\u66F4: /lingua-lang [zh|ja|en|es|fr|de]",
-    cmdDescCompact: "1\u884C\u30AB\u30D7\u30BB\u30EB\u8868\u793A\u3068\u30D5\u30EB\u30C4\u30EA\u30FC\u306E\u5207\u66FF: /lingua-compact",
-    cmdDescLast: "\u524D\u56DE\u306E\u4F34\u8D70\u30AB\u30FC\u30C9\u3092\u518D\u8868\u793A: /lingua-last",
-    cmdDescAgent: "\u4F34\u8D70\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA\u3068\u6BCD\u8A9E\u5909\u66F4\u306E\u6848\u5185\u3092\u8868\u793A: /lingua-agent",
+    cmdDescStatus: "\u72B6\u614B\u30EC\u30DD\u30FC\u30C8\u3068\u30E2\u30C7\u30EB\u8A3A\u65AD\u3092\u8868\u793A: /lingual-status",
+    cmdDescModel: "\u5B66\u7FD2\u30E2\u30C7\u30EB\u306E\u78BA\u8A8D\u30FB\u5207\u66FF: /lingual-model [model-id|auto]",
+    cmdDescLang: "\u4F34\u8D70\u306E\u6BCD\u8A9E\u3092\u78BA\u8A8D\u30FB\u5909\u66F4: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "1\u884C\u30AB\u30D7\u30BB\u30EB\u8868\u793A\u3068\u30D5\u30EB\u30C4\u30EA\u30FC\u306E\u5207\u66FF: /lingual-compact",
+    cmdDescLast: "\u524D\u56DE\u306E\u4F34\u8D70\u30AB\u30FC\u30C9\u3092\u518D\u8868\u793A: /lingual-last",
+    cmdDescAgent: "\u4F34\u8D70\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA\u3068\u6BCD\u8A9E\u5909\u66F4\u306E\u6848\u5185\u3092\u8868\u793A: /lingual-agent",
     shortcutNextPage: "\u6B21\u306E\u30BB\u30B0\u30E1\u30F3\u30C8\u306B\u5207\u308A\u66FF\u3048",
     shortcutPrevPage: "\u524D\u306E\u30BB\u30B0\u30E1\u30F3\u30C8\u306B\u5207\u308A\u66FF\u3048",
     capsuleSlot1Prefix: "\u53E3",
@@ -104,15 +104,15 @@ var LANGUAGE_PRESETS = {
     statusReportCache: "\u30BB\u30C3\u30B7\u30E7\u30F3\u30AD\u30E3\u30C3\u30B7\u30E5",
     statusReportLayout: "HUD\u30EC\u30A4\u30A2\u30A6\u30C8: Trifecta \u30AA\u30FC\u30D7\u30F3\u5DE6\u30EC\u30FC\u30EB\u30C4\u30EA\u30FC\u69CB\u9020 (\xB7 \u250C \u251C \u2514)",
     statusReportAuth: "\u8A8D\u8A3C\u65B9\u5F0F: Pi \u30CD\u30A4\u30C6\u30A3\u30D6\u30A4\u30F3\u30D7\u30ED\u30BB\u30B9\u8A8D\u8A3C (\u30BC\u30ED\u8A2D\u5B9A\u30FBToken\u5B89\u5168)",
-    statusReportShortcuts: "\u30AF\u30A4\u30C3\u30AF\u64CD\u4F5C: /2 (\u30E2\u30FC\u30C9\u5207\u66FF) \xB7 /lingua-lang (\u6BCD\u8A9E\u5207\u66FF) \xB7 /lingua-model (\u30E2\u30C7\u30EB\u5207\u66FF) \xB7 /lingua-agent (\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA)",
+    statusReportShortcuts: "\u30AF\u30A4\u30C3\u30AF\u64CD\u4F5C: /2 (\u30E2\u30FC\u30C9\u5207\u66FF) \xB7 /lingual-lang (\u6BCD\u8A9E\u5207\u66FF) \xB7 /lingual-model (\u30E2\u30C7\u30EB\u5207\u66FF) \xB7 /lingual-agent (\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA)",
     modeDescOriginal: "\u539F\u6587\u30D1\u30B9\u30B9\u30EB\u30FC \xB7 0ms\u975E\u540C\u671F",
     modeDescEnglish: "\u82F1\u8A9E\u30E2\u30FC\u30C9 \xB7 \u9AD8\u5EA6\u30B3\u30FC\u30C9\u63A8\u8AD6",
     modeDescOff: "\u30AA\u30D5",
     modelCurrentLabel: "\u73FE\u5728\u306E\u5B66\u7FD2\u30E2\u30C7\u30EB",
     modelFollowSession: "\u30BB\u30C3\u30B7\u30E7\u30F3\u9023\u52D5",
-    modelAvailableListHeader: "\u5229\u7528\u53EF\u80FD\u306A\u30E2\u30C7\u30EB (/lingua-model <id> \u3067\u5207\u66FF):",
+    modelAvailableListHeader: "\u5229\u7528\u53EF\u80FD\u306A\u30E2\u30C7\u30EB (/lingual-model <id> \u3067\u5207\u66FF):",
     modelAutoFollowDesc: "auto (\u30BB\u30C3\u30B7\u30E7\u30F3\u306E\u4E3B\u30E2\u30C7\u30EB\u306B\u81EA\u52D5\u8FFD\u5F93)",
-    modelSelectHint: "/lingua-model <model-id> \u307E\u305F\u306F auto \u3092\u5165\u529B\u3057\u3066\u30E2\u30C7\u30EB\u3092\u6307\u5B9A\u3067\u304D\u307E\u3059\u3002"
+    modelSelectHint: "/lingual-model <model-id> \u307E\u305F\u306F auto \u3092\u5165\u529B\u3057\u3066\u30E2\u30C7\u30EB\u3092\u6307\u5B9A\u3067\u304D\u307E\u3059\u3002"
   },
   en: {
     slot1Label: "Spoken",
@@ -130,19 +130,19 @@ var LANGUAGE_PRESETS = {
     notifyPaging: "[en \u21C4 ja] Long prompt segmented. Press Alt+. or Alt+, to navigate pages",
     notifyNoHistory: "[en \u21C4 ja] No previous companion card recorded",
     notifyHistoryRestored: "[en \u21C4 ja] Restored previous companion card",
-    notifyAgentHelp: "\u{1F4A1} Switch native language with /lingua-lang <zh|ja|en|es|fr|de> anytime; for advanced prompt or style customization, simply describe your preferences to your Agent.",
+    notifyAgentHelp: "\u{1F4A1} Switch native language with /lingual-lang <zh|ja|en|es|fr|de> anytime; for advanced prompt or style customization, simply describe your preferences to your Agent.",
     notifyModelSwitched: "Companion model switched to: {model}",
     notifyLangSwitched: "Native language switched to: {lang}",
     notifyLangInvalid: "Invalid language code. Supported: zh, ja, en, es, fr, de",
     notifyCompactOn: "[en \u21C4 ja] Single-line capsule mode enabled for compact split panes",
     notifyCompactOff: "[en \u21C4 ja] Full tree layout restored",
     cmdDescMode: "Cycle companion mode [en \u21C4 ja]: [Original] \u2794 [English] \u2794 [Off]",
-    cmdDescStatus: "Display companion status report and model diagnosis: /lingua-status",
-    cmdDescModel: "Inspect or switch companion model: /lingua-model [model-id|auto]",
-    cmdDescLang: "View or switch companion native language: /lingua-lang [zh|ja|en|es|fr|de]",
-    cmdDescCompact: "Toggle single-line capsule mode: /lingua-compact",
-    cmdDescLast: "Replay previous companion card: /lingua-last",
-    cmdDescAgent: "Display companion customization & language guide: /lingua-agent",
+    cmdDescStatus: "Display companion status report and model diagnosis: /lingual-status",
+    cmdDescModel: "Inspect or switch companion model: /lingual-model [model-id|auto]",
+    cmdDescLang: "View or switch companion native language: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "Toggle single-line capsule mode: /lingual-compact",
+    cmdDescLast: "Replay previous companion card: /lingual-last",
+    cmdDescAgent: "Display companion customization & language guide: /lingual-agent",
     shortcutNextPage: "Switch to next companion segment",
     shortcutPrevPage: "Switch to previous companion segment",
     capsuleSlot1Prefix: "Spk",
@@ -156,15 +156,15 @@ var LANGUAGE_PRESETS = {
     statusReportCache: "Session Cache",
     statusReportLayout: "HUD Layout: Trifecta Minimalist Left-Rail Tree (\xB7 \u250C \u251C \u2514)",
     statusReportAuth: "Auth: Pi Native In-Process Auth (Zero Config \xB7 Secure)",
-    statusReportShortcuts: "Shortcuts: /2 (mode) \xB7 /lingua-lang (lang) \xB7 /lingua-model (model) \xB7 /lingua-agent (customize)",
+    statusReportShortcuts: "Shortcuts: /2 (mode) \xB7 /lingual-lang (lang) \xB7 /lingual-model (model) \xB7 /lingual-agent (customize)",
     modeDescOriginal: "Pass-through \xB7 0ms non-blocking",
     modeDescEnglish: "English mode \xB7 Deep reasoning",
     modeDescOff: "Disabled",
     modelCurrentLabel: "Current companion model",
     modelFollowSession: "Follow session",
-    modelAvailableListHeader: "Available models (run /lingua-model <id> to switch):",
+    modelAvailableListHeader: "Available models (run /lingual-model <id> to switch):",
     modelAutoFollowDesc: "auto (Automatically follows active session model)",
-    modelSelectHint: "Run /lingua-model <model-id> or auto to designate a model."
+    modelSelectHint: "Run /lingual-model <model-id> or auto to designate a model."
   },
   es: {
     slot1Label: "Coloquial",
@@ -182,19 +182,19 @@ var LANGUAGE_PRESETS = {
     notifyPaging: "[es \u21C4 en] Texto largo segmentado. Presione Alt+. o Alt+, para navegar",
     notifyNoHistory: "[es \u21C4 en] No hay registros anteriores",
     notifyHistoryRestored: "[es \u21C4 en] Tarjeta anterior restaurada",
-    notifyAgentHelp: "\u{1F4A1} Cambie su idioma nativo con /lingua-lang <zh|ja|en|es|fr|de> al instante; para estilos personalizados, simplemente ind\xEDquele sus preferencias a su Agente.",
+    notifyAgentHelp: "\u{1F4A1} Cambie su idioma nativo con /lingual-lang <zh|ja|en|es|fr|de> al instante; para estilos personalizados, simplemente ind\xEDquele sus preferencias a su Agente.",
     notifyModelSwitched: "Modelo cambiado a: {model}",
     notifyLangSwitched: "Idioma nativo cambiado a: {lang}",
     notifyLangInvalid: "C\xF3digo de idioma no v\xE1lido. Admitidos: zh, ja, en, es, fr, de",
     notifyCompactOn: "[es \u21C4 en] Modo c\xE1psula de una l\xEDnea activado",
     notifyCompactOff: "[es \u21C4 en] Modo \xE1rbol completo restaurado",
     cmdDescMode: "Cambiar modo [es \u21C4 en]: [Original] \u2794 [Ingl\xE9s] \u2794 [Apagado]",
-    cmdDescStatus: "Mostrar diagn\xF3stico y estado del modelo: /lingua-status",
-    cmdDescModel: "Consultar o cambiar modelo: /lingua-model [model-id|auto]",
-    cmdDescLang: "Ver o cambiar idioma nativo: /lingua-lang [zh|ja|en|es|fr|de]",
-    cmdDescCompact: "Alternar modo c\xE1psula de una l\xEDnea: /lingua-compact",
-    cmdDescLast: "Reaparecer tarjeta anterior: /lingua-last",
-    cmdDescAgent: "Ver gu\xEDa de personalizaci\xF3n y cambio de idioma: /lingua-agent",
+    cmdDescStatus: "Mostrar diagn\xF3stico y estado del modelo: /lingual-status",
+    cmdDescModel: "Consultar o cambiar modelo: /lingual-model [model-id|auto]",
+    cmdDescLang: "Ver o cambiar idioma nativo: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "Alternar modo c\xE1psula de una l\xEDnea: /lingual-compact",
+    cmdDescLast: "Reaparecer tarjeta anterior: /lingual-last",
+    cmdDescAgent: "Ver gu\xEDa de personalizaci\xF3n y cambio de idioma: /lingual-agent",
     shortcutNextPage: "Cambiar al siguiente segmento",
     shortcutPrevPage: "Cambiar al segmento anterior",
     capsuleSlot1Prefix: "Col",
@@ -208,15 +208,15 @@ var LANGUAGE_PRESETS = {
     statusReportCache: "Cach\xE9 de sesi\xF3n",
     statusReportLayout: "Dise\xF1o HUD: Trifecta \xE1rbol de gu\xEDa izquierda (\xB7 \u250C \u251C \u2514)",
     statusReportAuth: "Autenticaci\xF3n: Proceso nativo de Pi (Sin config \xB7 Seguro)",
-    statusReportShortcuts: "Accesos directos: /2 (modo) \xB7 /lingua-lang (idioma) \xB7 /lingua-model (modelo) \xB7 /lingua-agent (personalizar)",
+    statusReportShortcuts: "Accesos directos: /2 (modo) \xB7 /lingual-lang (idioma) \xB7 /lingual-model (modelo) \xB7 /lingual-agent (personalizar)",
     modeDescOriginal: "Directo \xB7 0ms no bloqueante",
     modeDescEnglish: "Modo ingl\xE9s \xB7 Razonamiento profundo",
     modeDescOff: "Apagado",
     modelCurrentLabel: "Modelo actual",
     modelFollowSession: "Siguiendo sesi\xF3n",
-    modelAvailableListHeader: "Modelos disponibles (ejecute /lingua-model <id>):",
+    modelAvailableListHeader: "Modelos disponibles (ejecute /lingual-model <id>):",
     modelAutoFollowDesc: "auto (Sigue autom\xE1ticamente el modelo de la sesi\xF3n)",
-    modelSelectHint: "Use /lingua-model <id> o auto para asignar un modelo."
+    modelSelectHint: "Use /lingual-model <id> o auto para asignar un modelo."
   },
   fr: {
     slot1Label: "Oral",
@@ -234,19 +234,19 @@ var LANGUAGE_PRESETS = {
     notifyPaging: "[fr \u21C4 en] Long texte segment\xE9. Appuyez sur Alt+. ou Alt+, pour parcourir",
     notifyNoHistory: "[fr \u21C4 en] Aucun historique pr\xE9c\xE9dent",
     notifyHistoryRestored: "[fr \u21C4 en] Carte pr\xE9c\xE9dente restaur\xE9e",
-    notifyAgentHelp: "\u{1F4A1} Changez de langue avec /lingua-lang <zh|ja|en|es|fr|de> \xE0 tout moment ; pour personnaliser le style ou le ton, d\xE9crivez simplement vos pr\xE9f\xE9rences \xE0 votre Agent.",
+    notifyAgentHelp: "\u{1F4A1} Changez de langue avec /lingual-lang <zh|ja|en|es|fr|de> \xE0 tout moment ; pour personnaliser le style ou le ton, d\xE9crivez simplement vos pr\xE9f\xE9rences \xE0 votre Agent.",
     notifyModelSwitched: "Mod\xE8le chang\xE9 pour : {model}",
     notifyLangSwitched: "Langue maternelle chang\xE9e en : {lang}",
     notifyLangInvalid: "Code de langue invalide. Pris en charge : zh, ja, en, es, fr, de",
     notifyCompactOn: "[fr \u21C4 en] Mode capsule sur une seule ligne activ\xE9",
     notifyCompactOff: "[fr \u21C4 en] Mode arborescence compl\xE8te restaur\xE9",
     cmdDescMode: "Changer de mode [fr \u21C4 en]: [Original] \u2794 [Anglais] \u2794 [D\xE9sactiv\xE9]",
-    cmdDescStatus: "Afficher le rapport d'\xE9tat et le diagnostic: /lingua-status",
-    cmdDescModel: "Consulter ou changer de mod\xE8le: /lingua-model [model-id|auto]",
-    cmdDescLang: "Afficher ou changer la langue maternelle: /lingua-lang [zh|ja|en|es|fr|de]",
-    cmdDescCompact: "Basculer le mode capsule sur une ligne: /lingua-compact",
-    cmdDescLast: "R\xE9afficher la carte pr\xE9c\xE9dente: /lingua-last",
-    cmdDescAgent: "Afficher le guide de personnalisation et de changement de langue : /lingua-agent",
+    cmdDescStatus: "Afficher le rapport d'\xE9tat et le diagnostic: /lingual-status",
+    cmdDescModel: "Consulter ou changer de mod\xE8le: /lingual-model [model-id|auto]",
+    cmdDescLang: "Afficher ou changer la langue maternelle: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "Basculer le mode capsule sur une ligne: /lingual-compact",
+    cmdDescLast: "R\xE9afficher la carte pr\xE9c\xE9dente: /lingual-last",
+    cmdDescAgent: "Afficher le guide de personnalisation et de changement de langue : /lingual-agent",
     shortcutNextPage: "Passer au segment suivant",
     shortcutPrevPage: "Passer au segment pr\xE9c\xE9dent",
     capsuleSlot1Prefix: "Oral",
@@ -260,15 +260,15 @@ var LANGUAGE_PRESETS = {
     statusReportCache: "Cache de session",
     statusReportLayout: "Disposition HUD : Arbre guide gauche Trifecta (\xB7 \u250C \u251C \u2514)",
     statusReportAuth: "Authentification : Processus interne Pi natif (Z\xE9ro config \xB7 S\xE9curis\xE9)",
-    statusReportShortcuts: "Raccourcis : /2 (mode) \xB7 /lingua-lang (langue) \xB7 /lingua-model (mod\xE8le) \xB7 /lingua-agent (personnaliser)",
+    statusReportShortcuts: "Raccourcis : /2 (mode) \xB7 /lingual-lang (langue) \xB7 /lingual-model (mod\xE8le) \xB7 /lingual-agent (personnaliser)",
     modeDescOriginal: "Passerelle directe \xB7 0ms non bloquant",
     modeDescEnglish: "Mode anglais \xB7 Raisonnement approfondi",
     modeDescOff: "D\xE9sactiv\xE9",
     modelCurrentLabel: "Mod\xE8le actuel",
     modelFollowSession: "Suit la session",
-    modelAvailableListHeader: "Mod\xE8les disponibles (tapez /lingua-model <id>):",
+    modelAvailableListHeader: "Mod\xE8les disponibles (tapez /lingual-model <id>):",
     modelAutoFollowDesc: "auto (Suit automatiquement le mod\xE8le principal)",
-    modelSelectHint: "Entrez /lingua-model <id> ou auto pour d\xE9finir le mod\xE8le."
+    modelSelectHint: "Entrez /lingual-model <id> ou auto pour d\xE9finir le mod\xE8le."
   },
   de: {
     slot1Label: "Gesprochen",
@@ -286,19 +286,19 @@ var LANGUAGE_PRESETS = {
     notifyPaging: "[de \u21C4 en] Langer Text segmentiert. Mit Alt+. oder Alt+, bl\xE4ttern",
     notifyNoHistory: "[de \u21C4 en] Kein vorheriger Eintrag vorhanden",
     notifyHistoryRestored: "[de \u21C4 en] Vorherige Karte wiederhergestellt",
-    notifyAgentHelp: "\u{1F4A1} Wechseln Sie die Muttersprache mit /lingua-lang <zh|ja|en|es|fr|de> jederzeit; f\xFCr benutzerdefinierte Stile teilen Sie Ihrem Agenten einfach Ihre W\xFCnsche mit.",
+    notifyAgentHelp: "\u{1F4A1} Wechseln Sie die Muttersprache mit /lingual-lang <zh|ja|en|es|fr|de> jederzeit; f\xFCr benutzerdefinierte Stile teilen Sie Ihrem Agenten einfach Ihre W\xFCnsche mit.",
     notifyModelSwitched: "Modell gewechselt zu: {model}",
     notifyLangSwitched: "Muttersprache ge\xE4ndert zu: {lang}",
     notifyLangInvalid: "Ung\xFCltiger Sprachcode. Unterst\xFCtzt: zh, ja, en, es, fr, de",
     notifyCompactOn: "[de \u21C4 en] Einzeiliger Kapselmodus aktiviert",
     notifyCompactOff: "[de \u21C4 en] Vollst\xE4ndige Baumansicht wiederhergestellt",
     cmdDescMode: "Modus umschalten [de \u21C4 en]: [Original] \u2794 [Englisch] \u2794 [Aus]",
-    cmdDescStatus: "Statusbericht und Modell-Diagnose anzeigen: /lingua-status",
-    cmdDescModel: "Modell pr\xFCfen oder wechseln: /lingua-model [model-id|auto]",
-    cmdDescLang: "Muttersprache anzeigen oder wechseln: /lingua-lang [zh|ja|en|es|fr|de]",
-    cmdDescCompact: "Einzeiligen Kapselmodus umschalten: /lingua-compact",
-    cmdDescLast: "Vorherige Karte erneut anzeigen: /lingua-last",
-    cmdDescAgent: "Anleitung zur Anpassung und Sprachumstellung anzeigen: /lingua-agent",
+    cmdDescStatus: "Statusbericht und Modell-Diagnose anzeigen: /lingual-status",
+    cmdDescModel: "Modell pr\xFCfen oder wechseln: /lingual-model [model-id|auto]",
+    cmdDescLang: "Muttersprache anzeigen oder wechseln: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "Einzeiligen Kapselmodus umschalten: /lingual-compact",
+    cmdDescLast: "Vorherige Karte erneut anzeigen: /lingual-last",
+    cmdDescAgent: "Anleitung zur Anpassung und Sprachumstellung anzeigen: /lingual-agent",
     shortcutNextPage: "Zum n\xE4chsten Segment wechseln",
     shortcutPrevPage: "Zum vorherigen Segment wechseln",
     capsuleSlot1Prefix: "Ges",
@@ -312,15 +312,15 @@ var LANGUAGE_PRESETS = {
     statusReportCache: "Sitzungscache",
     statusReportLayout: "HUD-Layout: Trifecta Minimalistische Baumstruktur (\xB7 \u250C \u251C \u2514)",
     statusReportAuth: "Authentifizierung: Pi nativer In-Process Modus (Zero Config \xB7 Sicher)",
-    statusReportShortcuts: "Befehle: /2 (Modus) \xB7 /lingua-lang (Sprache) \xB7 /lingua-model (Modell) \xB7 /lingua-agent (Anpassen)",
+    statusReportShortcuts: "Befehle: /2 (Modus) \xB7 /lingual-lang (Sprache) \xB7 /lingual-model (Modell) \xB7 /lingual-agent (Anpassen)",
     modeDescOriginal: "Direkt \xB7 0ms nicht blockierend",
     modeDescEnglish: "Englisch-Modus \xB7 Tiefgreifende Logik",
     modeDescOff: "Aus",
     modelCurrentLabel: "Aktuelles Modell",
     modelFollowSession: "Sitzungsmodell",
-    modelAvailableListHeader: "Verf\xFCgbare Modelle (/lingua-model <id> ausf\xFChren):",
+    modelAvailableListHeader: "Verf\xFCgbare Modelle (/lingual-model <id> ausf\xFChren):",
     modelAutoFollowDesc: "auto (Folgt automatisch dem aktiven Sitzungsmodell)",
-    modelSelectHint: "Geben Sie /lingua-model <id> oder auto ein."
+    modelSelectHint: "Geben Sie /lingual-model <id> oder auto ein."
   }
 };
 function resolveLabelsForLang(lang, overrides) {
@@ -354,7 +354,7 @@ function formatStatusReport(labels, info) {
   lines.push(
     `\u2022 ${labels.statusReportLayout || "Layout"}: ${layoutDesc}`,
     `\u2022 ${labels.statusReportAuth || "Auth: Pi Native In-Process Auth"}`,
-    `\u2022 ${labels.statusReportShortcuts || "Shortcuts: /2 \xB7 /lingua-lang \xB7 /lingua-compact \xB7 /lingua-model \xB7 /lingua-agent"}`
+    `\u2022 ${labels.statusReportShortcuts || "Shortcuts: /2 \xB7 /lingual-lang \xB7 /lingual-compact \xB7 /lingual-model \xB7 /lingual-agent"}`
   );
   return lines.join("\n");
 }
@@ -367,7 +367,7 @@ ${availableList}
 \u2022 ${labels.modelAutoFollowDesc || "auto"}
 `;
   }
-  msg += labels.modelSelectHint || "Specify model with /lingua-model <model-id> or auto.";
+  msg += labels.modelSelectHint || "Specify model with /lingual-model <model-id> or auto.";
   return msg;
 }
 
@@ -701,7 +701,7 @@ function shouldShieldBypass(text) {
 }
 
 // src/cache.ts
-var LinguaLruCache = class {
+var LingualLruCache = class {
   constructor(capacity = 50) {
     this.capacity = capacity;
   }
@@ -757,13 +757,13 @@ var LinguaLruCache = class {
     };
   }
 };
-var globalLinguaCache = new LinguaLruCache(50);
+var globalLingualCache = new LingualLruCache(50);
 
 // src/engine.ts
 var cachedUserConfig = null;
 var lastConfigCheckTime = 0;
 var CONFIG_CACHE_TTL_MS = 2e3;
-function loadUserConfig() {
+function loadUserLingualConfig() {
   if (process.env.NODE_ENV === "test" || process.execArgv.includes("--test") || process.argv.includes("--test")) {
     return {};
   }
@@ -773,7 +773,7 @@ function loadUserConfig() {
   }
   const configPaths = [
     path.join(os.homedir(), ".pi", "agent", "settings.json"),
-    path.join(os.homedir(), ".pi", "agent", "lingua.json")
+    path.join(os.homedir(), ".pi", "agent", "lingual.json")
   ];
   for (const p of configPaths) {
     try {
@@ -812,9 +812,9 @@ function loadUserConfig() {
   return {};
 }
 var DEFAULT_CONFIG = {
-  endpoint: process.env.LINGUA_ENDPOINT || "",
-  apiKey: process.env.LINGUA_API_KEY || "",
-  model: process.env.LINGUA_MODEL || "",
+  endpoint: process.env.LINGUAL_ENDPOINT || "",
+  apiKey: process.env.LINGUAL_API_KEY || "",
+  model: process.env.LINGUAL_MODEL || "",
   selectedModel: "auto",
   mode: "original",
   sourceLang: "zh",
@@ -822,7 +822,7 @@ var DEFAULT_CONFIG = {
   temperature: 0.2,
   timeoutMs: 3e4
 };
-var LINGUA_SYSTEM_PROMPT = buildSystemPrompt("zh", "en");
+var LINGUAL_SYSTEM_PROMPT = buildSystemPrompt("zh", "en");
 function isNonEnglish(text) {
   const naturalLanguageScript = /[\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af\u0400-\u04ff\u0600-\u06ff\u00c0-\u024f]/;
   return naturalLanguageScript.test(text);
@@ -1097,7 +1097,7 @@ function formatCapsuleLine(hudTitle, spoken, written, options = {}) {
 async function translatePrompt(text, userConfig = {}) {
   const trimmed = text.trim();
   if (!trimmed) return null;
-  const diskConfig = loadUserConfig();
+  const diskConfig = loadUserLingualConfig();
   const cfg = { ...DEFAULT_CONFIG, ...diskConfig, ...userConfig };
   if (!shouldTriggerTranslation(trimmed, cfg.sourceLang)) {
     return null;
@@ -1105,8 +1105,8 @@ async function translatePrompt(text, userConfig = {}) {
   if (shouldShieldBypass(trimmed)) {
     return null;
   }
-  const cacheKey = LinguaLruCache.buildKey(trimmed, cfg.sourceLang, cfg.targetLang);
-  const cached = globalLinguaCache.get(cacheKey);
+  const cacheKey = LingualLruCache.buildKey(trimmed, cfg.sourceLang, cfg.targetLang);
+  const cached = globalLingualCache.get(cacheKey);
   if (cached) {
     return cached;
   }
@@ -1176,7 +1176,7 @@ async function translatePrompt(text, userConfig = {}) {
         }
       )
     };
-    globalLinguaCache.set(cacheKey, result);
+    globalLingualCache.set(cacheKey, result);
     return result;
   } catch {
     return null;
@@ -1351,7 +1351,7 @@ function sanitizePromptForTranslation(raw) {
 }
 
 // src/extension.ts
-var initialDiskConfig = loadUserConfig();
+var initialDiskConfig = loadUserLingualConfig();
 var initialSourceLang = initialDiskConfig.sourceLang || "zh";
 var initialLabels = resolveLabelsForLang(initialSourceLang, initialDiskConfig.labels);
 var state = {
@@ -1361,14 +1361,14 @@ var state = {
   selectedModel: initialDiskConfig.selectedModel || "auto",
   labels: initialLabels
 };
-function saveUserLinguaConfig(patch) {
+function saveUserLingualConfig(patch) {
   if (process.env.NODE_ENV === "test" || process.execArgv.includes("--test") || process.argv.includes("--test")) {
     return;
   }
   try {
     const agentDir = path2.join(os2.homedir(), ".pi", "agent");
     const settingsFile = path2.join(agentDir, "settings.json");
-    const configFile = path2.join(agentDir, "lingua.json");
+    const configFile = path2.join(agentDir, "lingual.json");
     if (fs2.existsSync(settingsFile)) {
       try {
         const raw = fs2.readFileSync(settingsFile, "utf8");
@@ -1431,10 +1431,10 @@ function updateFooter(ctx) {
   switch (state.mode) {
     case "original":
     case "english":
-      ctx.ui.setStatus("lingua", ctx.ui.theme.fg("accent", pair));
+      ctx.ui.setStatus("lingual", ctx.ui.theme.fg("accent", pair));
       break;
     case "off":
-      ctx.ui.setStatus("lingua", ctx.ui.theme.fg("muted", `${pair}: off`));
+      ctx.ui.setStatus("lingual", ctx.ui.theme.fg("muted", `${pair}: off`));
       break;
   }
 }
@@ -1459,7 +1459,7 @@ function renderHudWidget(ctx, sourceText, spoken, written, vocab, spokenMeaning,
         maxCols: process.stdout?.columns || 80
       }
     );
-    ctx.ui.setWidget("lingua_hud", [capsuleText + pageTag], { placement: "aboveEditor" });
+    ctx.ui.setWidget("lingual_hud", [capsuleText + pageTag], { placement: "aboveEditor" });
     return;
   }
   const spotlightPhrasesList = hasVocab ? extractVocabPhrases(vocab) : [];
@@ -1541,7 +1541,7 @@ function renderHudWidget(ctx, sourceText, spoken, written, vocab, spokenMeaning,
   if (lines.length > 9) {
     lines = lines.slice(0, 9);
   }
-  ctx.ui.setWidget("lingua_hud", lines, { placement: "aboveEditor" });
+  ctx.ui.setWidget("lingual_hud", lines, { placement: "aboveEditor" });
 }
 function renderActiveCard(ctx) {
   if (pagedResults.length === 0) return;
@@ -1579,13 +1579,13 @@ function extension_default(pi) {
       nextMode = state.mode === "original" ? "english" : state.mode === "english" ? "off" : "original";
     }
     state.mode = nextMode;
-    saveUserLinguaConfig({ mode: nextMode });
+    saveUserLingualConfig({ mode: nextMode });
     updateFooter(ctx);
     if (nextMode === "english") {
       ctx.ui.notify(state.labels.notifyEnglish || `[${state.labels.hudTitle}] \u5DF2\u5207\u6362\u81F3\u3010\u82F1\u6587\u6A21\u5F0F\u3011\uFF1A\u53D1\u7ED9 AI \u7684\u8F93\u5165\u5C06\u81EA\u52A8\u8F6C\u6362\u4E3A\u7EAF\u6B63\u6280\u672F\u82F1\u6587`, "info");
     } else if (nextMode === "off") {
       if (ctx.hasUI && typeof ctx.ui.setWidget === "function") {
-        ctx.ui.setWidget("lingua_hud", void 0);
+        ctx.ui.setWidget("lingual_hud", void 0);
       }
       ctx.ui.notify(state.labels.notifyOff || `[${state.labels.hudTitle}] \u5DF2\u5173\u95ED\u4F34\u5B66`, "info");
     } else {
@@ -1600,11 +1600,7 @@ function extension_default(pi) {
     description: state.labels.cmdDescMode || "\u8BBE\u7F6E\u4F34\u5B66\u6A21\u5F0F: /lingual-mode <original|english|off>",
     handler: setModeHandler
   });
-  pi.registerCommand("lingua", {
-    description: state.labels.cmdDescMode || "\u5207\u6362\u4F34\u5B66\u6A21\u5F0F (\u522B\u540D)",
-    handler: setModeHandler
-  });
-  pi.registerCommand("translate", {
+  pi.registerCommand("lingual", {
     description: state.labels.cmdDescMode || "\u5207\u6362\u4F34\u5B66\u6A21\u5F0F (\u522B\u540D)",
     handler: setModeHandler
   });
@@ -1614,15 +1610,6 @@ function extension_default(pi) {
   });
   pi.registerCommand("lingual-agent", {
     description: state.labels.cmdDescAgent || "\u67E5\u770B\u4F34\u5B66\u5B9A\u5236\u4E0E\u6BCD\u8BED\u5207\u6362\u6307\u5357: /lingual-agent",
-    handler: async (_args, ctx) => {
-      ctx.ui.notify(
-        state.labels.notifyAgentHelp || "\u{1F4A1} \u5207\u6362\u6BCD\u8BED\uFF1F\u76F4\u63A5\u8FD0\u884C /lingual-lang <zh|ja|en|es|fr|de> \u5373\u53EF\u5B9E\u65F6\u5207\u6362\u5E76\u6301\u4E45\u5316\uFF1B\u82E5\u9700\u5B9A\u5236\u7279\u6B8A\u98CE\u683C\uFF0C\u53EF\u76F4\u63A5\u5411 Agent \u63CF\u8FF0\u4F60\u7684\u5B9A\u5236\u504F\u597D\u3002",
-        "info"
-      );
-    }
-  });
-  pi.registerCommand("lingua-agent", {
-    description: state.labels.cmdDescAgent || "\u67E5\u770B\u4F34\u5B66\u5B9A\u5236\u6307\u5357 (\u522B\u540D)",
     handler: async (_args, ctx) => {
       ctx.ui.notify(
         state.labels.notifyAgentHelp || "\u{1F4A1} \u5207\u6362\u6BCD\u8BED\uFF1F\u76F4\u63A5\u8FD0\u884C /lingual-lang <zh|ja|en|es|fr|de> \u5373\u53EF\u5B9E\u65F6\u5207\u6362\u5E76\u6301\u4E45\u5316\uFF1B\u82E5\u9700\u5B9A\u5236\u7279\u6B8A\u98CE\u683C\uFF0C\u53EF\u76F4\u63A5\u5411 Agent \u63CF\u8FF0\u4F60\u7684\u5B9A\u5236\u504F\u597D\u3002",
@@ -1642,17 +1629,13 @@ function extension_default(pi) {
       return;
     }
     state.selectedModel = trimmed;
-    saveUserLinguaConfig({ selectedModel: trimmed });
+    saveUserLingualConfig({ selectedModel: trimmed });
     const switchTemplate = state.labels.notifyModelSwitched || "\u4F34\u5B66\u6A21\u578B\u5DF2\u5207\u6362\u4E3A: {model}";
     const switchedMsg = `[${state.labels.hudTitle}] ` + switchTemplate.replace("{model}", trimmed);
     ctx.ui.notify(switchedMsg, "info");
   };
   pi.registerCommand("lingual-model", {
     description: state.labels.cmdDescModel || "\u67E5\u770B\u6216\u5207\u6362\u4F34\u5B66\u6A21\u578B: /lingual-model [model-id|auto]",
-    handler: setModelHandler
-  });
-  pi.registerCommand("lingua-model", {
-    description: state.labels.cmdDescModel || "\u67E5\u770B\u6216\u5207\u6362\u4F34\u5B66\u6A21\u578B (\u522B\u540D)",
     handler: setModelHandler
   });
   pi.registerCommand("2-model", {
@@ -1687,16 +1670,12 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
     }
     state.sourceLang = trimmed;
     state.labels = resolveLabelsForLang(trimmed, initialDiskConfig.labels);
-    saveUserLinguaConfig({ sourceLang: trimmed });
-    globalLinguaCache.clear();
+    saveUserLingualConfig({ sourceLang: trimmed });
+    globalLingualCache.clear();
     updateFooter(ctx);
     const template = state.labels.notifyLangSwitched || "Native language switched to: {lang}";
     ctx.ui.notify(`[${state.labels.hudTitle}] ` + template.replace("{lang}", trimmed), "info");
   };
-  pi.registerCommand("lingua-lang", {
-    description: state.labels.cmdDescLang || "\u67E5\u770B\u6216\u5207\u6362\u4F34\u5B66\u6BCD\u8BED [\u4E8C \u21C4 two]: /lingua-lang [zh|ja|en|es|fr|de]",
-    handler: switchLangHandler
-  });
   pi.registerCommand("lingual-lang", {
     description: state.labels.cmdDescLang || "\u5207\u6362\u4F34\u5B66\u6BCD\u8BED (\u522B\u540D)",
     handler: switchLangHandler
@@ -1707,7 +1686,7 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
   });
   const toggleCompactHandler = async (_args, ctx) => {
     state.compact = !state.compact;
-    saveUserLinguaConfig({ compact: state.compact });
+    saveUserLingualConfig({ compact: state.compact });
     const msg = state.compact ? state.labels.notifyCompactOn || `[${state.labels.hudTitle}] \u5DF2\u5F00\u542F\u5355\u884C\u80F6\u56CA\u6A21\u5F0F` : state.labels.notifyCompactOff || `[${state.labels.hudTitle}] \u5DF2\u5207\u6362\u4E3A\u5DE6\u5BFC\u8F68\u6811\u72B6\u67B6\u6784`;
     ctx.ui.notify(msg, "info");
     if (pagedResults.length > 0) {
@@ -1724,10 +1703,6 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
       );
     }
   };
-  pi.registerCommand("lingua-compact", {
-    description: state.labels.cmdDescCompact || "\u5207\u6362\u5355\u884C\u80F6\u56CA\u6A21\u5F0F\u4E0E\u5B8C\u6574\u6811\u72B6\u56FE: /lingua-compact",
-    handler: toggleCompactHandler
-  });
   pi.registerCommand("lingual-compact", {
     description: state.labels.cmdDescCompact || "\u5207\u6362\u5355\u884C\u80F6\u56CA\u6A21\u5F0F (\u522B\u540D)",
     handler: toggleCompactHandler
@@ -1745,16 +1720,12 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
       targetLang: "en",
       activeModel,
       layout: state.compact ? "capsule" : "tree",
-      cacheStats: globalLinguaCache.getStats()
+      cacheStats: globalLingualCache.getStats()
     });
     ctx.ui.notify(statusMsg, "info");
   };
   pi.registerCommand("lingual-status", {
     description: state.labels.cmdDescStatus || "\u67E5\u770B\u4F34\u5B66\u63D2\u4EF6\u5F53\u524D\u72B6\u6001\u62A5\u544A\u4E0E\u6A21\u578B\u8BCA\u65AD: /lingual-status",
-    handler: showStatusHandler
-  });
-  pi.registerCommand("lingua-status", {
-    description: state.labels.cmdDescStatus || "\u67E5\u770B\u4F34\u5B66\u63D2\u4EF6\u72B6\u6001 (\u522B\u540D)",
     handler: showStatusHandler
   });
   pi.registerCommand("2-status", {
@@ -1784,10 +1755,6 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
   };
   pi.registerCommand("lingual-last", {
     description: state.labels.cmdDescLast || "\u91CD\u65B0\u56DE\u770B\u6216\u91CD\u73B0\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247: /lingual-last",
-    handler: showLastHandler
-  });
-  pi.registerCommand("lingua-last", {
-    description: state.labels.cmdDescLast || "\u91CD\u65B0\u56DE\u770B\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247 (\u522B\u540D)",
     handler: showLastHandler
   });
   pi.registerCommand("2-last", {
@@ -1843,7 +1810,7 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
           }
         );
         const timeoutPromise = new Promise(
-          (_, reject) => setTimeout(() => reject(new Error("Lingua translation timed out")), 3e4)
+          (_, reject) => setTimeout(() => reject(new Error("Lingual translation timed out")), 3e4)
         );
         const res = await Promise.race([stream.result(), timeoutPromise]);
         if (!res) return null;
@@ -1866,7 +1833,7 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
     const promptToTranslate = sanitized.distilledText;
     if (!sanitized.hasNaturalLanguage || promptToTranslate.length > 500 || !shouldTriggerTranslation(promptToTranslate, state.sourceLang)) {
       if (ctx.hasUI) {
-        ctx.ui.setWidget("lingua_hud", void 0);
+        ctx.ui.setWidget("lingual_hud", void 0);
       }
       return { action: "continue" };
     }
@@ -1878,7 +1845,7 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
     pagedResults = [];
     if (state.mode === "original") {
       if (ctx.hasUI) {
-        ctx.ui.setStatus("lingua", ctx.ui.theme.fg("accent", "\u21C4 [lingua] polishing..."));
+        ctx.ui.setStatus("lingual", ctx.ui.theme.fg("accent", "\u21C4 [lingual] polishing..."));
       }
       if (chunks.length === 1) {
         translatePrompt(promptToTranslate, {
@@ -1952,11 +1919,11 @@ Usage: /lingua-lang <zh|ja|en|es|fr|de>`,
     }
     if (ctx.hasUI) {
       ctx.ui.setWidget(
-        "lingua_hud",
-        [ctx.ui.theme.fg("muted", "  \u22EF \u21C4 [lingua] polishing...")],
+        "lingual_hud",
+        [ctx.ui.theme.fg("muted", "  \u22EF \u21C4 [lingual] polishing...")],
         { placement: "aboveEditor" }
       );
-      ctx.ui.setStatus("lingua", ctx.ui.theme.fg("accent", "\u21C4 [lingua] polishing..."));
+      ctx.ui.setStatus("lingual", ctx.ui.theme.fg("accent", "\u21C4 [lingual] polishing..."));
     }
     try {
       let combinedEnglish = "";

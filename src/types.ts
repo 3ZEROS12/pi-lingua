@@ -1,14 +1,15 @@
-export type LinguaMode = "original" | "english" | "off";
+export type LingualMode = "original" | "english" | "off";
+export type LinguaMode = LingualMode;
 
-export interface LinguaI18nLabels {
-  slot1Label: string;      // e.g. "口语" | "Spoken" | "口語" | "Slack"
-  slot2Label: string;      // e.g. "写作" | "Written" | "文面" | "RFC"
-  vocabLabel: string;      // e.g. "重点" | "Vocab" | "単語"
-  sourceLabel: string;     // e.g. "原文" | "Original"
-  hudTitle: string;        // e.g. "二 ⇄ two" | "two ⇄ 二"
-  statusOriginal: string;  // e.g. "⇄ [二 ⇄ two] 原文"
-  statusEnglish: string;   // e.g. "⇄ [二 ⇄ two] 英文"
-  statusOff: string;       // e.g. "⇄ [二 ⇄ two]: 关"
+export interface LingualI18nLabels {
+  slot1Label: string;      // e.g. "Spoken" | "口語" | "Slack"
+  slot2Label: string;      // e.g. "Written" | "文面" | "RFC"
+  vocabLabel: string;      // e.g. "Vocab" | "単語"
+  sourceLabel: string;     // e.g. "Original" | "原文"
+  hudTitle: string;        // e.g. "zh ⇄ en" | "en ⇄ ja"
+  statusOriginal: string;  // e.g. "zh ⇄ en"
+  statusEnglish: string;   // e.g. "zh ⇄ en"
+  statusOff: string;       // e.g. "zh ⇄ en: off"
   subNuanceLabel?: string; // e.g. "↳"
 
   // Localized notifications (Primary Language Sovereignty)
@@ -37,8 +38,8 @@ export interface LinguaI18nLabels {
   shortcutPrevPage?: string;
 
   // Localized capsule prefixes
-  capsuleSlot1Prefix?: string; // e.g. "口" | "Spk" | "Col"
-  capsuleSlot2Prefix?: string; // e.g. "写" | "Wrt" | "Esc"
+  capsuleSlot1Prefix?: string; // e.g. "Spk" | "口"
+  capsuleSlot2Prefix?: string; // e.g. "Wrt" | "写"
   layoutCapsule?: string;      // e.g. "单行胶囊模式" | "Single-Line Capsule"
   layoutTree?: string;         // e.g. "左导轨树状架构" | "Left-Rail Tree"
 
@@ -66,23 +67,25 @@ export interface LinguaI18nLabels {
   spokenLabel?: string;
   writtenLabel?: string;
 }
+export type LinguaI18nLabels = LingualI18nLabels;
 
-export interface LinguaConfig {
+export interface LingualConfig {
   endpoint: string;
   apiKey: string;
   model: string;
   selectedModel?: string;   // e.g. "auto" (default) | "gemini-3.8-flash" | "claude-sonnet-5-5"
-  mode?: LinguaMode;
+  mode?: LingualMode;
   compact?: boolean;        // e.g. false (default) | true (1-line capsule)
   sourceLang?: string;      // e.g. "zh" (default) | "en" | "ja"
   targetLang?: string;      // e.g. "en" (default) | "ja" | "zh"
-  labels?: Partial<LinguaI18nLabels>;
+  labels?: Partial<LingualI18nLabels>;
   temperature?: number;
   timeoutMs?: number;
   complete?: (text: string, systemPrompt: string) => Promise<string | null>;
 }
+export type LinguaConfig = LingualConfig;
 
-export interface LinguaResult {
+export interface LingualResult {
   spoken: string;           // Slot 1 target expression
   spokenMeaning?: string;   // Slot 1 exact nuance/meaning in native language A
   written: string;          // Slot 2 target expression
@@ -91,6 +94,7 @@ export interface LinguaResult {
   sourceText: string;       // Original source text in language A
   annotated: string;
 }
+export type LinguaResult = LingualResult;
 
 export interface TranslationPayload {
   spoken: string;

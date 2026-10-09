@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   parseLlmResponse,
   formatTerminalAnnotation,
-  stripLinguaAnnotation,
+  stripLingualAnnotation,
   translatePrompt,
   isNonEnglish,
   shouldTriggerTranslation,
@@ -35,7 +35,7 @@ test("shouldTriggerTranslation - bidirectional language trigger logic", () => {
   // [Safety Guard]: Rejects long text (> 300 chars), multi-line docs (> 3 lines), markdown headings
   const longPrompt = "a".repeat(350);
   assert.equal(shouldTriggerTranslation(longPrompt, "zh"), false, "Must reject text exceeding 300 characters");
-  assert.equal(shouldTriggerTranslation("# 📋 pi-lingua · 文档撰写 Agent 任务交接说明书\n你好！", "zh"), false, "Must reject markdown heading");
+  assert.equal(shouldTriggerTranslation("# 📋 pi-lingual · 文档撰写 Agent 任务交接说明书\n你好！", "zh"), false, "Must reject markdown heading");
   assert.equal(shouldTriggerTranslation("Line 1\nLine 2\nLine 3\nLine 4", "zh"), false, "Must reject documents with > 3 lines");
   assert.equal(shouldTriggerTranslation("```ts\nconst a = 1;\n```", "zh"), false, "Must reject code blocks");
 
@@ -141,14 +141,14 @@ test("formatTerminalAnnotation - formats with source text anchor, native nuance,
   assert.ok(!longAnnotated.includes("..."), "Must not arbitrarily truncate original text with ellipsis");
 });
 
-test("stripLinguaAnnotation - cleanly recovers raw text and isolates parenthetical nuance", () => {
+test("stripLingualAnnotation - cleanly recovers raw text and isolates parenthetical nuance", () => {
   const branchAnnotated =
     "  · 原文   认同，开始吧\n" +
     "  ┌ [口语] Totally on board with that — let's dive right in. (完全赞同，咱们直接开搞)\n" +
     "  ├ [写作] Acknowledged. Let's proceed with the implementation. (确认赞同，着手推进具体实施)\n" +
     "  └ [重点] on board with · dive in";
 
-  const stripped = stripLinguaAnnotation(branchAnnotated);
+  const stripped = stripLingualAnnotation(branchAnnotated);
 
   assert.equal(stripped.raw, "认同，开始吧", "Must extract clean source text without prefixes");
   assert.equal(stripped.spoken, "Totally on board with that — let's dive right in.", "Must isolate English expression from nuance explanation");

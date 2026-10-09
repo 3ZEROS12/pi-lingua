@@ -5,7 +5,7 @@ import { translatePrompt } from "../dist/index.js";
 
 const require = createRequire(import.meta.url);
 const pkg = require("../package.json");
-const VERSION = pkg.version || "0.1.4";
+const VERSION = pkg.version || "0.3.0";
 
 async function main() {
   const args = process.argv.slice(2);
@@ -14,19 +14,15 @@ async function main() {
   if (!input || input === "--help" || input === "-h") {
     console.log(`pi-lingual (v${VERSION}) 🌐 - Developer Translator & Bilingual Companion`);
     console.log("\nUsage:");
-    console.log("  lingua <prompt>           Translate prompt and display spoken/written registers");
-    console.log("  lingual <prompt>          Alias for lingua");
-    console.log("  translate <prompt>        Alias for lingua");
-    console.log("  2 <prompt>                Fast CLI alias");
+    console.log("  lingual <prompt>          Translate prompt and display spoken/written registers");
     console.log("\nOptions:");
     console.log("  -h, --help                Show this help message");
     console.log("  -v, --version             Show version number");
     console.log("\nExample:");
-    console.log('  lingua "这个方案有点过度设计了，不如直接用标准库实现"');
-    console.log('  2 "吃什么？"');
+    console.log('  lingual "这个方案有点过度设计了，不如直接用标准库实现"');
     console.log("\nZero-Config Notice:");
     console.log("  Inside Pi Coding Agent, pi-lingual uses your active session model automatically (Zero Config).");
-    console.log("  For standalone CLI outside Pi, configure ~/.pi/agent/lingua.json or LINGUA_ENDPOINT environment variable.");
+    console.log("  For standalone CLI outside Pi, configure ~/.pi/agent/lingual.json or LINGUAL_ENDPOINT environment variable.");
     process.exit(input ? 0 : 1);
   }
 
@@ -38,7 +34,7 @@ async function main() {
   const result = await translatePrompt(input);
   if (!result) {
     console.error("Translation skipped. (Input may be non-natural-language, or no endpoint/model is configured for standalone CLI).");
-    console.error("💡 Tip: In Pi Coding Agent, it works out-of-the-box via session models. For CLI, configure ~/.pi/agent/lingua.json.");
+    console.error("💡 Tip: In Pi Coding Agent, it works out-of-the-box via session models. For CLI, configure ~/.pi/agent/lingual.json.");
     process.exit(1);
   }
 

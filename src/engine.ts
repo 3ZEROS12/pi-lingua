@@ -1,13 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import type { LinguaConfig, LinguaResult, TranslationPayload } from "./types.js";
+import type { LingualConfig, LingualResult, TranslationPayload } from "./types.js";
 import { resolveLabelsForLang } from "./presets.js";
 import { buildSystemPrompt } from "./prompts.js";
 import { shouldShieldBypass } from "./shield.js";
-import { LinguaLruCache, globalLinguaCache } from "./cache.js";
+import { LingualLruCache, globalLingualCache } from "./cache.js";
 
-let cachedUserConfig: Partial<LinguaConfig> | null = null;
+let cachedUserConfig: Partial<LingualConfig> | null = null;
 let lastConfigCheckTime = 0;
 const CONFIG_CACHE_TTL_MS = 2000;
 
@@ -19,11 +19,11 @@ export function invalidateUserConfigCache(): void {
 /**
  * Load user configuration from:
  * 1. ~/.pi/agent/settings.json (under "pi-lingual" block)
- * 2. ~/.pi/agent/lingua.json (flat or nested)
+ * 2. ~/.pi/agent/lingual.json (flat or nested)
  * Uses high-efficiency 2-second in-memory memoization to prevent synchronous disk I/O thrashing during parallel chunk translations.
  * Never hardcodes private credentials in source code.
  */
-export function loadUserConfig(): Partial<LinguaConfig> {
+export function loadUserLingualConfig(): Partial<LingualConfig> {
   // 测试沙箱隔离：自动化测试期间不读取宿主机个人配置，防止环境脏数据干扰断言
   if (process.env.NODE_ENV === "test" || process.execArgv.includes("--test") || process.argv.includes("--test")) {
     return {};
@@ -36,7 +36,7 @@ export function loadUserConfig(): Partial<LinguaConfig> {
 
   const configPaths = [
     path.join(os.homedir(), ".pi", "agent", "settings.json"),
-    path.join(os.homedir(), ".pi", "agent", "lingua.json"),
+    path.join(os.homedir(), ".pi", "agent", "lingual.json"),
   ];
 
   for (const p of configPaths) {
@@ -80,10 +80,10 @@ export function loadUserConfig(): Partial<LinguaConfig> {
   return {};
 }
 
-export const DEFAULT_CONFIG: LinguaConfig = {
-  endpoint: process.env.LINGUA_ENDPOINT || "",
-  apiKey: process.env.LINGUA_API_KEY || "",
-  model: process.env.LINGUA_MODEL || "",
+export const DEFAULT_CONFIG: LingualConfig = {
+  endpoint: process.env.LINGUAL_ENDPOINT || "",
+  apiKey: process.env.LINGUAL_API_KEY || "",
+  model: process.env.LINGUAL_MODEL || "",
   selectedModel: "auto",
   mode: "original",
   sourceLang: "zh",
@@ -101,7 +101,7 @@ export const DEFAULT_CONFIG: LinguaConfig = {
  * 4. 代码与专有名词绝对防御机制 (Code & Symbol Shield)
  * 5. 水平自适应重点词汇提取，单行紧凑流排列
  */
-export const LINGUA_SYSTEM_PROMPT = buildSystemPrompt("zh", "en");
+export const LINGUAL_SYSTEM_PROMPT = buildSystemPrompt("zh", "en");
 export { buildSystemPrompt };
 
 /**
@@ -554,7 +554,7 @@ export function formatCapsuleLine(
  * Strip annotations and recover purely clean text to prevent LLM prompt pollution
  * Robust against tree branch glyphs (┌ ├ └) and arrow annotations (↳)
  */
-export function stripLinguaAnnotation(annotatedText: string): {
+export function stripLingualAnnotation(annotatedText: string): {
   raw: string;
   spoken?: string;
   written?: string;
@@ -618,12 +618,12 @@ export function stripLinguaAnnotation(annotatedText: string): {
  */
 export async function translatePrompt(
   text: string,
-  userConfig: Partial<LinguaConfig> = {}
-): Promise<LinguaResult | null> {
+  userConfig: Partial<LingualConfig> = {}
+): Promise<LingualResult | null> {
   const trimmed = text.trim();
   if (!trimmed) return null;
 
-  const diskConfig = loadUserConfig();
+  const diskConfig = loadUserLingualConfig();
   const cfg = { ...DEFAULT_CONFIG, ...diskConfig, ...userConfig };
 
   // Language-aware bidirectional trigger check
@@ -637,8 +637,8 @@ export async function translatePrompt(
   }
 
   // In-Memory LRU Cache: 0ms hit for high-frequency phrases (e.g. "继续", "认同", "开始吧")
-  const cacheKey = LinguaLruCache.buildKey(trimmed, cfg.sourceLang, cfg.targetLang);
-  const cached = globalLinguaCache.get(cacheKey);
+  const cacheKey = LingualLruCache.buildKey(trimmed, cfg.sourceLang, cfg.targetLang);
+  const cached = globalLingualCache.get(cacheKey);
   if (cached) {
     return cached;
   }
@@ -699,7 +699,7 @@ export async function translatePrompt(
     const vocabLabel = cfg.labels?.vocabLabel || "Vocab";
     const sourceLabel = cfg.labels?.sourceLabel || "Original";
 
-    const result: LinguaResult = {
+    const result: LingualResult = {
       spoken: payload.spoken,
       spokenMeaning: payload.spokenMeaning,
       written: payload.written || "",
@@ -723,7 +723,7 @@ export async function translatePrompt(
     };
 
     // Store in LRU cache
-    globalLinguaCache.set(cacheKey, result);
+    globalLingualCache.set(cacheKey, result);
     return result;
   } catch {
     return null;
@@ -731,3 +731,7 @@ export async function translatePrompt(
     clearTimeout(timer);
   }
 }
+
+export const LINGUA_SYSTEM_PROMPT = LINGUAL_SYSTEM_PROMPT;
+export const stripLinguaAnnotation = stripLingualAnnotation;
+export const loadUserConfig = loadUserLingualConfig;

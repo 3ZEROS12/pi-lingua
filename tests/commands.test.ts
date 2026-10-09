@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import extensionFactory from "../dist/extension.js";
 import { formatStatusReport, resolveLabelsForLang } from "../src/presets.js";
-import { LinguaLruCache } from "../src/cache.js";
+import { LingualLruCache } from "../src/cache.js";
 
 test("extension command matrix - registers standardized lingual command suite", () => {
   const registeredCommands: Record<string, any> = {};
@@ -28,7 +28,6 @@ test("extension command matrix - registers standardized lingual command suite", 
   assert.ok(registeredCommands["lingual-agent"], "Must register /lingual-agent");
 
   // Compatibility aliases
-  assert.ok(registeredCommands["lingua"], "Must retain /lingua alias");
   assert.ok(registeredCommands["2"], "Must retain /2 alias");
   assert.ok(registeredCommands["2-lang"], "Must retain /2-lang alias");
   assert.ok(registeredCommands["2-compact"], "Must retain /2-compact alias");
@@ -77,7 +76,7 @@ test("extension /lingual - supports explicit mode arguments and cycle fallback",
   await registeredCommands["lingual"].handler("original", mockCtx);
 });
 
-test("extension /lingua-compact - toggles capsule and tree layout with notification", async () => {
+test("extension /lingual-compact - toggles capsule and tree layout with notification", async () => {
   const registeredCommands: Record<string, any> = {};
   const mockPi: any = {
     on() {},
@@ -100,7 +99,7 @@ test("extension /lingua-compact - toggles capsule and tree layout with notificat
   };
 
   // Toggle on
-  await registeredCommands["lingua-compact"].handler("", mockCtx);
+  await registeredCommands["lingual-compact"].handler("", mockCtx);
   assert.ok(notifications.length > 0);
   assert.ok(notifications[notifications.length - 1].includes("胶囊") || notifications[notifications.length - 1].includes("Capsule"));
 
@@ -110,7 +109,7 @@ test("extension /lingua-compact - toggles capsule and tree layout with notificat
   assert.ok(notifications[notifications.length - 1].includes("树状") || notifications[notifications.length - 1].includes("tree"));
 });
 
-test("extension /lingua-lang - switches native language and notifies in target language", async () => {
+test("extension /lingual-lang - switches native language and notifies in target language", async () => {
   const registeredCommands: Record<string, any> = {};
   const mockPi: any = {
     on() {},
@@ -133,21 +132,21 @@ test("extension /lingua-lang - switches native language and notifies in target l
   };
 
   // 1. Switch to Japanese
-  await registeredCommands["lingua-lang"].handler("ja", mockCtx);
+  await registeredCommands["lingual-lang"].handler("ja", mockCtx);
   assert.ok(notifications.length > 0);
   assert.ok(notifications[notifications.length - 1].includes("ja"));
 
   // 2. Invalid language code triggers warning
-  await registeredCommands["lingua-lang"].handler("xx", mockCtx);
+  await registeredCommands["lingual-lang"].handler("xx", mockCtx);
   assert.ok(notifications.length > 1);
 
   // 3. No argument displays available languages
-  await registeredCommands["lingua-lang"].handler("", mockCtx);
+  await registeredCommands["lingual-lang"].handler("", mockCtx);
   assert.ok(notifications[notifications.length - 1].includes("zh"));
   assert.ok(notifications[notifications.length - 1].includes("ja"));
 
   // 4. Teardown: Restore state back to Chinese for subsequent test isolation
-  await registeredCommands["lingua-lang"].handler("zh", mockCtx);
+  await registeredCommands["lingual-lang"].handler("zh", mockCtx);
 });
 
 test("formatStatusReport - includes in-memory cache statistics and hit rate", () => {

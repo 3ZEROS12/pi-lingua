@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { LinguaLruCache, globalLinguaCache } from "../src/cache.js";
+import { LingualLruCache, globalLingualCache } from "../src/cache.js";
 import { translatePrompt } from "../src/engine.js";
 
-test("LinguaLruCache - basic get, set, and stats tracking", () => {
-  const cache = new LinguaLruCache<string>(3);
+test("LingualLruCache - basic get, set, and stats tracking", () => {
+  const cache = new LingualLruCache<string>(3);
   assert.equal(cache.size, 0);
 
   cache.set("a", "alpha");
@@ -21,8 +21,8 @@ test("LinguaLruCache - basic get, set, and stats tracking", () => {
   assert.equal(stats.capacity, 3);
 });
 
-test("LinguaLruCache - evicts least recently used entry when capacity is exceeded", () => {
-  const cache = new LinguaLruCache<string>(3);
+test("LingualLruCache - evicts least recently used entry when capacity is exceeded", () => {
+  const cache = new LingualLruCache<string>(3);
   cache.set("1", "one");
   cache.set("2", "two");
   cache.set("3", "three");
@@ -41,7 +41,7 @@ test("LinguaLruCache - evicts least recently used entry when capacity is exceede
 });
 
 test("translatePrompt - hits in-memory LRU cache on repeated calls without invoking complete callback", async () => {
-  globalLinguaCache.clear();
+  globalLingualCache.clear();
   let calls = 0;
 
   const mockComplete = async (_text: string, _sysPrompt: string) => {
@@ -67,6 +67,6 @@ test("translatePrompt - hits in-memory LRU cache on repeated calls without invok
   assert.equal(calls, 1, "Mock complete must NOT be called on cache hit");
   assert.equal(res2.spoken, "Let's keep going.");
 
-  const stats = globalLinguaCache.getStats();
+  const stats = globalLingualCache.getStats();
   assert.ok(stats.hits >= 1, "Cache hit count must increment");
 });

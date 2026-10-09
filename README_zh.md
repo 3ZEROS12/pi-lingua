@@ -56,7 +56,7 @@
   <img src="assets/capsule-mode.svg" alt="pi-lingual 视窗形态切换" width="840">
 </p>
 
-通过 `/2-compact`（或 `/lingua-compact`）即可一键开启**胶囊模式**，将原本 6 行的树状视窗折叠为极致平铺的单行流：
+通过 `/2-compact`（或 `/linguall-compact`）即可一键开启**胶囊模式**，将原本 6 行的树状视窗折叠为极致平铺的单行流：
 ```text
 zh ⇄ en · [Spoken] This feels over-engineered... │ [Written] Proposed approach introduces unnecessary complexity...
 ```
@@ -107,7 +107,7 @@ zh ⇄ en · [Spoken] This feels over-engineered... │ [Written] Proposed appro
 切换伴学母语无需修改任何源码，无需重新编译，更无需重启终端。
 
 ### 即时无缝切换
-在任意正在运行的 Pi 会话中直接键入 `/2-lang [code]`（或 `/lingua-lang [code]`）：
+在任意正在运行的 Pi 会话中直接键入 `/2-lang [code]`（或 `/linguall-lang [code]`）：
 ```bash
 /2-lang ja   # 秒切日语母语伴学
 /2-lang en   # 秒切英语母语伴学（面向学习其他语言的英文开发者）
@@ -142,15 +142,15 @@ zh ⇄ en · [Spoken] This feels over-engineered... │ [Written] Proposed appro
 ### 2. 算力解耦（保护昂贵的高阶推理配额）
 当会话主模型为 Claude 3.5 Sonnet 或 o1 等高阶昂贵模型时，为了避免伴学翻译白白消耗主模型的按次/每分钟调用配额，可一键挂载轻量伴学模型：
 ```bash
-/lingua-model gemini-3.8-flash
+/linguall-model gemini-3.8-flash
 ```
 或随时重置为自动跟随：
 ```bash
-/lingua-model auto
+/linguall-model auto
 ```
 
 ### 3. 可选：本地 0 成本离线模型（Ollama · 0 云端消耗）
-如需在完全离线或敏感环境运行，可在本地启动 Ollama 并运行轻量 3B 模型（如 `qwen2.5:3b`），在 `~/.pi/agent/lingua.json` 中配置：
+如需在完全离线或敏感环境运行，可在本地启动 Ollama 并运行轻量 3B 模型（如 `qwen2.5:3b`），在 `~/.pi/agent/lingual.json` 中配置：
 ```json
 {
   "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
@@ -160,18 +160,18 @@ zh ⇄ en · [Spoken] This feels over-engineered... │ [Written] Proposed appro
 
 ---
 
-## 完整命令与快捷键速查表 (全面标准化为 `/lingual`)
+## 完整命令与快捷键速查表 (全面标准化为 `/linguall`)
 
 ### 终端会话内交互命令
 | 标准命令 | 兼容别名 | 功能说明 |
 | :--- | :--- | :--- |
-| `/lingual [mode]` | `/lingual-mode`, `/2`, `/lingua`, `/translate` | 切换或指定模式：`/lingual [original\|english\|off]` |
-| `/lingual-lang <lang>` | `/2-lang`, `/lingua-lang` | 秒切伴学母语（支持 `zh`, `ja`, `en`, `es`, `fr`, `de`） |
-| `/lingual-compact` | `/2-compact`, `/lingua-compact` | 切换单行胶囊模式与完整树状视窗 |
-| `/lingual-model <id>` | `/2-model`, `/lingua-model` | 查看或切换轻量伴学模型（`auto` 或指定模型 ID） |
-| `/lingual-status` | `/2-status`, `/lingua-status` | 查看完整系统健康诊断、语言流向与 LRU 缓存统计 |
-| `/lingual-last` | `/2-last`, `/lingua-last` | 在终端中重新浮现上一条伴学卡片 |
-| `/lingual-agent` | `/2-agent`, `/lingua-agent` | 查看伴学定制与母语切换指南 |
+| `/linguall [mode]` | `/linguall-mode`, `/2`, `/lingual`, `/translate` | 切换或指定模式：`/linguall [original\|english\|off]` |
+| `/linguall-lang <lang>` | `/2-lang`, `/linguall-lang` | 秒切伴学母语（支持 `zh`, `ja`, `en`, `es`, `fr`, `de`） |
+| `/linguall-compact` | `/2-compact`, `/linguall-compact` | 切换单行胶囊模式与完整树状视窗 |
+| `/linguall-model <id>` | `/2-model`, `/linguall-model` | 查看或切换轻量伴学模型（`auto` 或指定模型 ID） |
+| `/linguall-status` | `/2-status`, `/linguall-status` | 查看完整系统健康诊断、语言流向与 LRU 缓存统计 |
+| `/linguall-last` | `/2-last`, `/linguall-last` | 在终端中重新浮现上一条伴学卡片 |
+| `/linguall-agent` | `/2-agent`, `/linguall-agent` | 查看伴学定制与母语切换指南 |
 
 ### 键盘快捷键（伴学卡片浮现时）
 * **`Alt+.`** (`>` 键)：切换到下一个语义分块卡片；

@@ -17,11 +17,7 @@
     "LICENSE"
   ],
   "bin": {
-    "lingua": "bin/lingua.js",
-    "lingual": "bin/lingua.js",
-    "translate": "bin/lingua.js",
-    "lg": "bin/lingua.js",
-    "2": "bin/lingua.js"
+    "lingual": "bin/lingual.js"
   },
   "pi": {
     "extensions": [

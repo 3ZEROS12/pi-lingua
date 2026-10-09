@@ -56,7 +56,7 @@ When working in 3–4 pane tiling layouts (tmux, WezTerm, iTerm2 splits) or comp
   <img src="assets/capsule-mode.svg" alt="pi-lingual Layout Morphing" width="840">
 </p>
 
-Toggle **Capsule Mode** with `/2-compact` (or `/lingua-compact`) to collapse the multi-line tree HUD into an ultra-dense, strictly single-line horizontal stream:
+Toggle **Capsule Mode** with `/2-compact` (or `/linguall-compact`) to collapse the multi-line tree HUD into an ultra-dense, strictly single-line horizontal stream:
 ```text
 zh ⇄ en · [Spoken] This feels over-engineered... │ [Written] Proposed approach introduces unnecessary complexity...
 ```
@@ -107,7 +107,7 @@ Host terminal widgets enforce a strict 10-line truncation threshold. `pi-lingual
 Switching native languages requires zero source mutations and zero terminal restarts.
 
 ### Instant In-Place Switching
-Run `/2-lang [code]` (or `/lingua-lang [code]`) inside any active Pi session:
+Run `/2-lang [code]` (or `/linguall-lang [code]`) inside any active Pi session:
 ```bash
 /2-lang ja   # Switch native language to Japanese
 /2-lang en   # Switch native language to English
@@ -142,15 +142,15 @@ User preferences persist in `~/.pi/agent/settings.json` under `"pi-lingual"`:
 ### 2. Model Decoupling (Preserving High-Tier Tokens)
 To prevent prompt translation from consuming high-tier reasoning quota (e.g. Claude 3.5 Sonnet or o1), designate a lightweight companion model:
 ```bash
-/lingua-model gemini-3.8-flash
+/linguall-model gemini-3.8-flash
 ```
 Or reset back to automatic inheritance:
 ```bash
-/lingua-model auto
+/linguall-model auto
 ```
 
 ### 3. Optional: Local Offline Model (Ollama · 0 Cloud Tokens)
-For fully offline or private environments, run a local 3B model (e.g. `qwen2.5:3b`) and configure `~/.pi/agent/lingua.json`:
+For fully offline or private environments, run a local 3B model (e.g. `qwen2.5:3b`) and configure `~/.pi/agent/lingual.json`:
 ```json
 {
   "endpoint": "http://127.0.0.1:11434/v1/chat/completions",
@@ -162,16 +162,16 @@ For fully offline or private environments, run a local 3B model (e.g. `qwen2.5:3
 
 ## Commands & Shortcuts Reference
 
-### In-Session Terminal Commands (Standardized on `/lingual`)
+### In-Session Terminal Commands (Standardized on `/linguall`)
 | Standard Command | Compatibility Aliases | Description |
 | :--- | :--- | :--- |
-| `/lingual [mode]` | `/lingual-mode`, `/2`, `/lingua`, `/translate` | Set or cycle mode: `/lingual [original\|english\|off]` |
-| `/lingual-lang <lang>` | `/2-lang`, `/lingua-lang` | Switch native language (`zh`, `ja`, `en`, `es`, `fr`, `de`) |
-| `/lingual-compact` | `/2-compact`, `/lingua-compact` | Toggle between single-line capsule mode and full tree HUD |
-| `/lingual-model <id>` | `/2-model`, `/lingua-model` | View or switch companion model (`auto` or specific model ID) |
-| `/lingual-status` | `/2-status`, `/lingua-status` | Display full diagnostic report, active model, and LRU cache statistics |
-| `/lingual-last` | `/2-last`, `/lingua-last` | Replay the previous companion card in the terminal |
-| `/lingual-agent` | `/2-agent`, `/lingua-agent` | Display companion customization guide |
+| `/linguall [mode]` | `/linguall-mode`, `/2`, `/lingual`, `/translate` | Set or cycle mode: `/linguall [original\|english\|off]` |
+| `/linguall-lang <lang>` | `/2-lang`, `/linguall-lang` | Switch native language (`zh`, `ja`, `en`, `es`, `fr`, `de`) |
+| `/linguall-compact` | `/2-compact`, `/linguall-compact` | Toggle between single-line capsule mode and full tree HUD |
+| `/linguall-model <id>` | `/2-model`, `/linguall-model` | View or switch companion model (`auto` or specific model ID) |
+| `/linguall-status` | `/2-status`, `/linguall-status` | Display full diagnostic report, active model, and LRU cache statistics |
+| `/linguall-last` | `/2-last`, `/linguall-last` | Replay the previous companion card in the terminal |
+| `/linguall-agent` | `/2-agent`, `/linguall-agent` | Display companion customization guide |
 
 ### Keyboard Shortcuts (During Translation HUD Display)
 * **`Alt+.`** (`>`): Flip to the next semantic chunk.

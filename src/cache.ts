@@ -1,5 +1,5 @@
 /**
- * In-Memory LRU Cache for Lingua Translations (会话级 0 依赖极速缓存)
+ * In-Memory LRU Cache for Lingual Translations (会话级 0 依赖极速缓存)
  * 
  * 开发者在与 AI 对话时存在大量高频短语（如“继续”、“可以”、“同意”、“开始吧”、“继续推进”）。
  * 基于 ES6 Map 实现轻量高效的 LRU 缓存（默认容量 50 条）。
@@ -13,7 +13,7 @@ export interface CacheStats {
   capacity: number;
 }
 
-export class LinguaLruCache<T> {
+export class LingualLruCache<T> {
   private cache = new Map<string, T>();
   private hits = 0;
   private misses = 0;
@@ -77,7 +77,6 @@ export class LinguaLruCache<T> {
   }
 }
 
-import type { LinguaResult } from "./types.js";
-
-// 全局会话级单例缓存
-export const globalLinguaCache = new LinguaLruCache<LinguaResult>(50);
+export const LinguaLruCache = LingualLruCache;
+export const globalLingualCache = new LingualLruCache<any>(50);
+export const globalLinguaCache = globalLingualCache;

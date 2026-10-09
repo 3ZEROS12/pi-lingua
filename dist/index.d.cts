@@ -1,5 +1,6 @@
-type LinguaMode = "original" | "english" | "off";
-interface LinguaI18nLabels {
+type LingualMode = "original" | "english" | "off";
+type LinguaMode = LingualMode;
+interface LingualI18nLabels {
     slot1Label: string;
     slot2Label: string;
     vocabLabel: string;
@@ -53,21 +54,23 @@ interface LinguaI18nLabels {
     spokenLabel?: string;
     writtenLabel?: string;
 }
-interface LinguaConfig {
+type LinguaI18nLabels = LingualI18nLabels;
+interface LingualConfig {
     endpoint: string;
     apiKey: string;
     model: string;
     selectedModel?: string;
-    mode?: LinguaMode;
+    mode?: LingualMode;
     compact?: boolean;
     sourceLang?: string;
     targetLang?: string;
-    labels?: Partial<LinguaI18nLabels>;
+    labels?: Partial<LingualI18nLabels>;
     temperature?: number;
     timeoutMs?: number;
     complete?: (text: string, systemPrompt: string) => Promise<string | null>;
 }
-interface LinguaResult {
+type LinguaConfig = LingualConfig;
+interface LingualResult {
     spoken: string;
     spokenMeaning?: string;
     written: string;
@@ -76,6 +79,7 @@ interface LinguaResult {
     sourceText: string;
     annotated: string;
 }
+type LinguaResult = LingualResult;
 interface TranslationPayload {
     spoken: string;
     spokenMeaning?: string;
@@ -88,16 +92,16 @@ interface TranslationPayload {
  * 官方预设多语言映射矩阵 (Language Preset Matrix)
  * 当用户或 Agent 设定母语 A 时，所有 UI 标签、图腾与状态文本自动本地化，彻底根除跨语言残留。
  */
-declare const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels>;
+declare const LANGUAGE_PRESETS: Record<string, LingualI18nLabels>;
 /**
  * 根据母语语言代码解析对应的本地化标签，并允许用户自定义覆盖
  * 遵循 Lesson 7: 英文中枢保底链 (English Pivot Fallback)
  */
-declare function resolveLabelsForLang(lang: string, overrides?: Partial<LinguaI18nLabels>): LinguaI18nLabels;
+declare function resolveLabelsForLang(lang: string, overrides?: Partial<LingualI18nLabels>): LingualI18nLabels;
 /**
  * 格式化完整的运行状态报告，严格遵循母语 A 统治权
  */
-declare function formatStatusReport(labels: LinguaI18nLabels, info: {
+declare function formatStatusReport(labels: LingualI18nLabels, info: {
     mode: string;
     sourceLang: string;
     targetLang?: string;
@@ -113,7 +117,7 @@ declare function formatStatusReport(labels: LinguaI18nLabels, info: {
 /**
  * 格式化模型选择界面的提示文本，严格遵循母语 A 统治权
  */
-declare function formatModelSelectionMessage(labels: LinguaI18nLabels, currentActive: string, availableList?: string): string;
+declare function formatModelSelectionMessage(labels: LingualI18nLabels, currentActive: string, availableList?: string): string;
 
 /**
  * Splits text into atomic natural sentence chunks when long.
@@ -147,7 +151,7 @@ declare function buildSystemPrompt(sourceLang?: string, targetLang?: string): st
 declare function shouldShieldBypass(text: string): boolean;
 
 /**
- * In-Memory LRU Cache for Lingua Translations (会话级 0 依赖极速缓存)
+ * In-Memory LRU Cache for Lingual Translations (会话级 0 依赖极速缓存)
  *
  * 开发者在与 AI 对话时存在大量高频短语（如“继续”、“可以”、“同意”、“开始吧”、“继续推进”）。
  * 基于 ES6 Map 实现轻量高效的 LRU 缓存（默认容量 50 条）。
@@ -159,7 +163,7 @@ interface CacheStats {
     size: number;
     capacity: number;
 }
-declare class LinguaLruCache<T> {
+declare class LingualLruCache<T> {
     readonly capacity: number;
     private cache;
     private hits;
@@ -176,8 +180,9 @@ declare class LinguaLruCache<T> {
     get size(): number;
     getStats(): CacheStats;
 }
-
-declare const globalLinguaCache: LinguaLruCache<LinguaResult>;
+declare const LinguaLruCache: typeof LingualLruCache;
+declare const globalLingualCache: LingualLruCache<any>;
+declare const globalLinguaCache: LingualLruCache<any>;
 
 /**
  * Prompt Sanitizer & Intent Distiller (报错审查与意图萃取器)
@@ -211,12 +216,12 @@ declare function invalidateUserConfigCache(): void;
 /**
  * Load user configuration from:
  * 1. ~/.pi/agent/settings.json (under "pi-lingual" block)
- * 2. ~/.pi/agent/lingua.json (flat or nested)
+ * 2. ~/.pi/agent/lingual.json (flat or nested)
  * Uses high-efficiency 2-second in-memory memoization to prevent synchronous disk I/O thrashing during parallel chunk translations.
  * Never hardcodes private credentials in source code.
  */
-declare function loadUserConfig(): Partial<LinguaConfig>;
-declare const DEFAULT_CONFIG: LinguaConfig;
+declare function loadUserLingualConfig(): Partial<LingualConfig>;
+declare const DEFAULT_CONFIG: LingualConfig;
 /**
  * 现代开发者双语伴学系统提示词 (中文 A ➔ 英文 B，默认导出)
  * 设计哲学：
@@ -226,7 +231,7 @@ declare const DEFAULT_CONFIG: LinguaConfig;
  * 4. 代码与专有名词绝对防御机制 (Code & Symbol Shield)
  * 5. 水平自适应重点词汇提取，单行紧凑流排列
  */
-declare const LINGUA_SYSTEM_PROMPT: string;
+declare const LINGUAL_SYSTEM_PROMPT: string;
 
 /**
  * Check if the text contains non-English natural language scripts (CJK, accented Latin, Cyrillic, etc.)
@@ -323,7 +328,7 @@ declare function formatCapsuleLine(hudTitle: string, spoken: string, written?: s
  * Strip annotations and recover purely clean text to prevent LLM prompt pollution
  * Robust against tree branch glyphs (┌ ├ └) and arrow annotations (↳)
  */
-declare function stripLinguaAnnotation(annotatedText: string): {
+declare function stripLingualAnnotation(annotatedText: string): {
     raw: string;
     spoken?: string;
     written?: string;
@@ -332,6 +337,9 @@ declare function stripLinguaAnnotation(annotatedText: string): {
 /**
  * Translate a user prompt into idiomatic English with dual registers, native nuance, and vocabulary highlights
  */
-declare function translatePrompt(text: string, userConfig?: Partial<LinguaConfig>): Promise<LinguaResult | null>;
+declare function translatePrompt(text: string, userConfig?: Partial<LingualConfig>): Promise<LingualResult | null>;
+declare const LINGUA_SYSTEM_PROMPT: string;
+declare const stripLinguaAnnotation: typeof stripLingualAnnotation;
+declare const loadUserConfig: typeof loadUserLingualConfig;
 
-export { type CacheStats, DEFAULT_CONFIG, LANGUAGE_PRESETS, LINGUA_SYSTEM_PROMPT, type LinguaConfig, type LinguaI18nLabels, LinguaLruCache, type LinguaMode, type LinguaResult, MAX_TRANSLATION_CHARS, MAX_TRANSLATION_LINES, type SanitizedPromptResult, type TranslationPayload, buildSystemPrompt, extractVocabPhrases, formatCapsuleLine, formatModelSelectionMessage, formatStatusReport, formatSubRail, formatTerminalAnnotation, formatTreeBranch, getVisualWidth, globalLinguaCache, invalidateUserConfigCache, isNonEnglish, loadUserConfig, parseLlmResponse, resolveLabelsForLang, sanitizePromptForTranslation, shouldShieldBypass, shouldTriggerTranslation, splitSemanticChunks, spotlightPhrases, stripLinguaAnnotation, translatePrompt, truncateVisual, wrapVisualText };
+export { type CacheStats, DEFAULT_CONFIG, LANGUAGE_PRESETS, LINGUAL_SYSTEM_PROMPT, LINGUA_SYSTEM_PROMPT, type LinguaConfig, type LinguaI18nLabels, LinguaLruCache, type LinguaMode, type LinguaResult, type LingualConfig, type LingualI18nLabels, LingualLruCache, type LingualMode, type LingualResult, MAX_TRANSLATION_CHARS, MAX_TRANSLATION_LINES, type SanitizedPromptResult, type TranslationPayload, buildSystemPrompt, extractVocabPhrases, formatCapsuleLine, formatModelSelectionMessage, formatStatusReport, formatSubRail, formatTerminalAnnotation, formatTreeBranch, getVisualWidth, globalLinguaCache, globalLingualCache, invalidateUserConfigCache, isNonEnglish, loadUserConfig, loadUserLingualConfig, parseLlmResponse, resolveLabelsForLang, sanitizePromptForTranslation, shouldShieldBypass, shouldTriggerTranslation, splitSemanticChunks, spotlightPhrases, stripLinguaAnnotation, stripLingualAnnotation, translatePrompt, truncateVisual, wrapVisualText };

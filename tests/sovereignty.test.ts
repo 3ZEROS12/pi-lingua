@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { resolveLabelsForLang, formatStatusReport, formatModelSelectionMessage } from "../src/presets.js";
 import { buildSystemPrompt } from "../src/prompts.js";
-import { formatTerminalAnnotation, stripLinguaAnnotation } from "../src/engine.js";
+import { formatTerminalAnnotation, stripLingualAnnotation } from "../src/engine.js";
 
 test("Primary Language Sovereignty - Japanese (ja) leaves ZERO Chinese in UI and labels", () => {
   const jaLabels = resolveLabelsForLang("ja");
@@ -19,7 +19,7 @@ test("Primary Language Sovereignty - Japanese (ja) leaves ZERO Chinese in UI and
   assert.ok(jaLabels.notifyEnglish?.includes("【英語モード】に切り替えました"));
   assert.ok(jaLabels.notifyOff?.includes("オフにしました"));
   assert.ok(jaLabels.notifyPaging?.includes("長文を分割しました"));
-  assert.ok(jaLabels.notifyAgentHelp?.includes("母語の変更は /lingua-lang"));
+  assert.ok(jaLabels.notifyAgentHelp?.includes("母語の変更は /lingual-lang"));
 
   // Status report contains Japanese chrome
   const report = formatStatusReport(jaLabels, {
@@ -110,8 +110,8 @@ test("Visual Consistency - Source line tag matches [Original] format and aligns 
   const cleanLine1 = lines[1].replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "");
   assert.ok(cleanLine1.includes("  ┌ [口语] Totally on board with that."));
 
-  // Recovery via stripLinguaAnnotation works with bracketed source tag
-  const recovered = stripLinguaAnnotation(annotated);
+  // Recovery via stripLingualAnnotation works with bracketed source tag
+  const recovered = stripLingualAnnotation(annotated);
   assert.equal(recovered.raw, "认同，开始吧");
   assert.equal(recovered.spoken, "Totally on board with that.");
 });

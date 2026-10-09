@@ -7,11 +7,11 @@ import type {
   InputEvent,
   InputEventResult,
 } from "@earendil-works/pi-coding-agent";
-import type { LinguaMode, LinguaI18nLabels, LinguaResult } from "./types.js";
+import type { LingualMode, LingualI18nLabels, LingualResult } from "./types.js";
 import {
   translatePrompt,
   shouldTriggerTranslation,
-  loadUserConfig,
+  loadUserLingualConfig,
   formatTreeBranch,
   formatSubRail,
   truncateVisual,
@@ -29,17 +29,17 @@ import {
 } from "./presets.js";
 import { splitSemanticChunks } from "./chunker.js";
 import { sanitizePromptForTranslation } from "./sanitizer.js";
-import { globalLinguaCache } from "./cache.js";
+import { globalLingualCache } from "./cache.js";
 
 interface ExtensionState {
-  mode: LinguaMode;
+  mode: LingualMode;
   compact: boolean;
   sourceLang: string;
   selectedModel: string;
-  labels: LinguaI18nLabels;
+  labels: LingualI18nLabels;
 }
 
-const initialDiskConfig = loadUserConfig();
+const initialDiskConfig = loadUserLingualConfig();
 const initialSourceLang = initialDiskConfig.sourceLang || "zh";
 const initialLabels = resolveLabelsForLang(initialSourceLang, initialDiskConfig.labels);
 
@@ -51,7 +51,7 @@ const state: ExtensionState = {
   labels: initialLabels,
 };
 
-function saveUserLinguaConfig(patch: Record<string, any>) {
+function saveUserLingualConfig(patch: Record<string, any>) {
   // 测试沙箱隔离：自动化测试期间不污染宿主机用户配置
   if (process.env.NODE_ENV === "test" || process.execArgv.includes("--test") || process.argv.includes("--test")) {
     return;
@@ -60,7 +60,7 @@ function saveUserLinguaConfig(patch: Record<string, any>) {
   try {
     const agentDir = path.join(os.homedir(), ".pi", "agent");
     const settingsFile = path.join(agentDir, "settings.json");
-    const configFile = path.join(agentDir, "lingua.json");
+    const configFile = path.join(agentDir, "lingual.json");
 
     // 1. 优先尝试持久化到 Pi 全局 settings.json 下的 "pi-lingual" 配置块 (对齐 ADR-0003 与 Trifecta 铁律 1)
     if (fs.existsSync(settingsFile)) {
@@ -87,7 +87,7 @@ function saveUserLinguaConfig(patch: Record<string, any>) {
       } catch {}
     }
 
-    // 2. 同时更新 ~/.pi/agent/lingua.json 作为独立备用配置，同样执行删键清理以防永久覆盖 settings.json
+    // 2. 同时更新 ~/.pi/agent/lingual.json 作为独立备用配置，同样执行删键清理以防永久覆盖 settings.json
     if (!fs.existsSync(agentDir)) {
       fs.mkdirSync(agentDir, { recursive: true });
     }
@@ -118,10 +118,10 @@ function saveUserLinguaConfig(patch: Record<string, any>) {
 let currentRequestId = 0;
 
 // 内存暂存最近一次成功伴学结果，供 /2-last 与 /lingua-last 随时回看复盘
-let lastResult: LinguaResult | null = null;
+let lastResult: LingualResult | null = null;
 
 // 多句切分原子卡片分页池与当前索引
-let pagedResults: LinguaResult[] = [];
+let pagedResults: LingualResult[] = [];
 let currentPageIndex = 0;
 let totalExpectedPages = 1;
 
@@ -132,10 +132,10 @@ function updateFooter(ctx: ExtensionContext) {
   switch (state.mode) {
     case "original":
     case "english":
-      ctx.ui.setStatus("lingua", ctx.ui.theme.fg("accent", pair));
+      ctx.ui.setStatus("lingual", ctx.ui.theme.fg("accent", pair));
       break;
     case "off":
-      ctx.ui.setStatus("lingua", ctx.ui.theme.fg("muted", `${pair}: off`));
+      ctx.ui.setStatus("lingual", ctx.ui.theme.fg("muted", `${pair}: off`));
       break;
   }
 }
@@ -184,7 +184,7 @@ function renderHudWidget(
         maxCols: process.stdout?.columns || 80,
       }
     );
-    ctx.ui.setWidget("lingua_hud", [capsuleText + pageTag], { placement: "aboveEditor" });
+    ctx.ui.setWidget("lingual_hud", [capsuleText + pageTag], { placement: "aboveEditor" });
     return;
   }
 
@@ -306,7 +306,7 @@ function renderHudWidget(
     lines = lines.slice(0, 9);
   }
 
-  ctx.ui.setWidget("lingua_hud", lines, { placement: "aboveEditor" });
+  ctx.ui.setWidget("lingual_hud", lines, { placement: "aboveEditor" });
 }
 
 function renderActiveCard(ctx: ExtensionContext) {
@@ -337,7 +337,7 @@ export default function (pi: ExtensionAPI) {
   const setModeHandler = async (args: string, ctx: ExtensionContext) => {
     currentRequestId++;
     const trimmed = args?.trim().toLowerCase();
-    let nextMode: LinguaMode;
+    let nextMode: LingualMode;
 
     if (trimmed === "english" || trimmed === "en" || trimmed === "eng" || trimmed === "2") {
       nextMode = "english";
@@ -352,14 +352,14 @@ export default function (pi: ExtensionAPI) {
 
     state.mode = nextMode;
     // 【核心根治 1 · 状态持久化落盘】：每次切换模式立即物理持久化到 settings.json，彻底杜绝重载时回退到 original！
-    saveUserLinguaConfig({ mode: nextMode });
+    saveUserLingualConfig({ mode: nextMode });
     updateFooter(ctx);
 
     if (nextMode === "english") {
       ctx.ui.notify(state.labels.notifyEnglish || `[${state.labels.hudTitle}] 已切换至【英文模式】：发给 AI 的输入将自动转换为纯正技术英文`, "info");
     } else if (nextMode === "off") {
       if (ctx.hasUI && typeof ctx.ui.setWidget === "function") {
-        ctx.ui.setWidget("lingua_hud", undefined);
+        ctx.ui.setWidget("lingual_hud", undefined);
       }
       ctx.ui.notify(state.labels.notifyOff || `[${state.labels.hudTitle}] 已关闭伴学`, "info");
     } else {
@@ -378,17 +378,12 @@ export default function (pi: ExtensionAPI) {
     handler: setModeHandler,
   });
 
-  pi.registerCommand("lingua", {
+  pi.registerCommand("lingual", {
     description: state.labels.cmdDescMode || "切换伴学模式 (别名)",
     handler: setModeHandler,
   });
 
-  pi.registerCommand("translate", {
-    description: state.labels.cmdDescMode || "切换伴学模式 (别名)",
-    handler: setModeHandler,
-  });
-
-  pi.registerCommand("2", {
+    pi.registerCommand("2", {
     description: state.labels.cmdDescMode || "切换伴学模式 (别名)",
     handler: setModeHandler,
   });
@@ -404,18 +399,7 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
-  pi.registerCommand("lingua-agent", {
-    description: state.labels.cmdDescAgent || "查看伴学定制指南 (别名)",
-    handler: async (_args, ctx) => {
-      ctx.ui.notify(
-        state.labels.notifyAgentHelp ||
-          "💡 切换母语？直接运行 /lingual-lang <zh|ja|en|es|fr|de> 即可实时切换并持久化；若需定制特殊风格，可直接向 Agent 描述你的定制偏好。",
-        "info"
-      );
-    },
-  });
-
-  const setModelHandler = async (args: string, ctx: ExtensionContext) => {
+    const setModelHandler = async (args: string, ctx: ExtensionContext) => {
     const trimmed = args.trim();
     const followSessionDesc = state.labels.modelFollowSession || "跟随会话";
     const currentActive = state.selectedModel === "auto"
@@ -434,7 +418,7 @@ export default function (pi: ExtensionAPI) {
     }
 
     state.selectedModel = trimmed;
-    saveUserLinguaConfig({ selectedModel: trimmed });
+    saveUserLingualConfig({ selectedModel: trimmed });
     const switchTemplate = state.labels.notifyModelSwitched || "伴学模型已切换为: {model}";
     const switchedMsg = `[${state.labels.hudTitle}] ` + switchTemplate.replace("{model}", trimmed);
     ctx.ui.notify(switchedMsg, "info");
@@ -445,12 +429,7 @@ export default function (pi: ExtensionAPI) {
     handler: setModelHandler,
   });
 
-  pi.registerCommand("lingua-model", {
-    description: state.labels.cmdDescModel || "查看或切换伴学模型 (别名)",
-    handler: setModelHandler,
-  });
-
-  pi.registerCommand("2-model", {
+    pi.registerCommand("2-model", {
     description: state.labels.cmdDescModel || "查看或切换伴学模型 (别名)",
     handler: setModelHandler,
   });
@@ -483,20 +462,15 @@ export default function (pi: ExtensionAPI) {
 
     state.sourceLang = trimmed;
     state.labels = resolveLabelsForLang(trimmed, initialDiskConfig.labels);
-    saveUserLinguaConfig({ sourceLang: trimmed });
-    globalLinguaCache.clear();
+    saveUserLingualConfig({ sourceLang: trimmed });
+    globalLingualCache.clear();
     updateFooter(ctx);
 
     const template = state.labels.notifyLangSwitched || "Native language switched to: {lang}";
     ctx.ui.notify(`[${state.labels.hudTitle}] ` + template.replace("{lang}", trimmed), "info");
   };
 
-  pi.registerCommand("lingua-lang", {
-    description: state.labels.cmdDescLang || "查看或切换伴学母语 [二 ⇄ two]: /lingua-lang [zh|ja|en|es|fr|de]",
-    handler: switchLangHandler,
-  });
-
-  pi.registerCommand("lingual-lang", {
+    pi.registerCommand("lingual-lang", {
     description: state.labels.cmdDescLang || "切换伴学母语 (别名)",
     handler: switchLangHandler,
   });
@@ -508,7 +482,7 @@ export default function (pi: ExtensionAPI) {
 
   const toggleCompactHandler = async (_args: string, ctx: ExtensionContext) => {
     state.compact = !state.compact;
-    saveUserLinguaConfig({ compact: state.compact });
+    saveUserLingualConfig({ compact: state.compact });
     const msg = state.compact
       ? (state.labels.notifyCompactOn || `[${state.labels.hudTitle}] 已开启单行胶囊模式`)
       : (state.labels.notifyCompactOff || `[${state.labels.hudTitle}] 已切换为左导轨树状架构`);
@@ -530,12 +504,7 @@ export default function (pi: ExtensionAPI) {
     }
   };
 
-  pi.registerCommand("lingua-compact", {
-    description: state.labels.cmdDescCompact || "切换单行胶囊模式与完整树状图: /lingua-compact",
-    handler: toggleCompactHandler,
-  });
-
-  pi.registerCommand("lingual-compact", {
+    pi.registerCommand("lingual-compact", {
     description: state.labels.cmdDescCompact || "切换单行胶囊模式 (别名)",
     handler: toggleCompactHandler,
   });
@@ -557,7 +526,7 @@ export default function (pi: ExtensionAPI) {
       targetLang: "en",
       activeModel,
       layout: state.compact ? "capsule" : "tree",
-      cacheStats: globalLinguaCache.getStats(),
+      cacheStats: globalLingualCache.getStats(),
     });
 
     ctx.ui.notify(statusMsg, "info");
@@ -568,12 +537,7 @@ export default function (pi: ExtensionAPI) {
     handler: showStatusHandler,
   });
 
-  pi.registerCommand("lingua-status", {
-    description: state.labels.cmdDescStatus || "查看伴学插件状态 (别名)",
-    handler: showStatusHandler,
-  });
-
-  pi.registerCommand("2-status", {
+    pi.registerCommand("2-status", {
     description: state.labels.cmdDescStatus || "查看伴学插件当前状态 (别名)",
     handler: showStatusHandler,
   });
@@ -605,12 +569,7 @@ export default function (pi: ExtensionAPI) {
     handler: showLastHandler,
   });
 
-  pi.registerCommand("lingua-last", {
-    description: state.labels.cmdDescLast || "重新回看上一条伴学卡片 (别名)",
-    handler: showLastHandler,
-  });
-
-  pi.registerCommand("2-last", {
+    pi.registerCommand("2-last", {
     description: state.labels.cmdDescLast || "回看上一条伴学卡片 (别名)",
     handler: showLastHandler,
   });
@@ -679,7 +638,7 @@ export default function (pi: ExtensionAPI) {
 
         // 【关键保护 2】：设置 30s 充裕超时保护，防止上游网络死锁或挂起阻塞用户终端输入，同时避免并发排队时虚假超时
         const timeoutPromise = new Promise<null>((_, reject) =>
-          setTimeout(() => reject(new Error("Lingua translation timed out")), 30000)
+          setTimeout(() => reject(new Error("Lingual translation timed out")), 30000)
         );
         const res = (await Promise.race([stream.result(), timeoutPromise])) as any;
         if (!res) return null;
@@ -722,7 +681,7 @@ export default function (pi: ExtensionAPI) {
     ) {
       // 【关键体验防线 1 · 绝无僵尸残留】：当前输入不触发翻译时，立刻物理销毁上一轮的旧卡片，绝不让上上一句死死挂在屏幕上！
       if (ctx.hasUI) {
-        ctx.ui.setWidget("lingua_hud", undefined);
+        ctx.ui.setWidget("lingual_hud", undefined);
       }
       return { action: "continue" };
     }
@@ -738,7 +697,7 @@ export default function (pi: ExtensionAPI) {
     // 【原文模式】(original · 默认)：彻底非阻塞 (0ms 立即放行原始输入)，后台异步微任务渲染卡片视窗
     if (state.mode === "original") {
       if (ctx.hasUI) {
-        ctx.ui.setStatus("lingua", ctx.ui.theme.fg("accent", "⇄ [lingua] polishing..."));
+        ctx.ui.setStatus("lingual", ctx.ui.theme.fg("accent", "⇄ [lingual] polishing..."));
       }
 
       if (chunks.length === 1) {
@@ -824,11 +783,11 @@ export default function (pi: ExtensionAPI) {
     // 【英文模式】(english)：同步等待获取纯技术英文以替换发送给 AI 的 Prompt
     if (ctx.hasUI) {
       ctx.ui.setWidget(
-        "lingua_hud",
-        [ctx.ui.theme.fg("muted", "  ⋯ ⇄ [lingua] polishing...")],
+        "lingual_hud",
+        [ctx.ui.theme.fg("muted", "  ⋯ ⇄ [lingual] polishing...")],
         { placement: "aboveEditor" }
       );
-      ctx.ui.setStatus("lingua", ctx.ui.theme.fg("accent", "⇄ [lingua] polishing..."));
+      ctx.ui.setStatus("lingual", ctx.ui.theme.fg("accent", "⇄ [lingual] polishing..."));
     }
 
     try {
@@ -877,7 +836,7 @@ export default function (pi: ExtensionAPI) {
           )
         );
         if (requestId !== currentRequestId) return { action: "continue" };
-        const validResults = results.filter((r): r is LinguaResult => r !== null);
+        const validResults = results.filter((r): r is LingualResult => r !== null);
         if (validResults.length === 0) {
           if (ctx.hasUI) {
             ctx.ui.notify(`[${state.labels.hudTitle}] 英文翻译请求未就绪或超时，本次已放行原文`, "warning");

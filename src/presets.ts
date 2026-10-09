@@ -1,10 +1,10 @@
-import type { LinguaI18nLabels } from "./types.js";
+import type { LingualI18nLabels } from "./types.js";
 
 /**
  * 官方预设多语言映射矩阵 (Language Preset Matrix)
  * 当用户或 Agent 设定母语 A 时，所有 UI 标签、图腾与状态文本自动本地化，彻底根除跨语言残留。
  */
-export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
+export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
   zh: {
     slot1Label: "Spoken",
     slot2Label: "Written",
@@ -22,7 +22,7 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     notifyPaging: "[zh ⇄ en] 长句已切分多段，按 Alt+. 或 Alt+, 翻页浏览",
     notifyNoHistory: "[zh ⇄ en] 暂无上一条伴学记录",
     notifyHistoryRestored: "[zh ⇄ en] 已重新显示上一条伴学卡片",
-    notifyAgentHelp: "💡 切换母语？直接运行 /lingua-lang <zh|ja|en|es|fr|de> 即可实时切换并持久化；若需定制特殊风格，可直接向 Agent 描述你的定制偏好。",
+    notifyAgentHelp: "💡 切换母语？直接运行 /lingual-lang <zh|ja|en|es|fr|de> 即可实时切换并持久化；若需定制特殊风格，可直接向 Agent 描述你的定制偏好。",
     notifyModelSwitched: "伴学模型已切换为: {model}",
     notifyLangSwitched: "伴学母语已切换为: {lang}",
     notifyLangInvalid: "无效的语言代码。支持的语言代码: zh, ja, en, es, fr, de",
@@ -30,12 +30,12 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     notifyCompactOff: "[zh ⇄ en] 已切换为左导轨树状架构：展示完整双模与语感",
 
     cmdDescMode: "切换伴学模式 [zh ⇄ en]: [原文] ➔ [英文] ➔ [关]",
-    cmdDescStatus: "查看伴学插件当前状态报告与模型诊断: /lingua-status",
-    cmdDescModel: "查看或切换伴学模型 [zh ⇄ en]: /lingua-model [model-id|auto]",
-    cmdDescLang: "查看或切换伴学母语 [zh ⇄ en]: /lingua-lang [zh|ja|en|es|fr|de]",
-    cmdDescCompact: "切换单行胶囊模式与完整树状图: /lingua-compact",
-    cmdDescLast: "重新回看或重现上一条伴学卡片: /lingua-last",
-    cmdDescAgent: "查看伴学定制与母语切换指南: /lingua-agent",
+    cmdDescStatus: "查看伴学插件当前状态报告与模型诊断: /lingual-status",
+    cmdDescModel: "查看或切换伴学模型 [zh ⇄ en]: /lingual-model [model-id|auto]",
+    cmdDescLang: "查看或切换伴学母语 [zh ⇄ en]: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "切换单行胶囊模式与完整树状图: /lingual-compact",
+    cmdDescLast: "重新回看或重现上一条伴学卡片: /lingual-last",
+    cmdDescAgent: "查看伴学定制与母语切换指南: /lingual-agent",
     shortcutNextPage: "切换至下一段伴学切片",
     shortcutPrevPage: "切换至上一段伴学切片",
 
@@ -51,16 +51,16 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     statusReportCache: "会话缓存",
     statusReportLayout: "HUD布局: Trifecta 开放式左导轨树状架构 (· ┌ ├ └)",
     statusReportAuth: "凭据模式: Pi 原生进程内认证 (Zero Config · 零Token泄露)",
-    statusReportShortcuts: "快捷操作: /2 (切换模式) · /lingua-lang (切母语) · /lingua-model (切模型) · /lingua-agent (定制语言)",
+    statusReportShortcuts: "快捷操作: /2 (切换模式) · /lingual-lang (切母语) · /lingual-model (切模型) · /lingual-agent (定制语言)",
     modeDescOriginal: "原文直通 · 0ms非阻塞",
     modeDescEnglish: "英文模式 · 深度代码推理",
     modeDescOff: "已关闭",
 
     modelCurrentLabel: "当前伴学模型",
     modelFollowSession: "跟随会话",
-    modelAvailableListHeader: "可用模型 (输入 /lingua-model <id> 切换):",
+    modelAvailableListHeader: "可用模型 (输入 /lingual-model <id> 切换):",
     modelAutoFollowDesc: "auto (自动跟随当前会话主模型)",
-    modelSelectHint: "可输入 /lingua-model <model-id> 或 auto 指定伴学模型。",
+    modelSelectHint: "可输入 /lingual-model <model-id> 或 auto 指定伴学模型。",
   },
   ja: {
     slot1Label: "口語",
@@ -79,7 +79,7 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     notifyPaging: "[ja ⇄ en] 長文を分割しました。Alt+. または Alt+, でページ送り",
     notifyNoHistory: "[ja ⇄ en] 前回の記録はありません",
     notifyHistoryRestored: "[ja ⇄ en] 前回のカードを復元しました",
-    notifyAgentHelp: "💡 母語の変更は /lingua-lang <zh|ja|en|es|fr|de> で即時切り替え・保存できます。特別な文体や語域のカスタマイズが必要な場合は、Agent に直接ご要望をお伝えください。",
+    notifyAgentHelp: "💡 母語の変更は /lingual-lang <zh|ja|en|es|fr|de> で即時切り替え・保存できます。特別な文体や語域のカスタマイズが必要な場合は、Agent に直接ご要望をお伝えください。",
     notifyModelSwitched: "モデルを切り替えました: {model}",
     notifyLangSwitched: "母語を切り替えました: {lang}",
     notifyLangInvalid: "無効な言語コードです。対応言語: zh, ja, en, es, fr, de",
@@ -87,12 +87,12 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     notifyCompactOff: "[ja ⇄ en] フルツリー表示に切り替えました：詳細なニュアンスを表示",
 
     cmdDescMode: "モード切替 [ja ⇄ en]: [原文] ➔ [英語] ➔ [オフ]",
-    cmdDescStatus: "状態レポートとモデル診断を表示: /lingua-status",
-    cmdDescModel: "学習モデルの確認・切替: /lingua-model [model-id|auto]",
-    cmdDescLang: "伴走の母語を確認・変更: /lingua-lang [zh|ja|en|es|fr|de]",
-    cmdDescCompact: "1行カプセル表示とフルツリーの切替: /lingua-compact",
-    cmdDescLast: "前回の伴走カードを再表示: /lingua-last",
-    cmdDescAgent: "伴走カスタマイズと母語変更の案内を表示: /lingua-agent",
+    cmdDescStatus: "状態レポートとモデル診断を表示: /lingual-status",
+    cmdDescModel: "学習モデルの確認・切替: /lingual-model [model-id|auto]",
+    cmdDescLang: "伴走の母語を確認・変更: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "1行カプセル表示とフルツリーの切替: /lingual-compact",
+    cmdDescLast: "前回の伴走カードを再表示: /lingual-last",
+    cmdDescAgent: "伴走カスタマイズと母語変更の案内を表示: /lingual-agent",
     shortcutNextPage: "次のセグメントに切り替え",
     shortcutPrevPage: "前のセグメントに切り替え",
 
@@ -108,16 +108,16 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     statusReportCache: "セッションキャッシュ",
     statusReportLayout: "HUDレイアウト: Trifecta オープン左レールツリー構造 (· ┌ ├ └)",
     statusReportAuth: "認証方式: Pi ネイティブインプロセス認証 (ゼロ設定・Token安全)",
-    statusReportShortcuts: "クイック操作: /2 (モード切替) · /lingua-lang (母語切替) · /lingua-model (モデル切替) · /lingua-agent (カスタマイズ)",
+    statusReportShortcuts: "クイック操作: /2 (モード切替) · /lingual-lang (母語切替) · /lingual-model (モデル切替) · /lingual-agent (カスタマイズ)",
     modeDescOriginal: "原文パススルー · 0ms非同期",
     modeDescEnglish: "英語モード · 高度コード推論",
     modeDescOff: "オフ",
 
     modelCurrentLabel: "現在の学習モデル",
     modelFollowSession: "セッション連動",
-    modelAvailableListHeader: "利用可能なモデル (/lingua-model <id> で切替):",
+    modelAvailableListHeader: "利用可能なモデル (/lingual-model <id> で切替):",
     modelAutoFollowDesc: "auto (セッションの主モデルに自動追従)",
-    modelSelectHint: "/lingua-model <model-id> または auto を入力してモデルを指定できます。",
+    modelSelectHint: "/lingual-model <model-id> または auto を入力してモデルを指定できます。",
   },
   en: {
     slot1Label: "Spoken",
@@ -136,7 +136,7 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     notifyPaging: "[en ⇄ ja] Long prompt segmented. Press Alt+. or Alt+, to navigate pages",
     notifyNoHistory: "[en ⇄ ja] No previous companion card recorded",
     notifyHistoryRestored: "[en ⇄ ja] Restored previous companion card",
-    notifyAgentHelp: "💡 Switch native language with /lingua-lang <zh|ja|en|es|fr|de> anytime; for advanced prompt or style customization, simply describe your preferences to your Agent.",
+    notifyAgentHelp: "💡 Switch native language with /lingual-lang <zh|ja|en|es|fr|de> anytime; for advanced prompt or style customization, simply describe your preferences to your Agent.",
     notifyModelSwitched: "Companion model switched to: {model}",
     notifyLangSwitched: "Native language switched to: {lang}",
     notifyLangInvalid: "Invalid language code. Supported: zh, ja, en, es, fr, de",
@@ -144,12 +144,12 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     notifyCompactOff: "[en ⇄ ja] Full tree layout restored",
 
     cmdDescMode: "Cycle companion mode [en ⇄ ja]: [Original] ➔ [English] ➔ [Off]",
-    cmdDescStatus: "Display companion status report and model diagnosis: /lingua-status",
-    cmdDescModel: "Inspect or switch companion model: /lingua-model [model-id|auto]",
-    cmdDescLang: "View or switch companion native language: /lingua-lang [zh|ja|en|es|fr|de]",
-    cmdDescCompact: "Toggle single-line capsule mode: /lingua-compact",
-    cmdDescLast: "Replay previous companion card: /lingua-last",
-    cmdDescAgent: "Display companion customization & language guide: /lingua-agent",
+    cmdDescStatus: "Display companion status report and model diagnosis: /lingual-status",
+    cmdDescModel: "Inspect or switch companion model: /lingual-model [model-id|auto]",
+    cmdDescLang: "View or switch companion native language: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "Toggle single-line capsule mode: /lingual-compact",
+    cmdDescLast: "Replay previous companion card: /lingual-last",
+    cmdDescAgent: "Display companion customization & language guide: /lingual-agent",
     shortcutNextPage: "Switch to next companion segment",
     shortcutPrevPage: "Switch to previous companion segment",
 
@@ -165,16 +165,16 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     statusReportCache: "Session Cache",
     statusReportLayout: "HUD Layout: Trifecta Minimalist Left-Rail Tree (· ┌ ├ └)",
     statusReportAuth: "Auth: Pi Native In-Process Auth (Zero Config · Secure)",
-    statusReportShortcuts: "Shortcuts: /2 (mode) · /lingua-lang (lang) · /lingua-model (model) · /lingua-agent (customize)",
+    statusReportShortcuts: "Shortcuts: /2 (mode) · /lingual-lang (lang) · /lingual-model (model) · /lingual-agent (customize)",
     modeDescOriginal: "Pass-through · 0ms non-blocking",
     modeDescEnglish: "English mode · Deep reasoning",
     modeDescOff: "Disabled",
 
     modelCurrentLabel: "Current companion model",
     modelFollowSession: "Follow session",
-    modelAvailableListHeader: "Available models (run /lingua-model <id> to switch):",
+    modelAvailableListHeader: "Available models (run /lingual-model <id> to switch):",
     modelAutoFollowDesc: "auto (Automatically follows active session model)",
-    modelSelectHint: "Run /lingua-model <model-id> or auto to designate a model.",
+    modelSelectHint: "Run /lingual-model <model-id> or auto to designate a model.",
   },
   es: {
     slot1Label: "Coloquial",
@@ -193,7 +193,7 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     notifyPaging: "[es ⇄ en] Texto largo segmentado. Presione Alt+. o Alt+, para navegar",
     notifyNoHistory: "[es ⇄ en] No hay registros anteriores",
     notifyHistoryRestored: "[es ⇄ en] Tarjeta anterior restaurada",
-    notifyAgentHelp: "💡 Cambie su idioma nativo con /lingua-lang <zh|ja|en|es|fr|de> al instante; para estilos personalizados, simplemente indíquele sus preferencias a su Agente.",
+    notifyAgentHelp: "💡 Cambie su idioma nativo con /lingual-lang <zh|ja|en|es|fr|de> al instante; para estilos personalizados, simplemente indíquele sus preferencias a su Agente.",
     notifyModelSwitched: "Modelo cambiado a: {model}",
     notifyLangSwitched: "Idioma nativo cambiado a: {lang}",
     notifyLangInvalid: "Código de idioma no válido. Admitidos: zh, ja, en, es, fr, de",
@@ -201,12 +201,12 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     notifyCompactOff: "[es ⇄ en] Modo árbol completo restaurado",
 
     cmdDescMode: "Cambiar modo [es ⇄ en]: [Original] ➔ [Inglés] ➔ [Apagado]",
-    cmdDescStatus: "Mostrar diagnóstico y estado del modelo: /lingua-status",
-    cmdDescModel: "Consultar o cambiar modelo: /lingua-model [model-id|auto]",
-    cmdDescLang: "Ver o cambiar idioma nativo: /lingua-lang [zh|ja|en|es|fr|de]",
-    cmdDescCompact: "Alternar modo cápsula de una línea: /lingua-compact",
-    cmdDescLast: "Reaparecer tarjeta anterior: /lingua-last",
-    cmdDescAgent: "Ver guía de personalización y cambio de idioma: /lingua-agent",
+    cmdDescStatus: "Mostrar diagnóstico y estado del modelo: /lingual-status",
+    cmdDescModel: "Consultar o cambiar modelo: /lingual-model [model-id|auto]",
+    cmdDescLang: "Ver o cambiar idioma nativo: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "Alternar modo cápsula de una línea: /lingual-compact",
+    cmdDescLast: "Reaparecer tarjeta anterior: /lingual-last",
+    cmdDescAgent: "Ver guía de personalización y cambio de idioma: /lingual-agent",
     shortcutNextPage: "Cambiar al siguiente segmento",
     shortcutPrevPage: "Cambiar al segmento anterior",
 
@@ -222,16 +222,16 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     statusReportCache: "Caché de sesión",
     statusReportLayout: "Diseño HUD: Trifecta árbol de guía izquierda (· ┌ ├ └)",
     statusReportAuth: "Autenticación: Proceso nativo de Pi (Sin config · Seguro)",
-    statusReportShortcuts: "Accesos directos: /2 (modo) · /lingua-lang (idioma) · /lingua-model (modelo) · /lingua-agent (personalizar)",
+    statusReportShortcuts: "Accesos directos: /2 (modo) · /lingual-lang (idioma) · /lingual-model (modelo) · /lingual-agent (personalizar)",
     modeDescOriginal: "Directo · 0ms no bloqueante",
     modeDescEnglish: "Modo inglés · Razonamiento profundo",
     modeDescOff: "Apagado",
 
     modelCurrentLabel: "Modelo actual",
     modelFollowSession: "Siguiendo sesión",
-    modelAvailableListHeader: "Modelos disponibles (ejecute /lingua-model <id>):",
+    modelAvailableListHeader: "Modelos disponibles (ejecute /lingual-model <id>):",
     modelAutoFollowDesc: "auto (Sigue automáticamente el modelo de la sesión)",
-    modelSelectHint: "Use /lingua-model <id> o auto para asignar un modelo.",
+    modelSelectHint: "Use /lingual-model <id> o auto para asignar un modelo.",
   },
   fr: {
     slot1Label: "Oral",
@@ -250,7 +250,7 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     notifyPaging: "[fr ⇄ en] Long texte segmenté. Appuyez sur Alt+. ou Alt+, pour parcourir",
     notifyNoHistory: "[fr ⇄ en] Aucun historique précédent",
     notifyHistoryRestored: "[fr ⇄ en] Carte précédente restaurée",
-    notifyAgentHelp: "💡 Changez de langue avec /lingua-lang <zh|ja|en|es|fr|de> à tout moment ; pour personnaliser le style ou le ton, décrivez simplement vos préférences à votre Agent.",
+    notifyAgentHelp: "💡 Changez de langue avec /lingual-lang <zh|ja|en|es|fr|de> à tout moment ; pour personnaliser le style ou le ton, décrivez simplement vos préférences à votre Agent.",
     notifyModelSwitched: "Modèle changé pour : {model}",
     notifyLangSwitched: "Langue maternelle changée en : {lang}",
     notifyLangInvalid: "Code de langue invalide. Pris en charge : zh, ja, en, es, fr, de",
@@ -258,12 +258,12 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     notifyCompactOff: "[fr ⇄ en] Mode arborescence complète restauré",
 
     cmdDescMode: "Changer de mode [fr ⇄ en]: [Original] ➔ [Anglais] ➔ [Désactivé]",
-    cmdDescStatus: "Afficher le rapport d'état et le diagnostic: /lingua-status",
-    cmdDescModel: "Consulter ou changer de modèle: /lingua-model [model-id|auto]",
-    cmdDescLang: "Afficher ou changer la langue maternelle: /lingua-lang [zh|ja|en|es|fr|de]",
-    cmdDescCompact: "Basculer le mode capsule sur une ligne: /lingua-compact",
-    cmdDescLast: "Réafficher la carte précédente: /lingua-last",
-    cmdDescAgent: "Afficher le guide de personnalisation et de changement de langue : /lingua-agent",
+    cmdDescStatus: "Afficher le rapport d'état et le diagnostic: /lingual-status",
+    cmdDescModel: "Consulter ou changer de modèle: /lingual-model [model-id|auto]",
+    cmdDescLang: "Afficher ou changer la langue maternelle: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "Basculer le mode capsule sur une ligne: /lingual-compact",
+    cmdDescLast: "Réafficher la carte précédente: /lingual-last",
+    cmdDescAgent: "Afficher le guide de personnalisation et de changement de langue : /lingual-agent",
     shortcutNextPage: "Passer au segment suivant",
     shortcutPrevPage: "Passer au segment précédent",
 
@@ -279,16 +279,16 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     statusReportCache: "Cache de session",
     statusReportLayout: "Disposition HUD : Arbre guide gauche Trifecta (· ┌ ├ └)",
     statusReportAuth: "Authentification : Processus interne Pi natif (Zéro config · Sécurisé)",
-    statusReportShortcuts: "Raccourcis : /2 (mode) · /lingua-lang (langue) · /lingua-model (modèle) · /lingua-agent (personnaliser)",
+    statusReportShortcuts: "Raccourcis : /2 (mode) · /lingual-lang (langue) · /lingual-model (modèle) · /lingual-agent (personnaliser)",
     modeDescOriginal: "Passerelle directe · 0ms non bloquant",
     modeDescEnglish: "Mode anglais · Raisonnement approfondi",
     modeDescOff: "Désactivé",
 
     modelCurrentLabel: "Modèle actuel",
     modelFollowSession: "Suit la session",
-    modelAvailableListHeader: "Modèles disponibles (tapez /lingua-model <id>):",
+    modelAvailableListHeader: "Modèles disponibles (tapez /lingual-model <id>):",
     modelAutoFollowDesc: "auto (Suit automatiquement le modèle principal)",
-    modelSelectHint: "Entrez /lingua-model <id> ou auto pour définir le modèle.",
+    modelSelectHint: "Entrez /lingual-model <id> ou auto pour définir le modèle.",
   },
   de: {
     slot1Label: "Gesprochen",
@@ -307,7 +307,7 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     notifyPaging: "[de ⇄ en] Langer Text segmentiert. Mit Alt+. oder Alt+, blättern",
     notifyNoHistory: "[de ⇄ en] Kein vorheriger Eintrag vorhanden",
     notifyHistoryRestored: "[de ⇄ en] Vorherige Karte wiederhergestellt",
-    notifyAgentHelp: "💡 Wechseln Sie die Muttersprache mit /lingua-lang <zh|ja|en|es|fr|de> jederzeit; für benutzerdefinierte Stile teilen Sie Ihrem Agenten einfach Ihre Wünsche mit.",
+    notifyAgentHelp: "💡 Wechseln Sie die Muttersprache mit /lingual-lang <zh|ja|en|es|fr|de> jederzeit; für benutzerdefinierte Stile teilen Sie Ihrem Agenten einfach Ihre Wünsche mit.",
     notifyModelSwitched: "Modell gewechselt zu: {model}",
     notifyLangSwitched: "Muttersprache geändert zu: {lang}",
     notifyLangInvalid: "Ungültiger Sprachcode. Unterstützt: zh, ja, en, es, fr, de",
@@ -315,12 +315,12 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     notifyCompactOff: "[de ⇄ en] Vollständige Baumansicht wiederhergestellt",
 
     cmdDescMode: "Modus umschalten [de ⇄ en]: [Original] ➔ [Englisch] ➔ [Aus]",
-    cmdDescStatus: "Statusbericht und Modell-Diagnose anzeigen: /lingua-status",
-    cmdDescModel: "Modell prüfen oder wechseln: /lingua-model [model-id|auto]",
-    cmdDescLang: "Muttersprache anzeigen oder wechseln: /lingua-lang [zh|ja|en|es|fr|de]",
-    cmdDescCompact: "Einzeiligen Kapselmodus umschalten: /lingua-compact",
-    cmdDescLast: "Vorherige Karte erneut anzeigen: /lingua-last",
-    cmdDescAgent: "Anleitung zur Anpassung und Sprachumstellung anzeigen: /lingua-agent",
+    cmdDescStatus: "Statusbericht und Modell-Diagnose anzeigen: /lingual-status",
+    cmdDescModel: "Modell prüfen oder wechseln: /lingual-model [model-id|auto]",
+    cmdDescLang: "Muttersprache anzeigen oder wechseln: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescCompact: "Einzeiligen Kapselmodus umschalten: /lingual-compact",
+    cmdDescLast: "Vorherige Karte erneut anzeigen: /lingual-last",
+    cmdDescAgent: "Anleitung zur Anpassung und Sprachumstellung anzeigen: /lingual-agent",
     shortcutNextPage: "Zum nächsten Segment wechseln",
     shortcutPrevPage: "Zum vorherigen Segment wechseln",
 
@@ -336,16 +336,16 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
     statusReportCache: "Sitzungscache",
     statusReportLayout: "HUD-Layout: Trifecta Minimalistische Baumstruktur (· ┌ ├ └)",
     statusReportAuth: "Authentifizierung: Pi nativer In-Process Modus (Zero Config · Sicher)",
-    statusReportShortcuts: "Befehle: /2 (Modus) · /lingua-lang (Sprache) · /lingua-model (Modell) · /lingua-agent (Anpassen)",
+    statusReportShortcuts: "Befehle: /2 (Modus) · /lingual-lang (Sprache) · /lingual-model (Modell) · /lingual-agent (Anpassen)",
     modeDescOriginal: "Direkt · 0ms nicht blockierend",
     modeDescEnglish: "Englisch-Modus · Tiefgreifende Logik",
     modeDescOff: "Aus",
 
     modelCurrentLabel: "Aktuelles Modell",
     modelFollowSession: "Sitzungsmodell",
-    modelAvailableListHeader: "Verfügbare Modelle (/lingua-model <id> ausführen):",
+    modelAvailableListHeader: "Verfügbare Modelle (/lingual-model <id> ausführen):",
     modelAutoFollowDesc: "auto (Folgt automatisch dem aktiven Sitzungsmodell)",
-    modelSelectHint: "Geben Sie /lingua-model <id> oder auto ein.",
+    modelSelectHint: "Geben Sie /lingual-model <id> oder auto ein.",
   },
 };
 
@@ -355,8 +355,8 @@ export const LANGUAGE_PRESETS: Record<string, LinguaI18nLabels> = {
  */
 export function resolveLabelsForLang(
   lang: string,
-  overrides?: Partial<LinguaI18nLabels>
-): LinguaI18nLabels {
+  overrides?: Partial<LingualI18nLabels>
+): LingualI18nLabels {
   const norm = (lang || "zh").toLowerCase().split("-")[0];
   const target = LANGUAGE_PRESETS[norm] || LANGUAGE_PRESETS.zh;
   return {
@@ -370,7 +370,7 @@ export function resolveLabelsForLang(
  * 格式化完整的运行状态报告，严格遵循母语 A 统治权
  */
 export function formatStatusReport(
-  labels: LinguaI18nLabels,
+  labels: LingualI18nLabels,
   info: {
     mode: string;
     sourceLang: string;
@@ -415,7 +415,7 @@ export function formatStatusReport(
   lines.push(
     `• ${labels.statusReportLayout || "Layout"}: ${layoutDesc}`,
     `• ${labels.statusReportAuth || "Auth: Pi Native In-Process Auth"}`,
-    `• ${labels.statusReportShortcuts || "Shortcuts: /2 · /lingua-lang · /lingua-compact · /lingua-model · /lingua-agent"}`
+    `• ${labels.statusReportShortcuts || "Shortcuts: /2 · /lingual-lang · /lingual-compact · /lingual-model · /lingual-agent"}`
   );
   return lines.join("\n");
 }
@@ -424,7 +424,7 @@ export function formatStatusReport(
  * 格式化模型选择界面的提示文本，严格遵循母语 A 统治权
  */
 export function formatModelSelectionMessage(
-  labels: LinguaI18nLabels,
+  labels: LingualI18nLabels,
   currentActive: string,
   availableList?: string
 ): string {
@@ -432,6 +432,6 @@ export function formatModelSelectionMessage(
   if (availableList) {
     msg += `${labels.modelAvailableListHeader || "Available models:"}\n${availableList}\n• ${labels.modelAutoFollowDesc || "auto"}\n`;
   }
-  msg += labels.modelSelectHint || "Specify model with /lingua-model <model-id> or auto.";
+  msg += labels.modelSelectHint || "Specify model with /lingual-model <model-id> or auto.";
   return msg;
 }
