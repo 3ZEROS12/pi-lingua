@@ -416,10 +416,10 @@ export function formatTerminalAnnotation(
     spotlight?: boolean;
   } = {}
 ): string {
-  const slot1 = options.slot1Label || "口语";
-  const slot2 = options.slot2Label || "写作";
-  const vocabTag = options.vocabLabel || "重点";
-  const sourceTag = options.sourceLabel || "原文";
+  const slot1 = options.slot1Label || "Spoken";
+  const slot2 = options.slot2Label || "Written";
+  const vocabTag = options.vocabLabel || "Vocab";
+  const sourceTag = options.sourceLabel || "Original";
 
   const hasSlot2 = Boolean(written && written.trim());
   const hasVocab = Boolean(vocab && vocab.trim());
@@ -648,10 +648,10 @@ export async function translatePrompt(
     const payload = parseLlmResponse(content);
     if (!payload || !payload.spoken) return null;
 
-    const slot1Label = cfg.labels?.slot1Label || cfg.labels?.spokenLabel || "口语";
-    const slot2Label = cfg.labels?.slot2Label || cfg.labels?.writtenLabel || "写作";
-    const vocabLabel = cfg.labels?.vocabLabel || "重点";
-    const sourceLabel = cfg.labels?.sourceLabel || "原文";
+    const slot1Label = cfg.labels?.slot1Label || cfg.labels?.spokenLabel || "Spoken";
+    const slot2Label = cfg.labels?.slot2Label || cfg.labels?.writtenLabel || "Written";
+    const vocabLabel = cfg.labels?.vocabLabel || "Vocab";
+    const sourceLabel = cfg.labels?.sourceLabel || "Original";
 
     const result: LinguaResult = {
       spoken: payload.spoken,

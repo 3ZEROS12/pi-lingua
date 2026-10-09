@@ -1,10 +1,10 @@
 // src/presets.ts
 var LANGUAGE_PRESETS = {
   zh: {
-    slot1Label: "\u53E3\u8BED",
-    slot2Label: "\u5199\u4F5C",
-    vocabLabel: "\u91CD\u70B9",
-    sourceLabel: "\u539F\u6587",
+    slot1Label: "Spoken",
+    slot2Label: "Written",
+    vocabLabel: "Vocab",
+    sourceLabel: "Original",
     hudTitle: "\u4E8C \u21C4 two",
     statusOriginal: "\u21C4 [\u4E8C \u21C4 two] \u539F\u6587",
     statusEnglish: "\u21C4 [\u4E8C \u21C4 two] \u82F1\u6587",
@@ -1041,10 +1041,10 @@ function spotlightPhrases(text, phrases) {
   return result;
 }
 function formatTerminalAnnotation(sourceText, spoken, written, vocab, options = {}) {
-  const slot1 = options.slot1Label || "\u53E3\u8BED";
-  const slot2 = options.slot2Label || "\u5199\u4F5C";
-  const vocabTag = options.vocabLabel || "\u91CD\u70B9";
-  const sourceTag = options.sourceLabel || "\u539F\u6587";
+  const slot1 = options.slot1Label || "Spoken";
+  const slot2 = options.slot2Label || "Written";
+  const vocabTag = options.vocabLabel || "Vocab";
+  const sourceTag = options.sourceLabel || "Original";
   const hasSlot2 = Boolean(written && written.trim());
   const hasVocab = Boolean(vocab && vocab.trim());
   const spotlightEnabled = options.spotlight !== false;
@@ -1193,10 +1193,10 @@ async function translatePrompt(text, userConfig = {}) {
     }
     const payload = parseLlmResponse(content);
     if (!payload || !payload.spoken) return null;
-    const slot1Label = cfg.labels?.slot1Label || cfg.labels?.spokenLabel || "\u53E3\u8BED";
-    const slot2Label = cfg.labels?.slot2Label || cfg.labels?.writtenLabel || "\u5199\u4F5C";
-    const vocabLabel = cfg.labels?.vocabLabel || "\u91CD\u70B9";
-    const sourceLabel = cfg.labels?.sourceLabel || "\u539F\u6587";
+    const slot1Label = cfg.labels?.slot1Label || cfg.labels?.spokenLabel || "Spoken";
+    const slot2Label = cfg.labels?.slot2Label || cfg.labels?.writtenLabel || "Written";
+    const vocabLabel = cfg.labels?.vocabLabel || "Vocab";
+    const sourceLabel = cfg.labels?.sourceLabel || "Original";
     const result = {
       spoken: payload.spoken,
       spokenMeaning: payload.spokenMeaning,

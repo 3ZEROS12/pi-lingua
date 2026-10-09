@@ -11,10 +11,10 @@ import os from "os";
 // src/presets.ts
 var LANGUAGE_PRESETS = {
   zh: {
-    slot1Label: "\u53E3\u8BED",
-    slot2Label: "\u5199\u4F5C",
-    vocabLabel: "\u91CD\u70B9",
-    sourceLabel: "\u539F\u6587",
+    slot1Label: "Spoken",
+    slot2Label: "Written",
+    vocabLabel: "Vocab",
+    sourceLabel: "Original",
     hudTitle: "\u4E8C \u21C4 two",
     statusOriginal: "\u21C4 [\u4E8C \u21C4 two] \u539F\u6587",
     statusEnglish: "\u21C4 [\u4E8C \u21C4 two] \u82F1\u6587",
@@ -991,10 +991,10 @@ function spotlightPhrases(text, phrases) {
   return result;
 }
 function formatTerminalAnnotation(sourceText, spoken, written, vocab, options = {}) {
-  const slot1 = options.slot1Label || "\u53E3\u8BED";
-  const slot2 = options.slot2Label || "\u5199\u4F5C";
-  const vocabTag = options.vocabLabel || "\u91CD\u70B9";
-  const sourceTag = options.sourceLabel || "\u539F\u6587";
+  const slot1 = options.slot1Label || "Spoken";
+  const slot2 = options.slot2Label || "Written";
+  const vocabTag = options.vocabLabel || "Vocab";
+  const sourceTag = options.sourceLabel || "Original";
   const hasSlot2 = Boolean(written && written.trim());
   const hasVocab = Boolean(vocab && vocab.trim());
   const spotlightEnabled = options.spotlight !== false;
@@ -1101,10 +1101,10 @@ async function translatePrompt(text, userConfig = {}) {
     }
     const payload = parseLlmResponse(content);
     if (!payload || !payload.spoken) return null;
-    const slot1Label = cfg.labels?.slot1Label || cfg.labels?.spokenLabel || "\u53E3\u8BED";
-    const slot2Label = cfg.labels?.slot2Label || cfg.labels?.writtenLabel || "\u5199\u4F5C";
-    const vocabLabel = cfg.labels?.vocabLabel || "\u91CD\u70B9";
-    const sourceLabel = cfg.labels?.sourceLabel || "\u539F\u6587";
+    const slot1Label = cfg.labels?.slot1Label || cfg.labels?.spokenLabel || "Spoken";
+    const slot2Label = cfg.labels?.slot2Label || cfg.labels?.writtenLabel || "Written";
+    const vocabLabel = cfg.labels?.vocabLabel || "Vocab";
+    const sourceLabel = cfg.labels?.sourceLabel || "Original";
     const result = {
       spoken: payload.spoken,
       spokenMeaning: payload.spokenMeaning,
@@ -1350,20 +1350,67 @@ function renderHudWidget(ctx, sourceText, spoken, written, vocab, spokenMeaning,
   if (hasVocab) {
     lines.push(...formatTreeBranch("\u2514", " ", vocabTag, vocab, pMuted, pMuted, pMuted, pDim, maxCols));
   }
-  if (lines.length > 9) {
-    const compactLines = [...sourceLines];
-    const spText = spokenMeaning ? `${spoken} (${spokenMeaning})` : spoken;
-    compactLines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spText, pMuted, pAccent, pMuted, (s) => s, maxCols));
+  const HARD_MAX_LINES = 8;
+  if (lines.length > HARD_MAX_LINES) {
+    const t1Lines = [...sourceLines];
+    const spT1 = spokenMeaning ? `${spoken} (${spokenMeaning})` : spoken;
+    t1Lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spT1, pMuted, pAccent, pMuted, (s) => s, maxCols));
     if (hasWritten) {
       const branchChar = hasVocab ? "\u251C" : "\u2514";
       const contChar = hasVocab ? "\u2502" : " ";
-      const wrText = writtenMeaning ? `${written} (${writtenMeaning})` : written || "";
-      compactLines.push(...formatTreeBranch(branchChar, contChar, slot2, wrText, pMuted, pAccent, pMuted, (s) => s, maxCols));
+      const wrT1 = writtenMeaning ? `${written} (${writtenMeaning})` : written || "";
+      t1Lines.push(...formatTreeBranch(branchChar, contChar, slot2, wrT1, pMuted, pAccent, pMuted, (s) => s, maxCols));
     }
     if (hasVocab) {
-      compactLines.push(...formatTreeBranch("\u2514", " ", vocabTag, vocab, pMuted, pMuted, pMuted, pDim, maxCols));
+      t1Lines.push(...formatTreeBranch("\u2514", " ", vocabTag, vocab, pMuted, pMuted, pMuted, pDim, maxCols));
     }
-    lines = compactLines;
+    if (t1Lines.length <= HARD_MAX_LINES) {
+      lines = t1Lines;
+    } else {
+      const t2Lines = [...sourceLines];
+      t2Lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, displaySpoken, pMuted, pAccent, pMuted, (s) => s, maxCols));
+      if (hasWritten) {
+        const branchChar = hasVocab ? "\u251C" : "\u2514";
+        const contChar = hasVocab ? "\u2502" : " ";
+        t2Lines.push(...formatTreeBranch(branchChar, contChar, slot2, displayWritten, pMuted, pAccent, pMuted, (s) => s, maxCols));
+      }
+      if (hasVocab) {
+        t2Lines.push(...formatTreeBranch("\u2514", " ", vocabTag, vocab, pMuted, pMuted, pMuted, pDim, maxCols));
+      }
+      if (t2Lines.length <= HARD_MAX_LINES) {
+        lines = t2Lines;
+      } else {
+        const t3Lines = [];
+        if (sourceLines.length > 2) {
+          t3Lines.push(sourceLines[0]);
+          t3Lines.push(sourceLines[1]);
+        } else {
+          t3Lines.push(...sourceLines);
+        }
+        t3Lines.push(...formatTreeBranch(hasWritten ? "\u250C" : "\u2514", hasWritten ? "\u2502" : " ", slot1, displaySpoken, pMuted, pAccent, pMuted, (s) => s, maxCols));
+        if (hasWritten) {
+          t3Lines.push(...formatTreeBranch("\u2514", " ", slot2, displayWritten, pMuted, pAccent, pMuted, (s) => s, maxCols));
+        }
+        if (t3Lines.length <= HARD_MAX_LINES) {
+          lines = t3Lines;
+        } else {
+          const capsuleText = formatCapsuleLine(
+            state.labels.hudTitle,
+            spoken,
+            written,
+            {
+              slot1Short: state.labels.capsuleSlot1Prefix || slot1,
+              slot2Short: state.labels.capsuleSlot2Prefix || slot2,
+              maxCols: process.stdout?.columns || 80
+            }
+          );
+          lines = [capsuleText + pageTag];
+        }
+      }
+    }
+  }
+  if (lines.length > HARD_MAX_LINES) {
+    lines = lines.slice(0, HARD_MAX_LINES);
   }
   ctx.ui.setWidget("lingua_hud", lines, { placement: "aboveEditor" });
 }

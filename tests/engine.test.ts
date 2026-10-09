@@ -118,17 +118,17 @@ test("formatTerminalAnnotation - formats with source text anchor, native nuance,
     "Let's keep going.",
     "Proceed with the next steps."
   );
-  assert.ok(noVocab.includes("· [原文] 继续"));
-  assert.ok(noVocab.includes("┌ [口语] Let's keep going."));
-  assert.ok(noVocab.includes("└ [写作] Proceed with the next steps."));
+  assert.ok(noVocab.includes("· [Original] 继续"));
+  assert.ok(noVocab.includes("┌ [Spoken] Let's keep going."));
+  assert.ok(noVocab.includes("└ [Written] Proceed with the next steps."));
 
   // 3. Single slot
   const single = formatTerminalAnnotation(
     "继续",
     "Let's keep going."
   );
-  assert.ok(single.includes("· [原文] 继续"));
-  assert.ok(single.includes("└ [口语] Let's keep going."));
+  assert.ok(single.includes("· [Original] 继续"));
+  assert.ok(single.includes("└ [Spoken] Let's keep going."));
 
   // 4. Long original prompt must be 100% complete without arbitrary ellipsis truncation
   const longPrompt = "需要你针对现在的github和npm上的说明文档做个针对性调整，保有人味儿是绝对必须的。";
@@ -137,7 +137,7 @@ test("formatTerminalAnnotation - formats with source text anchor, native nuance,
     "We need you to give the docs a targeted pass.",
     "Please perform targeted revisions."
   );
-  assert.ok(longAnnotated.includes(`· [原文] ${longPrompt}`), "Must preserve 100% complete original sentence without ellipses");
+  assert.ok(longAnnotated.includes(`· [Original] ${longPrompt}`), "Must preserve 100% complete original sentence without ellipses");
   assert.ok(!longAnnotated.includes("..."), "Must not arbitrarily truncate original text with ellipsis");
 });
 
@@ -182,10 +182,10 @@ test("translatePrompt - supports custom completion callback (Pi native ModelRegi
   assert.equal(res.written, "Acknowledged. Let's proceed with the implementation.");
   assert.equal(res.writtenMeaning, "确认赞同，着手推进具体实施");
   assert.equal(res.vocab, "on board with (赞成/支持) · dive in (立刻着手/开搞)");
-  assert.ok(res.annotated.includes("· [原文] 认同，开始吧"));
-  assert.ok(res.annotated.includes("┌ [口语]"));
-  assert.ok(res.annotated.includes("├ [写作]"));
-  assert.ok(res.annotated.includes("└ [重点]"));
+  assert.ok(res.annotated.includes("· [Original] 认同，开始吧"));
+  assert.ok(res.annotated.includes("┌ [Spoken]"));
+  assert.ok(res.annotated.includes("├ [Written]"));
+  assert.ok(res.annotated.includes("└ [Vocab]"));
 });
 
 test("translatePrompt - live integration test against local gateway if configured", async () => {

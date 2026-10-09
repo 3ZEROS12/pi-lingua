@@ -258,24 +258,81 @@ function renderHudWidget(
     lines.push(...formatTreeBranch("└", " ", vocabTag, vocab!, pMuted, pMuted, pMuted, pDim, maxCols));
   }
 
-  // 4. 动态行数终极守卫 (Strict 9-Line Hard Budget Guard)
-  // 当用户在极端窄屏/分屏终端下（导致长文折行膨胀超过 9 行）时，自动将子释义优雅内联压缩，确保绝不触发 Pi 核心的 10 行硬截断！
-  if (lines.length > 9) {
-    const compactLines: string[] = [...sourceLines];
-    const spText = spokenMeaning ? `${spoken} (${spokenMeaning})` : spoken;
-    compactLines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spText, pMuted, pAccent, pMuted, s => s, maxCols));
+  // 4. 动态行数坚不可摧守卫 (Bulletproof Tiered Hard Budget Guard)
+  // Pi host widget 的物理截断硬上限为 10 行。
+  // 为了 100% 物理杜绝 "... (widget truncated)"，我们严格将最大行数预算约束在 <= 8 行 (保留 2 行绝对安全冗余)！
+  const HARD_MAX_LINES = 8;
 
+  if (lines.length > HARD_MAX_LINES) {
+    // Tier 1: 内联母语语感释义入括号 (收起独立的 subRail 语感导轨行)
+    const t1Lines: string[] = [...sourceLines];
+    const spT1 = spokenMeaning ? `${spoken} (${spokenMeaning})` : spoken;
+    t1Lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, spT1, pMuted, pAccent, pMuted, s => s, maxCols));
     if (hasWritten) {
       const branchChar = hasVocab ? "├" : "└";
       const contChar = hasVocab ? "│" : " ";
-      const wrText = writtenMeaning ? `${written} (${writtenMeaning})` : (written || "");
-      compactLines.push(...formatTreeBranch(branchChar, contChar, slot2, wrText, pMuted, pAccent, pMuted, s => s, maxCols));
+      const wrT1 = writtenMeaning ? `${written} (${writtenMeaning})` : (written || "");
+      t1Lines.push(...formatTreeBranch(branchChar, contChar, slot2, wrT1, pMuted, pAccent, pMuted, s => s, maxCols));
+    }
+    if (hasVocab) {
+      t1Lines.push(...formatTreeBranch("└", " ", vocabTag, vocab!, pMuted, pMuted, pMuted, pDim, maxCols));
     }
 
-    if (hasVocab) {
-      compactLines.push(...formatTreeBranch("└", " ", vocabTag, vocab!, pMuted, pMuted, pMuted, pDim, maxCols));
+    if (t1Lines.length <= HARD_MAX_LINES) {
+      lines = t1Lines;
+    } else {
+      // Tier 2: 句子本身过长或屏幕极窄，剥离括号中的长篇母语释义，只保留精纯目标语 spoken 和 written
+      const t2Lines: string[] = [...sourceLines];
+      t2Lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, displaySpoken, pMuted, pAccent, pMuted, s => s, maxCols));
+      if (hasWritten) {
+        const branchChar = hasVocab ? "├" : "└";
+        const contChar = hasVocab ? "│" : " ";
+        t2Lines.push(...formatTreeBranch(branchChar, contChar, slot2, displayWritten!, pMuted, pAccent, pMuted, s => s, maxCols));
+      }
+      if (hasVocab) {
+        t2Lines.push(...formatTreeBranch("└", " ", vocabTag, vocab!, pMuted, pMuted, pMuted, pDim, maxCols));
+      }
+
+      if (t2Lines.length <= HARD_MAX_LINES) {
+        lines = t2Lines;
+      } else {
+        // Tier 3: 进一步省略重点词汇行，原文最多保留 2 行
+        const t3Lines: string[] = [];
+        if (sourceLines.length > 2) {
+          t3Lines.push(sourceLines[0]);
+          t3Lines.push(sourceLines[1]);
+        } else {
+          t3Lines.push(...sourceLines);
+        }
+        t3Lines.push(...formatTreeBranch(hasWritten ? "┌" : "└", hasWritten ? "│" : " ", slot1, displaySpoken, pMuted, pAccent, pMuted, s => s, maxCols));
+        if (hasWritten) {
+          t3Lines.push(...formatTreeBranch("└", " ", slot2, displayWritten!, pMuted, pAccent, pMuted, s => s, maxCols));
+        }
+
+        if (t3Lines.length <= HARD_MAX_LINES) {
+          lines = t3Lines;
+        } else {
+          // Tier 4: 极端长句/超窄屏，优雅降级为单行胶囊模式 (1-Line Capsule Mode)，严格 1 行！
+          const capsuleText = formatCapsuleLine(
+            state.labels.hudTitle,
+            spoken,
+            written,
+            {
+              slot1Short: state.labels.capsuleSlot1Prefix || slot1,
+              slot2Short: state.labels.capsuleSlot2Prefix || slot2,
+              maxCols: process.stdout?.columns || 80,
+            }
+          );
+          lines = [capsuleText + pageTag];
+        }
+      }
     }
-    lines = compactLines;
+  }
+
+  // 终极物理拦截底线 (Ultimate Physical Safety Redline)
+  // 无论发生何种异常折行计算，送入宿主的行数绝对不能超过 HARD_MAX_LINES
+  if (lines.length > HARD_MAX_LINES) {
+    lines = lines.slice(0, HARD_MAX_LINES);
   }
 
   ctx.ui.setWidget("lingua_hud", lines, { placement: "aboveEditor" });
