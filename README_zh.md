@@ -180,9 +180,9 @@ pi install npm:pi-lingual
 
 | 命令 | 全名 / 别名 | 功能说明 |
 | :--- | :--- | :--- |
-| `/lingual [sub]` | `/lingual-mode` | 主命令总线：无参数平滑切模式，或路由所有子命令 |
+| `/lingual [sub]` | `/lingual-mode` | 主命令总线：无参数平滑切模式，或路由所有子命令（如 `/lingual compact`） |
 | `/slots [cmd]` | `/lingual-slots` | 全动态槽位管理（自由增删改查槽位、彻底删除原文行） |
-| `/compact` | `/lingual-compact` | 切换树状视窗与单行胶囊模式 |
+| `/lingual-compact` | `/lingual compact` | 切换树状视窗与单行胶囊模式（保留全名，避免冲突占用 Pi 核心压缩命令） |
 | `/lang <源> [目标]` | `/lingual-lang` | 切换语言对（如 `/lang ja en`、`/lang 日语`） |
 | `/last` | `/lingual-last` | 重新浮现上一条伴学卡片 |
 | `/lingual-model <id>` | — | 指定轻量伴学模型（`auto` 恢复跟随主会话） |

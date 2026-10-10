@@ -181,9 +181,9 @@ Switch language pairs anytime:
 
 | Command | Full / Alias | Description |
 | :--- | :--- | :--- |
-| `/lingual [sub]` | `/lingual-mode` | Master command: cycle modes, or route subcommands |
+| `/lingual [sub]` | `/lingual-mode` | Master command: cycle modes, or route subcommands (e.g. `/lingual compact`) |
 | `/slots [cmd]` | `/lingual-slots` | Dynamic slot pipeline: add custom slots or remove source text row |
-| `/compact` | `/lingual-compact` | Toggle between Tree HUD and Capsule mode |
+| `/lingual-compact` | `/lingual compact` | Toggle between Tree HUD and Capsule mode (preserves Pi core `/compact`) |
 | `/lang <source> [target]` | `/lingual-lang` | Switch language pair (e.g. `/lang ja en`, `/lang 日语`) |
 | `/last` | `/lingual-last` | Replay the most recent companion card |
 | `/lingual-model <id>` | — | Switch companion model (`auto` to follow session, or specify a model ID) |

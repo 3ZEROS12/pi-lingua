@@ -697,14 +697,9 @@ export default function (pi: ExtensionAPI) {
     handler: switchLangHandler,
   });
 
-  // 独立胶囊紧凑布局命令 (/compact, /lingual-compact)
-  pi.registerCommand("compact", {
-    description: state.labels.cmdDescCompact || "Toggle single-line capsule mode: /compact",
-    handler: toggleCompactHandler,
-  });
-
+  // 独立胶囊紧凑布局命令 (仅保留全称 /lingual-compact，绝不占用 Pi 内置的 /compact 会话上下文压缩命令)
   pi.registerCommand("lingual-compact", {
-    description: state.labels.cmdDescCompact || "Toggle single-line capsule mode (alias): /lingual-compact",
+    description: state.labels.cmdDescCompact || "Toggle single-line capsule mode: /lingual-compact",
     handler: toggleCompactHandler,
   });
 
