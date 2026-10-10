@@ -135,13 +135,14 @@ export async function translateCore(
     };
   }
 
-  // 4. Build system prompt with context and tone adaptations
+  // 4. Build system prompt with context, tone, and dynamic custom slot adaptations
   const systemPrompt = buildSystemPrompt(
     sourceLang,
     targetLang,
     Boolean(req.isLongInput),
     req.context,
-    req.tone || "general"
+    req.tone || "general",
+    req.slots
   );
 
   // 5. Invoke LLM completion

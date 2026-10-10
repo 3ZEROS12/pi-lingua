@@ -13,7 +13,7 @@ Code in your native language. See real-time Silicon Valley spoken phrasing and f
 **English** | [简体中文](./README_zh.md)
 
 <p align="center">
-  <img src="assets/hero.svg" alt="pi-lingual Terminal Companion HUD Experience" width="840">
+  <img src="assets/demo.gif" alt="pi-lingual Terminal Companion HUD Experience" width="840">
 </p>
 
 ```text
@@ -101,6 +101,21 @@ Memorizing isolated vocabulary lists does not build expressive capability. Real 
 * **`[Spoken] (Conversational Register)`**: High-frequency phrasing used by Silicon Valley engineering teams. Includes daily standups, Slack huddles, pair-programming chats, and common phrasal verbs.
 * **`[Written] (Architecture Register)`**: Formal technical prose. Built for RFC proposals, pull request descriptions, architecture reviews, and issue trackers.
 * **`[Vocab] (Collocations)`**: Extracted engineering collocations. Automatically highlighted with non-destructive ANSI underline formatting when matched in sentences.
+
+---
+
+## Dynamic Dual-Slot Architecture (Domain-Specific Customization)
+
+`[Spoken]` and `[Written]` are simply the out-of-the-box defaults for **Slot 1** and **Slot 2** in `pi-lingual`'s underlying **Dynamic Dual-Slot Architecture**. The engine is not restricted to software engineering; both slots can be decoupled and rebound to match any domain via custom Agent instructions or preset configurations:
+
+| Preset | Target Domain | Slot 1 (Casual / Immediate) | Slot 2 (Formal / Rigorous) |
+| :--- | :--- | :--- | :--- |
+| **`developer` (Default)** | Software Engineering | `[Spoken]` Silicon Valley Standup / Slack | `[Written]` RFC / PR Review Plain English |
+| **`social`** | Twitter/X & Social Growth | `[Hook]` Viral Hook / Engaging Banter | `[Deep]` Structured Technical Insight |
+| **`japanese`** | Japanese Immersion | `[口語]` Casual Tameguchi / Huddle | `[敬語]` Business Polite Keigo |
+| **`academic`** | Academic Research | `[Discussion]` Lab Colloquy / Q&A | `[Paper]` Peer-Reviewed Journal Prose |
+
+*To customize slot styles, describe your target audience and tone to your Agent (e.g. `/lingual-agent`), or supply custom slot definitions via `CustomSlotsConfig` in the API.*
 
 ---
 

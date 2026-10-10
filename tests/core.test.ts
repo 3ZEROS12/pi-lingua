@@ -134,3 +134,30 @@ Translating input to natural Silicon Valley flow.
   assert.equal(parsed.written, "In full agreement with the proposed direction.");
   assert.equal(parsed.vocab, "down with (赞同/支持)");
 });
+
+test("core: buildSystemPrompt supports dynamic custom slot definitions", () => {
+  const prompt = buildSystemPrompt(
+    "zh",
+    "en",
+    false,
+    undefined,
+    "general",
+    {
+      slot1: {
+        name: "Viral Twitter Hook",
+        label: "Hook",
+        instruction: "Punchy, viral opening hook for Twitter/X.",
+      },
+      slot2: {
+        name: "Deep Architecture Breakdown",
+        label: "Deep",
+        instruction: "Rigorous RFC-grade architectural explanation.",
+      },
+    }
+  );
+
+  assert.match(prompt, /Slot 1: Viral Twitter Hook/);
+  assert.match(prompt, /Punchy, viral opening hook for Twitter\/X/);
+  assert.match(prompt, /Slot 2: Deep Architecture Breakdown/);
+  assert.match(prompt, /Rigorous RFC-grade architectural explanation/);
+});

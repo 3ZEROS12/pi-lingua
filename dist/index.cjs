@@ -40,6 +40,7 @@ __export(index_exports, {
   LingualSessionController: () => LingualSessionController,
   MAX_TRANSLATION_CHARS: () => MAX_TRANSLATION_CHARS,
   MAX_TRANSLATION_LINES: () => MAX_TRANSLATION_LINES,
+  SLOT_PRESETS: () => SLOT_PRESETS,
   buildSystemPrompt: () => buildSystemPrompt,
   extractVocabPhrases: () => extractVocabPhrases,
   formatCapsuleLine: () => formatCapsuleLine,
@@ -604,6 +605,56 @@ function splitSemanticChunks(text, maxChunkChars = 65) {
 }
 
 // src/core/prompts.ts
+var SLOT_PRESETS = {
+  developer: {
+    slot1: {
+      label: "Spoken",
+      name: "Agile Spoken",
+      instruction: "Natural, fluent spoken flow (daily standup, Slack, pair programming, agile collaboration, code reviews). Authentic Silicon Valley flow, natural contractions, native phrasal verbs, idioms."
+    },
+    slot2: {
+      label: "Written",
+      name: "RFC Technical Written",
+      instruction: "Clear, precise, modern technical written prose (PR descriptions, RFCs, issues, architecture docs). High-level Plain prose: active, concise, professional. STRICTLY AVOID archaic Victorian fluff (e.g. 'we may now proceed') and AI-slop buzzwords (e.g. 'delve', 'testament')."
+    }
+  },
+  social: {
+    slot1: {
+      label: "Hook",
+      name: "Twitter/X Viral Hook",
+      instruction: "High-impact, punchy opening hook with authentic Silicon Valley dev slang, rhetorical appeal, or conversational banter for Twitter/X and Reddit. Sharp, memorable, and human."
+    },
+    slot2: {
+      label: "Deep",
+      name: "Technical Insight",
+      instruction: "High-signal, structured technical insight for technical threads, Substack, and long-form posts. Concise, authoritative, and direct without corporate marketing fluff."
+    }
+  },
+  japanese: {
+    slot1: {
+      label: "\u53E3\u8A9E",
+      name: "\u65E5\u5E38\u30BF\u30E1\u53E3 (Casual Spoken)",
+      instruction: "\u89AA\u3057\u3044\u540C\u50DA\u3084\u53CB\u4EBA\u3068\u306E\u65E5\u5E38\u4F1A\u8A71\u30FBSlack\u30CF\u30C9\u30EB\u30FB\u30AB\u30B8\u30E5\u30A2\u30EB\u306A\u3084\u308A\u53D6\u308A\u306B\u6700\u9069\u306A\u81EA\u7136\u306A\u53E3\u8A9E\u8868\u73FE\u3002\u30BF\u30E1\u53E3\u30FB\u89AA\u3057\u307F\u3084\u3059\u3044\u30C8\u30FC\u30F3\u3002"
+    },
+    slot2: {
+      label: "\u656C\u8A9E",
+      name: "\u30D3\u30B8\u30CD\u30B9\u4E01\u5BE7\u8A9E\u30FB\u8B19\u8B72\u8A9E (Business Polite)",
+      instruction: "\u4E0A\u53F8\u30FB\u30AF\u30E9\u30A4\u30A2\u30F3\u30C8\u30FB\u516C\u5F0F\u9023\u7D61\u30FB\u696D\u52D9\u5831\u544A\u306B\u3075\u3055\u308F\u3057\u3044\u6D17\u7DF4\u3055\u308C\u305F\u4E01\u5BE7\u8A9E\u30FB\u8B19\u8B72\u8A9E\u306E\u30D3\u30B8\u30CD\u30B9\u6587\u9762\u3002"
+    }
+  },
+  academic: {
+    slot1: {
+      label: "Discussion",
+      name: "Lab Seminar Colloquy",
+      instruction: "Natural conversational academic discourse (research lab discussions, seminar Q&A, conference banter). Fluent, collegial, and clear."
+    },
+    slot2: {
+      label: "Paper",
+      name: "Peer-Reviewed Paper Prose",
+      instruction: "Rigorous, objective, passive/active balanced academic prose meeting IEEE, ACM, and Nature journal standards. Precise vocabulary, rigorous methodology descriptions."
+    }
+  }
+};
 var LANGUAGE_SPECS = {
   zh: {
     name: "Chinese",
@@ -822,10 +873,15 @@ var LANGUAGE_SPECS = {
     ]
   }
 };
-function buildSystemPrompt(sourceLang = "zh", targetLang = "en", isLongInput = false, context, tone = "general") {
+function buildSystemPrompt(sourceLang = "zh", targetLang = "en", isLongInput = false, context, tone = "general", customSlots) {
   const normSource = (sourceLang || "zh").toLowerCase().split("-")[0];
   const spec = LANGUAGE_SPECS[normSource] || LANGUAGE_SPECS.zh;
   const targetName = targetLang === "ja" ? "Japanese" : targetLang === "zh" ? "Chinese" : "English";
+  const defaultSlots = SLOT_PRESETS.developer;
+  const slot1Name = customSlots?.slot1?.name || (tone === "social" ? SLOT_PRESETS.social.slot1.name : defaultSlots.slot1.name);
+  const slot1Instruction = customSlots?.slot1?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot1.instruction : defaultSlots.slot1.instruction);
+  const slot2Name = customSlots?.slot2?.name || (tone === "social" ? SLOT_PRESETS.social.slot2.name : defaultSlots.slot2.name);
+  const slot2Instruction = customSlots?.slot2?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot2.instruction : defaultSlots.slot2.instruction);
   const anchorText = spec.anchors.map(
     (a) => `Input: ${JSON.stringify(a.input)}
 Output: ${JSON.stringify({
@@ -882,14 +938,14 @@ Prioritize RFC, Pull Request, and architectural documentation precision:
   "written_meaning": "...",
   "vocab": "..."
 }`;
-  return `You are an elite bilingual developer language coach and senior software architect.
+  return `You are an elite bilingual developer language coach and cross-register translation architect.
 Task:
-Translate the user's message from native ${spec.name} (language A) into TWO distinct authentic ${targetName} registers (language B), and provide the exact back-translation/nuance in native ${spec.name} for each register:
-1. "spoken": Natural, fluent spoken ${targetName} (daily standup, Slack, X/Twitter developer banter, agile collaboration, code reviews). Authentic Silicon Valley flow, natural contractions, native phrasal verbs, idioms.
-2. "spoken_meaning": The exact colloquial nuance and meaning ${spec.meaningInstruction}.
-3. "written": Clear, precise, modern technical written ${targetName} (PR descriptions, RFCs, issues, architecture docs, high-signal technical posts). High-level Plain ${targetName}: active, concise, professional. STRICTLY AVOID archaic Victorian fluff (e.g. "we may now proceed", "precipitated", "parsimonious") and AI-slop buzzwords (e.g. "delve", "testament").
-4. "written_meaning": The exact formal technical nuance and meaning ${spec.meaningInstruction}.
-5. "vocab": Adaptively extract ALL key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging the user to high-level/native developer fluency. Do NOT artificially cap at 1-2; extract as many as genuinely beneficial, while keeping each definition concise ${spec.vocabInstruction} to ensure the terminal HUD remains vertically compact.
+Translate the user's message from native ${spec.name} (language A) into TWO distinct authentic ${targetName} registers (Slot 1 and Slot 2), and provide the exact back-translation/nuance in native ${spec.name} for each register:
+1. "spoken" (Slot 1: ${slot1Name}): ${slot1Instruction}
+2. "spoken_meaning": The exact nuance and meaning of Slot 1 ${spec.meaningInstruction}.
+3. "written" (Slot 2: ${slot2Name}): ${slot2Instruction}
+4. "written_meaning": The exact nuance and meaning of Slot 2 ${spec.meaningInstruction}.
+5. "vocab": Adaptively extract ALL key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging the user to high-level/native fluency. Do NOT artificially cap at 1-2; extract as many as genuinely beneficial, while keeping each definition concise ${spec.vocabInstruction} to ensure the terminal HUD remains vertically compact.
 
 [CODE & SYMBOL SHIELD - STRICT RULE]:
 All inline code (\`foo()\`), file paths (@file, path/to/file), SQL keywords, variable names, and technical identifiers MUST be preserved 100% verbatim in both spoken and written outputs. Never translate, rephrase, or drop code tokens.
@@ -995,6 +1051,17 @@ function shouldShieldBypass(text) {
   }
   if (SQL_STATEMENT_REGEX.test(trimmed) && !trimmed.includes("\uFF1F") && !trimmed.includes("?")) {
     return true;
+  }
+  const SECRET_PATTERNS = [
+    /-----BEGIN [A-Z ]+PRIVATE KEY-----/,
+    /(?:postgres|postgresql|mysql|mongodb|redis):\/\/[^:\s]+:[^@\s]+@[^\s]+/i,
+    /(?:sk-[a-zA-Z0-9_-]{20,}|ghp_[a-zA-Z0-9]{36}|glpat-[a-zA-Z0-9_-]{20}|AKIA[0-9A-Z]{16})/,
+    /eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/
+  ];
+  for (const pattern of SECRET_PATTERNS) {
+    if (pattern.test(trimmed)) {
+      return true;
+    }
   }
   return false;
 }
@@ -1580,7 +1647,8 @@ async function translateCore(req, options) {
     targetLang,
     Boolean(req.isLongInput),
     req.context,
-    req.tone || "general"
+    req.tone || "general",
+    req.slots
   );
   const raw = await options.completer(text, systemPrompt, options.signal);
   if (!raw) {
@@ -2186,6 +2254,7 @@ var LingualSessionController = class {
   LingualSessionController,
   MAX_TRANSLATION_CHARS,
   MAX_TRANSLATION_LINES,
+  SLOT_PRESETS,
   buildSystemPrompt,
   extractVocabPhrases,
   formatCapsuleLine,

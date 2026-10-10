@@ -85,5 +85,19 @@ export function shouldShieldBypass(text: string): boolean {
     return true;
   }
 
+  // 6. Local Data Loss Prevention (DLP) & Secret Shield:
+  // 零 Token 拦截并直通敏感凭据，严禁将 API Key、数据库密码、私钥、JWT 泄漏至公网大模型
+  const SECRET_PATTERNS = [
+    /-----BEGIN [A-Z ]+PRIVATE KEY-----/,
+    /(?:postgres|postgresql|mysql|mongodb|redis):\/\/[^:\s]+:[^@\s]+@[^\s]+/i,
+    /(?:sk-[a-zA-Z0-9_-]{20,}|ghp_[a-zA-Z0-9]{36}|glpat-[a-zA-Z0-9_-]{20}|AKIA[0-9A-Z]{16})/,
+    /eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/,
+  ];
+  for (const pattern of SECRET_PATTERNS) {
+    if (pattern.test(trimmed)) {
+      return true;
+    }
+  }
+
   return false;
 }

@@ -3,6 +3,17 @@ import type { LingualI18nLabels } from "../types.js";
 export type LingualMode = "original" | "english" | "off";
 export type LinguaMode = LingualMode;
 
+export interface SlotDefinition {
+  label: string;       // e.g. "Spoken" | "Hook" | "口語" | "Paper"
+  name: string;        // e.g. "Silicon Valley Spoken" | "Twitter Hook" | "Business Keigo"
+  instruction: string; // Specific tone & style instruction for this register
+}
+
+export interface CustomSlotsConfig {
+  slot1?: Partial<SlotDefinition>;
+  slot2?: Partial<SlotDefinition>;
+}
+
 export interface LingualRequest {
   text: string;
   sourceLang?: string;                  // e.g. "zh" (default) | "ja" | "en" | "es" | "fr" | "de"
@@ -10,6 +21,7 @@ export interface LingualRequest {
   context?: string;                     // Optional: Context of the tweet being replied to, issue, or Slack thread
   tone?: "general" | "social" | "tech"; // default "general"
   isLongInput?: boolean;
+  slots?: CustomSlotsConfig;            // Dynamic Dual-Slot Customization
 }
 
 export interface LingualResponse {

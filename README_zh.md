@@ -13,7 +13,7 @@
 [English](./README.md) | **简体中文**
 
 <p align="center">
-  <img src="assets/hero.svg" alt="pi-lingual 终端伴学视窗交互实录" width="840">
+  <img src="assets/demo.gif" alt="pi-lingual 终端伴学视窗交互实录" width="840">
 </p>
 
 ```text
@@ -101,6 +101,21 @@ pi install npm:pi-lingual
 * **`[口语] (Spoken Register)`**：北美硅谷团队日常沟通的高频表达。包含站会交流、Slack 讨论、结对编程中的常用短语动词与口语俚语。
 * **`[写作] (Written Register)`**：符合工程规范的技术书面语。适用于 RFC 提案、PR 描述、代码审查与技术方案编写。
 * **`[重点] (Collocations)`**：动态提取的核心词汇与搭配。在口语和写作句中命中时，自动施加 ANSI 微光下划线高亮。
+
+---
+
+## 动态双槽位架构与领域定制 (Dynamic Dual-Slot Architecture)
+
+`[口语]` 与 `[写作]` 仅是 `pi-lingual` 底层**双槽位架构（Slot 1 & Slot 2）**的出厂默认值。本引擎并非仅局限于软件开发，两个槽位完全解耦，任何人均可通过定制 Agent 提示词或预设配置将其重绑定为适配自身行业的专属语域：
+
+| 预设场景 | 目标领域 | 槽位 1 (轻快 / 日常) | 槽位 2 (正式 / 严谨) |
+| :--- | :--- | :--- | :--- |
+| **`developer` (默认)** | 软件工程协作 | `[口语]` 硅谷站会交流 / Slack 日常 | `[写作]` RFC 提案 / PR 审查技术规范 |
+| **`social`** | 出海推特与社媒推广 | `[Hook]` 爆款开场 / 社交网感俚语 | `[Deep]` 深度技术洞察 / 长推干货 |
+| **`japanese`** | 日语双轨伴学 | `[口語]` 朋友日常タメ口 / Huddle 对话 | `[敬語]` 商务严谨敬语 / 官方邮件 |
+| **`academic`** | 学术科研出版 | `[Discussion]` 组会研讨口语 / 答辩提问 | `[Paper]` IEEE/ACM 顶级期刊正文规范 |
+
+*如需定制槽位风格，可随时在会话中直接向 Agent 描述你的偏好与受众（如 `/lingual-agent`），或通过 API 的 `CustomSlotsConfig` 直接传入领域规则。*
 
 ---
 

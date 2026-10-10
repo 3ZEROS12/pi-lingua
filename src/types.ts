@@ -8,6 +8,8 @@ export type {
   LingualResult,
   LinguaResult,
   TranslationPayload,
+  SlotDefinition,
+  CustomSlotsConfig,
 } from "./core/types.js";
 
 export interface LingualI18nLabels {

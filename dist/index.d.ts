@@ -1,5 +1,5 @@
-import { L as LingualResult, a as LingualI18nLabels, b as LingualConfig } from './index-b5Xjggyr.js';
-export { C as CacheStats, c as LANGUAGE_PRESETS, d as LinguaConfig, e as LinguaI18nLabels, f as LinguaLruCache, g as LinguaMode, h as LinguaResult, i as LingualCoreOptions, j as LingualLruCache, k as LingualMode, l as LingualRequest, m as LingualResponse, S as SanitizedPromptResult, T as TranslationPayload, n as buildSystemPrompt, o as formatModelSelectionMessage, p as formatStatusReport, q as globalLinguaCache, r as globalLingualCache, s as parseLlmResponse, t as resolveLabelsForLang, u as sanitizePromptForTranslation, v as shouldShieldBypass, w as translateCore } from './index-b5Xjggyr.js';
+import { L as LingualResult, a as LingualI18nLabels, b as LingualConfig } from './index-DDr3BhXq.js';
+export { C as CacheStats, c as CustomSlotsConfig, d as LANGUAGE_PRESETS, e as LinguaConfig, f as LinguaI18nLabels, g as LinguaLruCache, h as LinguaMode, i as LinguaResult, j as LingualCoreOptions, k as LingualLruCache, l as LingualMode, m as LingualRequest, n as LingualResponse, S as SLOT_PRESETS, o as SanitizedPromptResult, p as SlotDefinition, T as TranslationPayload, q as buildSystemPrompt, r as formatModelSelectionMessage, s as formatStatusReport, t as globalLinguaCache, u as globalLingualCache, v as parseLlmResponse, w as resolveLabelsForLang, x as sanitizePromptForTranslation, y as shouldShieldBypass, z as translateCore } from './index-DDr3BhXq.js';
 
 /**
  * Splits text into atomic natural sentence chunks when long.

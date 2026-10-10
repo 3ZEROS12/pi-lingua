@@ -24,7 +24,7 @@
 
     <!-- Window Title -->
     <text x="440" y="38" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="500" fill="#859289" letter-spacing="0.3">
-      pi-lingual (v0.2.3) · Dual-Register Developer Companion for Pi
+      pi-lingual (v0.3.3) · Dual-Register Developer Companion for Pi
     </text>
   </g>
 
@@ -40,7 +40,7 @@
     <!-- Pi Session Greeting -->
     <text x="45" y="112" fill="#859289">
       <tspan fill="#7fbbb3">●</tspan>
-      <tspan fill="#859289"> pi-coding-agent · mode: interactive · model: antigravity/gemini-3.8-flash</tspan>
+      <tspan fill="#859289"> pi-coding-agent · mode: interactive · model: session-model</tspan>
     </text>
 
     <!-- User Input -->
@@ -118,7 +118,7 @@
     <line x1="20" y1="440" x2="860" y2="440" stroke="#2d353b" stroke-width="1" />
 
     <text x="40" y="462" font-size="11.5">
-      <tspan fill="#859289">[antigravity/gemini-3.8-flash]  [thinking: max]  [context: 12.4k / 4.2%]</tspan>
+      <tspan fill="#859289">[session-model]  [thinking: low]  [context: 12.4k / 4.2%]</tspan>
     </text>
 
     <text x="840" y="462" text-anchor="end" font-size="11.5">

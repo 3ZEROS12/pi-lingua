@@ -60,6 +60,15 @@ type LinguaI18nLabels = LingualI18nLabels;
 
 type LingualMode = "original" | "english" | "off";
 type LinguaMode = LingualMode;
+interface SlotDefinition {
+    label: string;
+    name: string;
+    instruction: string;
+}
+interface CustomSlotsConfig {
+    slot1?: Partial<SlotDefinition>;
+    slot2?: Partial<SlotDefinition>;
+}
 interface LingualRequest {
     text: string;
     sourceLang?: string;
@@ -67,6 +76,7 @@ interface LingualRequest {
     context?: string;
     tone?: "general" | "social" | "tech";
     isLongInput?: boolean;
+    slots?: CustomSlotsConfig;
 }
 interface LingualResponse {
     spoken: string;
@@ -114,11 +124,15 @@ interface TranslationPayload {
     summary?: string;
 }
 
+declare const SLOT_PRESETS: Record<string, {
+    slot1: SlotDefinition;
+    slot2: SlotDefinition;
+}>;
 /**
  * 动态根据母语 A (sourceLang) 与目标学习语言 B (targetLang) 生成严格遵循【母语最高统治权】的系统提示词
  * 支持长输入总结 (isLongInput)、上下文注入 (context) 和风格侧重 (tone: "general" | "social" | "tech")。
  */
-declare function buildSystemPrompt(sourceLang?: string, targetLang?: string, isLongInput?: boolean, context?: string, tone?: "general" | "social" | "tech"): string;
+declare function buildSystemPrompt(sourceLang?: string, targetLang?: string, isLongInput?: boolean, context?: string, tone?: "general" | "social" | "tech", customSlots?: CustomSlotsConfig): string;
 
 /**
  * In-Memory LRU Cache for Lingual Translations (会话级 0 依赖极速缓存)
@@ -240,4 +254,4 @@ interface SanitizedPromptResult {
  */
 declare function sanitizePromptForTranslation(raw: string): SanitizedPromptResult;
 
-export { type CacheStats as C, type LingualResult as L, type SanitizedPromptResult as S, type TranslationPayload as T, type LingualI18nLabels as a, type LingualConfig as b, LANGUAGE_PRESETS as c, type LinguaConfig as d, type LinguaI18nLabels as e, LinguaLruCache as f, type LinguaMode as g, type LinguaResult as h, type LingualCoreOptions as i, LingualLruCache as j, type LingualMode as k, type LingualRequest as l, type LingualResponse as m, buildSystemPrompt as n, formatModelSelectionMessage as o, formatStatusReport as p, globalLinguaCache as q, globalLingualCache as r, parseLlmResponse as s, resolveLabelsForLang as t, sanitizePromptForTranslation as u, shouldShieldBypass as v, translateCore as w };
+export { type CacheStats as C, type LingualResult as L, SLOT_PRESETS as S, type TranslationPayload as T, type LingualI18nLabels as a, type LingualConfig as b, type CustomSlotsConfig as c, LANGUAGE_PRESETS as d, type LinguaConfig as e, type LinguaI18nLabels as f, LinguaLruCache as g, type LinguaMode as h, type LinguaResult as i, type LingualCoreOptions as j, LingualLruCache as k, type LingualMode as l, type LingualRequest as m, type LingualResponse as n, type SanitizedPromptResult as o, type SlotDefinition as p, buildSystemPrompt as q, formatModelSelectionMessage as r, formatStatusReport as s, globalLinguaCache as t, globalLingualCache as u, parseLlmResponse as v, resolveLabelsForLang as w, sanitizePromptForTranslation as x, shouldShieldBypass as y, translateCore as z };

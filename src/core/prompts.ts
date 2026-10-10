@@ -1,3 +1,56 @@
+import type { SlotDefinition, CustomSlotsConfig } from "./types.js";
+
+export const SLOT_PRESETS: Record<string, { slot1: SlotDefinition; slot2: SlotDefinition }> = {
+  developer: {
+    slot1: {
+      label: "Spoken",
+      name: "Agile Spoken",
+      instruction: "Natural, fluent spoken flow (daily standup, Slack, pair programming, agile collaboration, code reviews). Authentic Silicon Valley flow, natural contractions, native phrasal verbs, idioms.",
+    },
+    slot2: {
+      label: "Written",
+      name: "RFC Technical Written",
+      instruction: "Clear, precise, modern technical written prose (PR descriptions, RFCs, issues, architecture docs). High-level Plain prose: active, concise, professional. STRICTLY AVOID archaic Victorian fluff (e.g. 'we may now proceed') and AI-slop buzzwords (e.g. 'delve', 'testament').",
+    },
+  },
+  social: {
+    slot1: {
+      label: "Hook",
+      name: "Twitter/X Viral Hook",
+      instruction: "High-impact, punchy opening hook with authentic Silicon Valley dev slang, rhetorical appeal, or conversational banter for Twitter/X and Reddit. Sharp, memorable, and human.",
+    },
+    slot2: {
+      label: "Deep",
+      name: "Technical Insight",
+      instruction: "High-signal, structured technical insight for technical threads, Substack, and long-form posts. Concise, authoritative, and direct without corporate marketing fluff.",
+    },
+  },
+  japanese: {
+    slot1: {
+      label: "口語",
+      name: "日常タメ口 (Casual Spoken)",
+      instruction: "親しい同僚や友人との日常会話・Slackハドル・カジュアルなやり取りに最適な自然な口語表現。タメ口・親しみやすいトーン。",
+    },
+    slot2: {
+      label: "敬語",
+      name: "ビジネス丁寧語・謙譲語 (Business Polite)",
+      instruction: "上司・クライアント・公式連絡・業務報告にふさわしい洗練された丁寧語・謙譲語のビジネス文面。",
+    },
+  },
+  academic: {
+    slot1: {
+      label: "Discussion",
+      name: "Lab Seminar Colloquy",
+      instruction: "Natural conversational academic discourse (research lab discussions, seminar Q&A, conference banter). Fluent, collegial, and clear.",
+    },
+    slot2: {
+      label: "Paper",
+      name: "Peer-Reviewed Paper Prose",
+      instruction: "Rigorous, objective, passive/active balanced academic prose meeting IEEE, ACM, and Nature journal standards. Precise vocabulary, rigorous methodology descriptions.",
+    },
+  },
+};
+
 interface LanguageSpec {
   name: string;
   nativeName: string;
@@ -241,11 +294,19 @@ export function buildSystemPrompt(
   targetLang = "en",
   isLongInput = false,
   context?: string,
-  tone: "general" | "social" | "tech" = "general"
+  tone: "general" | "social" | "tech" = "general",
+  customSlots?: CustomSlotsConfig
 ): string {
   const normSource = (sourceLang || "zh").toLowerCase().split("-")[0];
   const spec = LANGUAGE_SPECS[normSource] || LANGUAGE_SPECS.zh;
   const targetName = targetLang === "ja" ? "Japanese" : targetLang === "zh" ? "Chinese" : "English";
+
+  const defaultSlots = SLOT_PRESETS.developer;
+  const slot1Name = customSlots?.slot1?.name || (tone === "social" ? SLOT_PRESETS.social.slot1.name : defaultSlots.slot1.name);
+  const slot1Instruction = customSlots?.slot1?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot1.instruction : defaultSlots.slot1.instruction);
+
+  const slot2Name = customSlots?.slot2?.name || (tone === "social" ? SLOT_PRESETS.social.slot2.name : defaultSlots.slot2.name);
+  const slot2Instruction = customSlots?.slot2?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot2.instruction : defaultSlots.slot2.instruction);
 
   const anchorText = spec.anchors
     .map(
@@ -307,14 +368,14 @@ Prioritize RFC, Pull Request, and architectural documentation precision:
   "vocab": "..."
 }`;
 
-  return `You are an elite bilingual developer language coach and senior software architect.
+  return `You are an elite bilingual developer language coach and cross-register translation architect.
 Task:
-Translate the user's message from native ${spec.name} (language A) into TWO distinct authentic ${targetName} registers (language B), and provide the exact back-translation/nuance in native ${spec.name} for each register:
-1. "spoken": Natural, fluent spoken ${targetName} (daily standup, Slack, X/Twitter developer banter, agile collaboration, code reviews). Authentic Silicon Valley flow, natural contractions, native phrasal verbs, idioms.
-2. "spoken_meaning": The exact colloquial nuance and meaning ${spec.meaningInstruction}.
-3. "written": Clear, precise, modern technical written ${targetName} (PR descriptions, RFCs, issues, architecture docs, high-signal technical posts). High-level Plain ${targetName}: active, concise, professional. STRICTLY AVOID archaic Victorian fluff (e.g. "we may now proceed", "precipitated", "parsimonious") and AI-slop buzzwords (e.g. "delve", "testament").
-4. "written_meaning": The exact formal technical nuance and meaning ${spec.meaningInstruction}.
-5. "vocab": Adaptively extract ALL key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging the user to high-level/native developer fluency. Do NOT artificially cap at 1-2; extract as many as genuinely beneficial, while keeping each definition concise ${spec.vocabInstruction} to ensure the terminal HUD remains vertically compact.
+Translate the user's message from native ${spec.name} (language A) into TWO distinct authentic ${targetName} registers (Slot 1 and Slot 2), and provide the exact back-translation/nuance in native ${spec.name} for each register:
+1. "spoken" (Slot 1: ${slot1Name}): ${slot1Instruction}
+2. "spoken_meaning": The exact nuance and meaning of Slot 1 ${spec.meaningInstruction}.
+3. "written" (Slot 2: ${slot2Name}): ${slot2Instruction}
+4. "written_meaning": The exact nuance and meaning of Slot 2 ${spec.meaningInstruction}.
+5. "vocab": Adaptively extract ALL key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging the user to high-level/native fluency. Do NOT artificially cap at 1-2; extract as many as genuinely beneficial, while keeping each definition concise ${spec.vocabInstruction} to ensure the terminal HUD remains vertically compact.
 
 [CODE & SYMBOL SHIELD - STRICT RULE]:
 All inline code (\`foo()\`), file paths (@file, path/to/file), SQL keywords, variable names, and technical identifiers MUST be preserved 100% verbatim in both spoken and written outputs. Never translate, rephrase, or drop code tokens.
