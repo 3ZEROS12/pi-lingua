@@ -6,8 +6,8 @@ export type LinguaMode = LingualMode;
 export type SlotRole = "source" | "translation" | "vocab" | "custom";
 
 export interface SlotConfig {
-  id: string;               // e.g. "source", "spoken", "written", "vocab", "hook", "deep", "keigo"
-  label: string;            // e.g. "原文", "口语", "写作", "重点", "Original", "Spoken", "Hook"
+  id: string;               // Unique slot identifier, e.g. "source", "spoken", "written", "twitter", "grammar"
+  label: string;            // Card display label, e.g. "原文", "口语", "写作", "Tweet", "Grammar"
   role: SlotRole;           // "source" | "translation" | "vocab" | "custom"
   instruction?: string;     // Specific LLM translation/style prompt
   showMeaning?: boolean;    // Whether to generate nuance back-translation in language A
@@ -51,6 +51,7 @@ export interface LingualResponse {
   vocab?: string;
   summary?: string;
   slots?: SlotResult[];                 // Full dynamic slots result array
+  slotOutputs?: Record<string, { content: string; meaning?: string }>;
   cached: boolean;
   shieldBypassed: boolean;
 }
@@ -83,6 +84,8 @@ export interface LingualResult {
   sourceText: string;       // Original source text in language A (or distilled intent headline)
   summary?: string;         // Distilled core intent / question title in language A for long inputs
   annotated: string;
+  slots?: SlotResult[];     // Full dynamic slots result array
+  slotOutputs?: Record<string, { content: string; meaning?: string }>;
 }
 export type LinguaResult = LingualResult;
 
@@ -93,4 +96,6 @@ export interface TranslationPayload {
   writtenMeaning?: string;
   vocab?: string;
   summary?: string;
+  slots?: SlotResult[];
+  slotOutputs?: Record<string, { content: string; meaning?: string }>;
 }

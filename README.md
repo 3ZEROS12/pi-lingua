@@ -182,6 +182,7 @@ Switch language pairs anytime:
 | Command | Alias | Description |
 | :--- | :--- | :--- |
 | `/2 [sub]` | `/lingual [sub]` | Master command: cycle modes, or route subcommands |
+| `/slots [cmd]` | `/2-slots` | Dynamic slot pipeline: add custom slots or remove source text row |
 | `/compact` | `/2-compact` | Toggle between Tree HUD and Capsule mode |
 | `/lang <source> [target]` | `/2-lang` | Switch language pair (e.g. `/lang ja en`, `/lang 日语`) |
 | `/last` | `/2-last` | Replay the most recent companion card |
@@ -189,6 +190,21 @@ Switch language pairs anytime:
 | `/status` | `/2-status` | Display diagnostics, active model, and cache stats |
 
 *Keyboard shortcuts: `Alt+.` (next page), `Alt+,` (previous page). Standalone CLI: `lingual "prompt"`.*
+
+---
+
+## Universal Dynamic Slot Pipeline (Fully Movable Slots)
+
+Never get locked into rigid, hardcoded templates. Every slot on your companion card—including the source text—is a decoupled building block:
+
+- **Hide original source text**:  
+  Run `/slots rm source` to completely remove the source text row. Cards will display clean translation branches directly.
+- **Add custom tone & style slots**:  
+  Run `/slots add twitter Tweet Short punchy tweet under 280 chars`. The LLM JSON schema and Tree HUD layout adapt dynamically in real-time.
+- **Toggle or reset slots**:  
+  Run `/slots toggle <id>` to temporarily mute a slot; run `/slots reset` to restore default initial slots anytime.
+
+> 💡 **Agent Confirmation Protocol**: When asking your Agent to configure companion slots, your Agent will proactively confirm two things: **your desired slot count**, and **the specific style and role for each slot (including whether you want to keep or suppress the original text)**.
 
 ---
 

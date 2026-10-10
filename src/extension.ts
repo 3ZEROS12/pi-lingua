@@ -28,6 +28,11 @@ import {
   formatStatusReport,
   formatModelSelectionMessage,
   resolveSlotsForPreset,
+  getDefaultSlots,
+  createCustomSlot,
+  addSlotToList,
+  removeSlotFromList,
+  toggleSlotInList,
   SLOT_PRESETS,
   LANGUAGE_PRESETS,
 } from "./presets.js";
@@ -60,8 +65,10 @@ function isTestEnvironment(): boolean {
 const initialDiskConfig = isTestEnvironment() ? {} : loadUserLingualConfig();
 const initialSourceLang = initialDiskConfig.sourceLang || "zh";
 const initialTargetLang = initialDiskConfig.targetLang || (initialSourceLang === "en" ? "ja" : "en");
-const initialSlotPreset = initialDiskConfig.slotPreset || "developer";
-const initialSlots = initialDiskConfig.slots || resolveSlotsForPreset(initialSlotPreset, initialSourceLang);
+const initialSlotPreset = initialDiskConfig.slotPreset;
+const initialSlots = Array.isArray(initialDiskConfig.slots) && initialDiskConfig.slots.length > 0
+  ? initialDiskConfig.slots
+  : (initialSlotPreset ? resolveSlotsForPreset(initialSlotPreset, initialSourceLang) : getDefaultSlots(initialSourceLang));
 const initialLabels = resolveLabelsForLang(initialSourceLang, initialDiskConfig.labels, initialTargetLang);
 
 const state: ExtensionState = {
@@ -70,7 +77,7 @@ const state: ExtensionState = {
   sourceLang: initialSourceLang,
   targetLang: initialTargetLang,
   selectedModel: initialDiskConfig.selectedModel || "auto",
-  slotPreset: initialSlotPreset,
+  slotPreset: initialSlotPreset || "",
   slots: initialSlots,
   labels: initialLabels,
 };
@@ -146,9 +153,19 @@ function updateFooter(ctx: ExtensionContext) {
   if (!ctx.hasUI) return;
   // 标准化底栏标签为纯净极简的 A ⇄ B (例如 zh ⇄ en)
   let pair = `${state.sourceLang} ⇄ ${state.targetLang}`;
-  if (state.slotPreset && state.slotPreset !== "developer") {
+  const enabledSlots = (state.slots || []).filter((s) => s.enabled);
+  const hasSource = enabledSlots.some((s) => s.role === "source");
+  const nonSourceCount = enabledSlots.filter((s) => s.role !== "source").length;
+  
+  if (!hasSource) {
+    pair += ` · no-src`;
+  }
+  if (nonSourceCount !== 2) {
+    pair += ` · ${enabledSlots.length}s`;
+  } else if (state.slotPreset) {
     pair += ` · ${state.slotPreset}`;
   }
+
   switch (state.mode) {
     case "original":
     case "english":
@@ -390,41 +407,7 @@ export default function (pi: ExtensionAPI) {
     }
   };
 
-  const switchSlotsHandler = async (args: string, ctx: ExtensionContext) => {
-    const trimmed = args.trim().toLowerCase();
-    if (!trimmed) {
-      const activePreset = state.slotPreset || "developer";
-      const enabled = (state.slots || []).filter((s) => s.enabled);
-      const slotList = enabled.map((s, idx) => `  • #${idx} [${s.label}] (${s.role})`).join("\n");
-      const presetKeys = Object.keys(SLOT_PRESETS).join(", ");
-      const msg = `⇄ [${state.labels.hudTitle}] Active Slot Preset: [${activePreset}]\n${slotList}\n\nAvailable presets: ${presetKeys}\nUsage: /slots <preset> (e.g. /slots compact2, /slots social, /slots developer)`;
-      ctx.ui.notify(msg, "info");
-      return;
-    }
-
-    if (!SLOT_PRESETS[trimmed]) {
-      const presetKeys = Object.keys(SLOT_PRESETS).join(", ");
-      ctx.ui.notify(`[${state.labels.hudTitle}] Unknown preset "${trimmed}". Available: ${presetKeys}`, "warning");
-      return;
-    }
-
-    state.slotPreset = trimmed;
-    state.slots = resolveSlotsForPreset(trimmed, state.sourceLang);
-    saveUserLingualConfig({ slotPreset: trimmed === "developer" ? undefined : trimmed, slots: undefined });
-
-    // 重置缓存，使新槽位的输出立即生效
-    globalLingualCache.clear();
-
-    const desc = SLOT_PRESETS[trimmed].description;
-    const template = state.labels.notifySlotSwitched || "[{pair}] Switched slot architecture to [{preset}]: {desc}";
-    const notifyMsg = template
-      .replace("{pair}", state.labels.hudTitle)
-      .replace("{preset}", trimmed)
-      .replace("{desc}", desc);
-    ctx.ui.notify(notifyMsg, "info");
-    updateFooter(ctx);
-
-    // 若当前有活动卡片，立即就地刷新重绘
+  const refreshActiveView = (ctx: ExtensionContext) => {
     if (session.getReadyPages().length > 0) {
       renderActiveCard(ctx);
     } else if (session.getLastResult()) {
@@ -439,6 +422,135 @@ export default function (pi: ExtensionAPI) {
         last.writtenMeaning
       );
     }
+  };
+
+  const switchSlotsHandler = async (args: string, ctx: ExtensionContext) => {
+    const rawArgs = args.trim();
+    const parts = rawArgs.split(/\s+/).filter(Boolean);
+    const subCmd = (parts[0] || "").toLowerCase();
+
+    // 1. 无参数或 "list": 查看当前所有槽位状态与管理帮助
+    if (!subCmd || subCmd === "list" || subCmd === "ls") {
+      const slots = state.slots || [];
+      const lines = slots.map((s, idx) => {
+        const status = s.enabled ? "enabled" : "disabled";
+        const meaning = s.showMeaning ? " +nuance" : "";
+        const inst = s.instruction ? ` // ${s.instruction.slice(0, 45)}...` : "";
+        return `  ${idx + 1}. [${s.id}] "${s.label}" (${s.role}, ${status}${meaning})${inst}`;
+      });
+
+      const enabledCount = slots.filter((s) => s.enabled).length;
+      const help =
+        `⇄ [${state.labels.hudTitle}] Dynamic Slots (${enabledCount}/${slots.length} active):\n` +
+        (lines.length > 0 ? lines.join("\n") : "  (No slots configured)") +
+        `\n\nSlot Management:\n` +
+        `  • /slots add <id> <label> [instruction...] - Add or customize slot\n` +
+        `  • /slots rm <id>                           - Remove slot (e.g. /slots rm source to hide original text!)\n` +
+        `  • /slots toggle <id>                       - Toggle enable/disable\n` +
+        `  • /slots reset                             - Reset to clean initial defaults\n` +
+        `  • /slots <preset>                          - Quick apply template (e.g. compact2, social, developer)`;
+      ctx.ui.notify(help, "info");
+      return;
+    }
+
+    // 2. "/slots reset": 恢复开箱即用默认初始槽位
+    if (subCmd === "reset") {
+      state.slots = getDefaultSlots(state.sourceLang);
+      state.slotPreset = "";
+      saveUserLingualConfig({ slots: undefined, slotPreset: undefined });
+      globalLingualCache.clear();
+      ctx.ui.notify(`⇄ [${state.labels.hudTitle}] Reset slots to clean defaults (source + spoken + written).`, "info");
+      updateFooter(ctx);
+      refreshActiveView(ctx);
+      return;
+    }
+
+    // 3. "/slots rm <id>" 或 "/slots remove <id>" 或 "/slots del <id>": 彻底删除槽位（支持删除 source 原文槽位！）
+    if (subCmd === "rm" || subCmd === "remove" || subCmd === "del") {
+      const targetId = (parts[1] || "").toLowerCase();
+      if (!targetId) {
+        ctx.ui.notify(`Usage: /slots rm <slot-id> (e.g. /slots rm source to hide original text, or /slots rm written)`, "warning");
+        return;
+      }
+      const existing = (state.slots || []).find((s) => s.id.toLowerCase() === targetId);
+      if (!existing) {
+        ctx.ui.notify(`Slot [${targetId}] not found in active slots. Run /slots to inspect.`, "warning");
+        return;
+      }
+      state.slots = removeSlotFromList(state.slots || [], targetId);
+      state.slotPreset = "";
+      saveUserLingualConfig({ slots: state.slots, slotPreset: undefined });
+      globalLingualCache.clear();
+
+      const extraHint = targetId === "source" ? " Original source line will no longer appear on cards." : "";
+      ctx.ui.notify(`⇄ [${state.labels.hudTitle}] Removed slot [${targetId}] ("${existing.label}").${extraHint}`, "info");
+      updateFooter(ctx);
+      refreshActiveView(ctx);
+      return;
+    }
+
+    // 4. "/slots toggle <id>": 一键开关槽位
+    if (subCmd === "toggle") {
+      const targetId = (parts[1] || "").toLowerCase();
+      if (!targetId) {
+        ctx.ui.notify(`Usage: /slots toggle <slot-id>`, "warning");
+        return;
+      }
+      const existing = (state.slots || []).find((s) => s.id.toLowerCase() === targetId);
+      if (!existing) {
+        ctx.ui.notify(`Slot [${targetId}] not found in active slots.`, "warning");
+        return;
+      }
+      state.slots = toggleSlotInList(state.slots || [], targetId);
+      state.slotPreset = "";
+      saveUserLingualConfig({ slots: state.slots, slotPreset: undefined });
+      globalLingualCache.clear();
+      const updated = state.slots.find((s) => s.id.toLowerCase() === targetId);
+      ctx.ui.notify(`⇄ [${state.labels.hudTitle}] Slot [${targetId}] is now ${updated?.enabled ? "enabled" : "disabled"}.`, "info");
+      updateFooter(ctx);
+      refreshActiveView(ctx);
+      return;
+    }
+
+    // 5. "/slots add <id> <label> [instruction...]": 动态添加或修改槽位
+    if (subCmd === "add") {
+      const id = (parts[1] || "").toLowerCase();
+      const label = parts[2];
+      const instruction = parts.slice(3).join(" ");
+      if (!id || !label) {
+        ctx.ui.notify(`Usage: /slots add <id> <label> [instruction...]\nExample: /slots add twitter 推文 Short punchy tweet under 280 chars`, "warning");
+        return;
+      }
+      const newSlot = createCustomSlot({
+        id,
+        label,
+        instruction: instruction || undefined,
+      });
+      state.slots = addSlotToList(state.slots || [], newSlot);
+      state.slotPreset = "";
+      saveUserLingualConfig({ slots: state.slots, slotPreset: undefined });
+      globalLingualCache.clear();
+      ctx.ui.notify(`⇄ [${state.labels.hudTitle}] Added/updated slot [${id}] "${label}" (${newSlot.role}).`, "info");
+      updateFooter(ctx);
+      refreshActiveView(ctx);
+      return;
+    }
+
+    // 6. 兼容历史预设关键词 (e.g. /slots compact2, /slots social, /slots developer)
+    const matchedPreset = SLOT_PRESETS[subCmd];
+    if (matchedPreset) {
+      state.slotPreset = subCmd;
+      state.slots = resolveSlotsForPreset(subCmd, state.sourceLang);
+      saveUserLingualConfig({ slotPreset: subCmd === "developer" ? undefined : subCmd, slots: state.slots });
+      globalLingualCache.clear();
+      ctx.ui.notify(`⇄ [${state.labels.hudTitle}] Applied preset [${subCmd}]: ${matchedPreset.description}`, "info");
+      updateFooter(ctx);
+      refreshActiveView(ctx);
+      return;
+    }
+
+    // 7. 未知指令提示
+    ctx.ui.notify(`Unknown slot command or preset "${subCmd}". Type /slots to view slots and commands.`, "warning");
   };
 
   const showStatusHandler = async (_args: string, ctx: ExtensionContext) => {
@@ -585,17 +697,17 @@ export default function (pi: ExtensionAPI) {
 
   // 独立槽位架构配置命令 (/slots, /lingual-slots, /2-slots)
   pi.registerCommand("slots", {
-    description: state.labels.cmdDescSlots || "Inspect or switch slot architecture: /slots [developer|social|japanese|academic|compact2]",
+    description: state.labels.cmdDescSlots || "Inspect, add, remove, or customize dynamic slots: /slots [add|rm|toggle|reset]",
     handler: switchSlotsHandler,
   });
 
   pi.registerCommand("lingual-slots", {
-    description: state.labels.cmdDescSlots || "Inspect or switch slot architecture (alias): /lingual-slots [preset]",
+    description: state.labels.cmdDescSlots || "Dynamic slots management (alias): /lingual-slots [add|rm|toggle|reset]",
     handler: switchSlotsHandler,
   });
 
   pi.registerCommand("2-slots", {
-    description: state.labels.cmdDescSlots || "Quick switch slot architecture (alias): /2-slots [preset]",
+    description: state.labels.cmdDescSlots || "Dynamic slots management (alias): /2-slots [add|rm|toggle|reset]",
     handler: switchSlotsHandler,
   });
 

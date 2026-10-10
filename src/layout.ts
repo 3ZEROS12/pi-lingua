@@ -448,104 +448,179 @@ export function renderCardLayout(
   const isCompact = Boolean(options.isCompact);
   const pageTag = options.pageTag || "";
 
-  // 0. 解析动态多槽位 (Dynamic Multi-Slot Architecture)
-  const allSlots = options.slots;
-  const sourceSlot = allSlots?.find((s) => s.role === "source");
-  const sourceLabel = sourceSlot?.label || labels.sourceLabel || "原文";
-
-  const slot1Conf = allSlots?.find((s) => s.id === "spoken" || s.role === "translation");
-  const slot2Conf = allSlots?.find((s) => s.id === "written" || (s.role === "translation" && s !== slot1Conf));
-  const vocabConf = allSlots?.find((s) => s.id === "vocab" || s.role === "vocab");
-
-  const slot1Label = slot1Conf?.label || labels.slot1Label || "Spoken";
-  const slot2Label = slot2Conf?.label || labels.slot2Label || "Written";
-  const vocabLabel = vocabConf?.label || labels.vocabLabel || "Vocab";
-
-  const hasWritten = slot2Conf
-    ? (slot2Conf.enabled && Boolean(card.written && card.written.trim()))
-    : (allSlots ? false : Boolean(card.written && card.written.trim()));
-  const hasVocab = vocabConf
-    ? (vocabConf.enabled && Boolean(card.vocab && card.vocab.trim()))
-    : (allSlots ? false : Boolean(card.vocab && card.vocab.trim()));
-
-  // 1. 若显式请求胶囊模式，或列宽极端窄小 (< 35 列无法排版树状分支)，降级为单行胶囊流
-  if (isCompact || maxCols < 35) {
-    const capsuleText = formatCapsuleLine(
-      labels.hudTitle,
-      card.spoken,
-      hasWritten ? card.written : undefined,
-      {
-        slot1Short: slot1Conf?.label ? slot1Conf.label.slice(0, 4) : (labels.capsuleSlot1Prefix || labels.slot1Label || "Spk"),
-        slot2Short: slot2Conf?.label ? slot2Conf.label.slice(0, 4) : (labels.capsuleSlot2Prefix || labels.slot2Label || "Wrt"),
-        maxCols,
-      }
-    );
-    return [capsuleText + pageTag];
-  }
-
   const decMuted = options.themeDecorators?.muted || ((s) => s);
   const decAccent = options.themeDecorators?.accent || ((s) => s);
   const decDim = options.themeDecorators?.dim || ((s) => s);
 
-  const prefixRaw = `  · [${sourceLabel}] `;
-  const prefixW = getVisualWidth(prefixRaw);
-  const pageTagW = pageTag ? getVisualWidth(pageTag) : 0;
-  const availLine1W = Math.max(20, maxCols - prefixW - pageTagW);
+  // 0. 解析全动态多槽位 (Universal Dynamic Slot Architecture)
+  // 如果调用方传入了 slots，以传入为准；否则根据 card 自行派生默认槽位
+  let effectiveSlots: SlotConfig[] = [];
+  if (options.slots && options.slots.length > 0) {
+    effectiveSlots = options.slots.filter((s) => s.enabled);
+  } else {
+    // 默认回退槽位
+    effectiveSlots = [
+      { id: "source", label: labels.sourceLabel || "原文", role: "source", enabled: true },
+      { id: "spoken", label: labels.slot1Label || "Spoken", role: "translation", enabled: true, showMeaning: true },
+      ...(card.written ? [{ id: "written", label: labels.slot2Label || "Written", role: "translation", enabled: true, showMeaning: true } as SlotConfig] : []),
+      ...(card.vocab ? [{ id: "vocab", label: labels.vocabLabel || "Vocab", role: "vocab", enabled: true } as SlotConfig] : []),
+    ];
+  }
 
-  const cleanSource = card.sourceText.replace(/\r?\n+/g, " ").trim();
+  // 提取各槽位的内容
+  const resolveSlotContent = (slot: SlotConfig): { content: string; meaning?: string } => {
+    if (slot.role === "source") {
+      return { content: card.sourceText || "" };
+    }
+    if (card.slotOutputs && card.slotOutputs[slot.id]) {
+      const out = card.slotOutputs[slot.id];
+      return { content: out.content || "", meaning: out.meaning };
+    }
+    if (card.slots) {
+      const match = card.slots.find((s) => s.id === slot.id);
+      if (match) {
+        return { content: match.content || "", meaning: match.meaning };
+      }
+    }
+    // 后向兼容字段
+    if (slot.id === "spoken" || (slot.role === "translation" && !card.slotOutputs)) {
+      if (slot.id === "written") {
+        return { content: card.written || "", meaning: card.writtenMeaning };
+      }
+      return { content: card.spoken || "", meaning: card.spokenMeaning };
+    }
+    if (slot.id === "written") {
+      return { content: card.written || "", meaning: card.writtenMeaning };
+    }
+    if (slot.id === "vocab" || slot.role === "vocab") {
+      return { content: card.vocab || "" };
+    }
+    return { content: "" };
+  };
+
+  // 筛选出有内容的非 source 槽位
+  interface RenderBranch {
+    id: string;
+    label: string;
+    role: string;
+    content: string;
+    meaning?: string;
+  }
+  const contentBranches: RenderBranch[] = [];
+  for (const slot of effectiveSlots) {
+    if (slot.role === "source") continue;
+    const { content, meaning } = resolveSlotContent(slot);
+    if (content && content.trim()) {
+      contentBranches.push({
+        id: slot.id,
+        label: slot.label,
+        role: slot.role,
+        content: content.trim(),
+        meaning: (slot.showMeaning !== false && meaning && meaning.trim()) ? meaning.trim() : undefined,
+      });
+    }
+  }
+
+  // 1. 若显式请求胶囊模式，或列宽极端窄小 (< 35 列无法排版树状分支)，降级为单行胶囊流
+  if (isCompact || maxCols < 35) {
+    if (contentBranches.length === 0) {
+      return [truncateVisual(`⇄ [${labels.hudTitle}] ${card.sourceText}`, maxCols) + pageTag];
+    }
+    const parts = contentBranches.map((b) => {
+      const shortLabel = b.label.slice(0, 4);
+      return `${shortLabel}: ${b.content}`;
+    });
+    const prefix = `⇄ [${labels.hudTitle}] `;
+    const fullText = prefix + parts.join(" · ");
+    return [truncateVisual(fullText, maxCols) + pageTag];
+  }
+
+  // 2. 检查是否有 source 原文槽位（支持用户完全删除/关闭原文行）
+  const sourceSlot = effectiveSlots.find((s) => s.role === "source");
   let sourceLines: string[] = [];
 
-  if (getVisualWidth(cleanSource) <= availLine1W) {
-    sourceLines = [
-      decMuted("  · ") + decMuted("[") + decDim(sourceLabel) + decMuted("] ") + cleanSource + pageTag,
-    ];
-  } else {
-    const wrapped = wrapVisualText(cleanSource, Math.max(20, maxCols - prefixW));
-    sourceLines = wrapped.map((wLine, idx) => {
-      const isLast = idx === wrapped.length - 1;
-      const tagSuffix = isLast ? pageTag : "";
-      if (idx === 0) {
-        return (
-          decMuted("  · ") +
-          decMuted("[") +
-          decDim(sourceLabel) +
-          decMuted("] ") +
-          wLine +
-          tagSuffix
-        );
-      }
-      return " ".repeat(prefixW) + decDim(wLine) + tagSuffix;
-    });
+  if (sourceSlot && card.sourceText && card.sourceText.trim()) {
+    const sourceLabel = sourceSlot.label || labels.sourceLabel || "原文";
+    const prefixRaw = `  · [${sourceLabel}] `;
+    const prefixW = getVisualWidth(prefixRaw);
+    const pageTagW = pageTag ? getVisualWidth(pageTag) : 0;
+    const availLine1W = Math.max(20, maxCols - prefixW - pageTagW);
+
+    const cleanSource = card.sourceText.replace(/\r?\n+/g, " ").trim();
+
+    if (getVisualWidth(cleanSource) <= availLine1W) {
+      sourceLines = [
+        decMuted("  · ") + decMuted("[") + decDim(sourceLabel) + decMuted("] ") + cleanSource + pageTag,
+      ];
+    } else {
+      const wrapped = wrapVisualText(cleanSource, Math.max(20, maxCols - prefixW));
+      sourceLines = wrapped.map((wLine, idx) => {
+        const isLast = idx === wrapped.length - 1;
+        const tagSuffix = isLast ? pageTag : "";
+        if (idx === 0) {
+          return (
+            decMuted("  · ") +
+            decMuted("[") +
+            decDim(sourceLabel) +
+            decMuted("] ") +
+            wLine +
+            tagSuffix
+          );
+        }
+        return " ".repeat(prefixW) + decDim(wLine) + tagSuffix;
+      });
+    }
   }
 
   let lines: string[] = [...sourceLines];
 
-  // 口语/Slot1 分支
-  const branch1Char = (hasWritten || hasVocab) ? "┌" : "└";
-  const cont1Char = (hasWritten || hasVocab) ? "│" : " ";
-  lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1Label, card.spoken, decMuted, decAccent, decMuted, s => s, maxCols));
-  if (card.spokenMeaning) {
-    lines.push(...formatSubRail(cont1Char, card.spokenMeaning, "↳", decMuted, decDim, maxCols));
-  }
+  // 3. 动态渲染非 source 槽位分支 (Trifecta Tree Rails)
+  const numBranches = contentBranches.length;
+  for (let i = 0; i < numBranches; i++) {
+    const branch = contentBranches[i];
+    const isFirst = i === 0;
+    const isLast = i === numBranches - 1;
 
-  // 写作/Slot2 分支
-  if (hasWritten) {
-    const branchChar = hasVocab ? "├" : "└";
-    const contChar = hasVocab ? "│" : " ";
-    lines.push(...formatTreeBranch(branchChar, contChar, slot2Label, card.written!, decMuted, decAccent, decMuted, s => s, maxCols));
-    if (card.writtenMeaning) {
-      lines.push(...formatSubRail(contChar, card.writtenMeaning, "↳", decMuted, decDim, maxCols));
+    let branchChar = "├";
+    let contChar = "│";
+
+    if (numBranches === 1) {
+      branchChar = "└";
+      contChar = " ";
+    } else if (isFirst) {
+      branchChar = "┌";
+      contChar = "│";
+    } else if (isLast) {
+      branchChar = "└";
+      contChar = " ";
+    }
+
+    const isVocab = branch.role === "vocab";
+    const contentColor = isVocab ? decDim : (s: string) => s;
+    const headingColor = isVocab ? decMuted : decAccent;
+
+    lines.push(
+      ...formatTreeBranch(
+        branchChar,
+        contChar,
+        branch.label,
+        branch.content,
+        decMuted,
+        headingColor,
+        decMuted,
+        contentColor,
+        maxCols
+      )
+    );
+
+    if (branch.meaning) {
+      lines.push(...formatSubRail(contChar, branch.meaning, "↳", decMuted, decDim, maxCols));
     }
   }
 
-  // 重点词汇分支
-  if (hasVocab) {
-    lines.push(...formatTreeBranch("└", " ", vocabLabel, card.vocab!, decMuted, decMuted, decMuted, decDim, maxCols));
-  }
-
-  // 行数守卫与盒模型约束求解 (坚持左导轨树状架构，绝不粗暴降级为单行胶囊)
+  // 4. 行数守卫与盒模型约束求解 (Kinetic Line Budget Guard: lines.length <= maxLines)
   if (lines.length > maxLines) {
-    // 约束 Tier 1: 原文最多展示 2 行，防止长原文占用过多预算；超过 2 行时末行严格附带合规省略号
+    // 约束 Tier 1: 原文最多展示 2 行
     let clampedSourceLines = sourceLines;
     if (sourceLines.length > 2) {
       clampedSourceLines = [
@@ -554,86 +629,103 @@ export function renderCardLayout(
       ];
     }
 
-    // 约束 Tier 2: 将母语语感内联入括号，收缩纵向子导轨高度
-    const spInline = card.spokenMeaning ? `${card.spoken} (${card.spokenMeaning})` : card.spoken;
-    const rawSpLines = formatTreeBranch(branch1Char, cont1Char, slot1Label, spInline, decMuted, decAccent, decMuted, s => s, maxCols);
+    // 约束 Tier 2: 将母语释义内联入括号，消除纵向子导轨
+    const inlineLines: string[] = [...clampedSourceLines];
+    for (let i = 0; i < numBranches; i++) {
+      const branch = contentBranches[i];
+      const isFirst = i === 0;
+      const isLast = i === numBranches - 1;
+      const branchChar = numBranches === 1 ? "└" : isFirst ? "┌" : isLast ? "└" : "├";
+      const contChar = numBranches === 1 || isLast ? " " : "│";
+      const isVocab = branch.role === "vocab";
+      const headingColor = isVocab ? decMuted : decAccent;
+      const contentColor = isVocab ? decDim : (s: string) => s;
 
-    let rawWrLines: string[] = [];
-    if (hasWritten) {
-      const branchChar = hasVocab ? "├" : "└";
-      const contChar = hasVocab ? "│" : " ";
-      const wrInline = card.writtenMeaning ? `${card.written} (${card.writtenMeaning})` : (card.written || "");
-      rawWrLines = formatTreeBranch(branchChar, contChar, slot2Label, wrInline, decMuted, decAccent, decMuted, s => s, maxCols);
+      const inlineText = branch.meaning ? `${branch.content} (${branch.meaning})` : branch.content;
+      inlineLines.push(
+        ...formatTreeBranch(
+          branchChar,
+          contChar,
+          branch.label,
+          inlineText,
+          decMuted,
+          headingColor,
+          decMuted,
+          contentColor,
+          maxCols
+        )
+      );
     }
 
-    let rawVocabLines: string[] = [];
-    if (hasVocab) {
-      rawVocabLines = formatTreeBranch("└", " ", vocabLabel, card.vocab!, decMuted, decMuted, decMuted, decDim, maxCols);
-    }
-
-    const totalInline = clampedSourceLines.length + rawSpLines.length + rawWrLines.length + rawVocabLines.length;
-    if (totalInline <= maxLines) {
-      lines = [...clampedSourceLines, ...rawSpLines, ...rawWrLines, ...rawVocabLines];
+    if (inlineLines.length <= maxLines) {
+      lines = inlineLines;
     } else {
-      // 约束 Tier 3: 目标语完整性铁律 (Target Language Integrity Invariant)
-      // 当全内联依然超出行预算时，绝对禁止对带长语感的折行数组执行盲目 slice，
-      // 彻底根除英文主句被截断 (如 "which came as quite a") 或留下未闭合孤立括号 (如 "(嗨，今天想跟你聊聊林纳斯·托瓦兹。我以") 的缺陷！
-      // 优先保障纯正目标语英文与重点词汇的完整性：
-      const branchChar = hasVocab ? "├" : "└";
-      const contChar = hasVocab ? "│" : " ";
-      const pureSpLines = formatTreeBranch(branch1Char, cont1Char, slot1Label, card.spoken, decMuted, decAccent, decMuted, s => s, maxCols);
-      const pureWrLines = hasWritten
-        ? formatTreeBranch(branchChar, contChar, slot2Label, card.written!, decMuted, decAccent, decMuted, s => s, maxCols)
-        : [];
-      const pureVocabLines = hasVocab
-        ? formatTreeBranch("└", " ", vocabLabel, card.vocab!, decMuted, decMuted, decMuted, decDim, maxCols)
-        : [];
+      // 约束 Tier 3: 剥离母语微释义，保障目标语言内容的纯净与完整
+      const pureLines: string[] = [...clampedSourceLines];
+      for (let i = 0; i < numBranches; i++) {
+        const branch = contentBranches[i];
+        const isFirst = i === 0;
+        const isLast = i === numBranches - 1;
+        const branchChar = numBranches === 1 ? "└" : isFirst ? "┌" : isLast ? "└" : "├";
+        const contChar = numBranches === 1 || isLast ? " " : "│";
+        const isVocab = branch.role === "vocab";
+        const headingColor = isVocab ? decMuted : decAccent;
+        const contentColor = isVocab ? decDim : (s: string) => s;
 
-      const totalPure = clampedSourceLines.length + pureSpLines.length + pureWrLines.length + pureVocabLines.length;
-      if (totalPure <= maxLines) {
-        // 若预算有空余，尝试保留其中某一个语感 (优先保留口语语感)
-        if (clampedSourceLines.length + rawSpLines.length + pureWrLines.length + pureVocabLines.length <= maxLines) {
-          lines = [...clampedSourceLines, ...rawSpLines, ...pureWrLines, ...pureVocabLines];
-        } else if (clampedSourceLines.length + pureSpLines.length + rawWrLines.length + pureVocabLines.length <= maxLines) {
-          lines = [...clampedSourceLines, ...pureSpLines, ...rawWrLines, ...pureVocabLines];
-        } else {
-          lines = [...clampedSourceLines, ...pureSpLines, ...pureWrLines, ...pureVocabLines];
-        }
+        pureLines.push(
+          ...formatTreeBranch(
+            branchChar,
+            contChar,
+            branch.label,
+            branch.content,
+            decMuted,
+            headingColor,
+            decMuted,
+            contentColor,
+            maxCols
+          )
+        );
+      }
+
+      if (pureLines.length <= maxLines) {
+        lines = pureLines;
       } else {
-        // 约束 Tier 4: 超长文/中间状态多句安全有界分配
-        // 优先保障四分支齐全，绝不压缩掉重点词汇或砍断词汇项：
-        // 保证口语 (max 2) + 写作 (max 2) + 原文 (max 2) = 6 行，为重点词汇稳固留出 2~3 行充足空间！
-        const remForText = Math.max(4, maxLines - clampedSourceLines.length - Math.min(2, pureVocabLines.length));
-        const spBudget = Math.max(1, Math.min(pureSpLines.length, Math.floor(remForText / 2)));
-        const wrBudget = Math.max(1, Math.min(pureWrLines.length, remForText - spBudget));
+        // 约束 Tier 4: 按可用行数预算严格裁剪
+        const availForBranches = Math.max(1, maxLines - clampedSourceLines.length);
+        const perBranchBudget = Math.max(1, Math.floor(availForBranches / Math.max(1, numBranches)));
 
-        const clampLines = (arr: string[], budget: number): string[] => {
-          if (arr.length <= budget) return arr;
-          const res = arr.slice(0, budget);
-          const last = res.length - 1;
-          res[last] = truncateVisual(res[last] + "...", maxCols);
-          return res;
-        };
+        const clampedBranchLines: string[] = [...clampedSourceLines];
+        for (let i = 0; i < numBranches; i++) {
+          const branch = contentBranches[i];
+          const isFirst = i === 0;
+          const isLast = i === numBranches - 1;
+          const branchChar = numBranches === 1 ? "└" : isFirst ? "┌" : isLast ? "└" : "├";
+          const contChar = numBranches === 1 || isLast ? " " : "│";
+          const isVocab = branch.role === "vocab";
+          const headingColor = isVocab ? decMuted : decAccent;
+          const contentColor = isVocab ? decDim : (s: string) => s;
 
-        const spSafe = clampLines(pureSpLines, spBudget);
-        const wrSafe = clampLines(pureWrLines, wrBudget);
+          const branchRendered = formatTreeBranch(
+            branchChar,
+            contChar,
+            branch.label,
+            branch.content,
+            decMuted,
+            headingColor,
+            decMuted,
+            contentColor,
+            maxCols
+          );
 
-        // 计算留给重点词汇的剩余可用行数
-        const remForVocab = Math.max(1, maxLines - clampedSourceLines.length - spSafe.length - wrSafe.length);
-        let vLines = pureVocabLines;
-        if (vLines.length > remForVocab) {
-          if (remForVocab === 1) {
-            const vPrefix = `  └ [${labels.vocabLabel}] `;
-            vLines = [formatVocabItemsAtomic(card.vocab || "", vPrefix, maxCols)];
+          if (branchRendered.length <= perBranchBudget) {
+            clampedBranchLines.push(...branchRendered);
           } else {
-            vLines = vLines.slice(0, remForVocab);
+            const sliced = branchRendered.slice(0, perBranchBudget);
+            sliced[sliced.length - 1] = truncateVisual(sliced[sliced.length - 1] + "...", maxCols);
+            clampedBranchLines.push(...sliced);
           }
         }
-
-        lines = [...clampedSourceLines, ...spSafe, ...wrSafe, ...vLines];
-        if (lines.length > maxLines) {
-          lines = lines.slice(0, maxLines);
-        }
+        lines = clampedBranchLines.slice(0, maxLines);
       }
     }
   }

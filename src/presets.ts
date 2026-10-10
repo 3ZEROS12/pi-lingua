@@ -6,6 +6,77 @@ export interface SlotPresetDefinition {
   slots: (sourceLang?: string) => SlotConfig[];
 }
 
+export { getDefaultSlots } from "./core/prompts.js";
+
+/**
+ * 创建自定义槽位配置
+ */
+export function createCustomSlot(params: Partial<SlotConfig> & { id: string; label: string }): SlotConfig {
+  const normId = params.id.trim().toLowerCase();
+  const role = params.role || (normId === "source" ? "source" : normId === "vocab" ? "vocab" : "translation");
+  return {
+    id: normId,
+    label: params.label.trim(),
+    role,
+    instruction: params.instruction?.trim() || (role === "source" ? undefined : "Natural, authentic expressions matching requested context."),
+    showMeaning: params.showMeaning !== undefined ? params.showMeaning : (role !== "source" && role !== "vocab"),
+    enabled: params.enabled !== undefined ? params.enabled : true,
+  };
+}
+
+/**
+ * 纯函数：向槽位列表中添加槽位（若已存在同名 id 则覆盖更新，否则追加在末尾）
+ */
+export function addSlotToList(slots: SlotConfig[], newSlot: SlotConfig): SlotConfig[] {
+  const normId = newSlot.id.trim().toLowerCase();
+  const existingIndex = slots.findIndex((s) => s.id.toLowerCase() === normId);
+  if (existingIndex >= 0) {
+    const copy = [...slots];
+    copy[existingIndex] = { ...newSlot, id: normId };
+    return copy;
+  }
+  return [...slots, { ...newSlot, id: normId }];
+}
+
+/**
+ * 纯函数：从槽位列表中彻底移除指定 id 的槽位（支持删除 source 原文槽位）
+ */
+export function removeSlotFromList(slots: SlotConfig[], slotId: string): SlotConfig[] {
+  const normId = slotId.trim().toLowerCase();
+  return slots.filter((s) => s.id.toLowerCase() !== normId);
+}
+
+/**
+ * 纯函数：更新指定槽位的属性
+ */
+export function updateSlotInList(slots: SlotConfig[], slotId: string, patch: Partial<SlotConfig>): SlotConfig[] {
+  const normId = slotId.trim().toLowerCase();
+  return slots.map((s) => (s.id.toLowerCase() === normId ? { ...s, ...patch } : s));
+}
+
+/**
+ * 纯函数：切换指定槽位的启用/禁用状态
+ */
+export function toggleSlotInList(slots: SlotConfig[], slotId: string): SlotConfig[] {
+  const normId = slotId.trim().toLowerCase();
+  return slots.map((s) => (s.id.toLowerCase() === normId ? { ...s, enabled: !s.enabled } : s));
+}
+
+/**
+ * 纯函数：调整槽位在列表中的排列顺序
+ */
+export function moveSlotInList(slots: SlotConfig[], slotId: string, targetIndex: number): SlotConfig[] {
+  const normId = slotId.trim().toLowerCase();
+  const currentIndex = slots.findIndex((s) => s.id.toLowerCase() === normId);
+  if (currentIndex === -1 || targetIndex < 0 || targetIndex >= slots.length || currentIndex === targetIndex) {
+    return slots;
+  }
+  const copy = [...slots];
+  const [removed] = copy.splice(currentIndex, 1);
+  copy.splice(targetIndex, 0, removed);
+  return copy;
+}
+
 export const SLOT_PRESETS: Record<string, SlotPresetDefinition> = {
   developer: {
     name: "Developer",

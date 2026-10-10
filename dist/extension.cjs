@@ -222,34 +222,6 @@ function spotlightPhrases(text, phrases) {
   }
   return result;
 }
-function formatVocabItemsAtomic(vocab, prefix, maxCols) {
-  if (!vocab || !vocab.trim()) return prefix.trimEnd();
-  const items = vocab.split(/\s*(?:·|•)\s*/);
-  const prefixW = getVisualWidth(prefix);
-  const availW = Math.max(20, maxCols - prefixW);
-  const keptItems = [];
-  let curW = 0;
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i].trim();
-    if (!item) continue;
-    const itemW = getVisualWidth(item);
-    const sepW = keptItems.length > 0 ? 3 : 0;
-    if (curW + sepW + itemW <= availW) {
-      keptItems.push(item);
-      curW += sepW + itemW;
-    } else {
-      if (keptItems.length === 0) {
-        return prefix + truncateVisual(item, availW);
-      } else {
-        if (curW + 5 <= availW) {
-          return prefix + keptItems.join(" \xB7 ") + " \xB7 ...";
-        }
-        return prefix + keptItems.join(" \xB7 ");
-      }
-    }
-  }
-  return prefix + keptItems.join(" \xB7 ");
-}
 function formatTerminalAnnotation(sourceText, spoken, written, vocab, options = {}) {
   const slot1 = options.slot1Label || "Spoken";
   const slot2 = options.slot2Label || "Written";
@@ -282,108 +254,141 @@ function formatTerminalAnnotation(sourceText, spoken, written, vocab, options = 
   }
   return lines.join("\n");
 }
-function formatCapsuleLine(hudTitle, spoken, written, options = {}) {
-  const maxCols = options.maxCols || (process.stdout?.columns ? Math.max(30, process.stdout.columns) : 80);
-  const slot1 = options.slot1Short || "Spk";
-  const slot2 = options.slot2Short || "Wrt";
-  const cleanSpoken = spoken.replace(/\r?\n+/g, " ").trim();
-  const cleanWritten = (written || "").replace(/\r?\n+/g, " ").trim();
-  const prefix = `\u21C4 [${hudTitle}] `;
-  const prefixW = getVisualWidth(prefix);
-  const hasSlot2 = Boolean(cleanWritten);
-  const availW = Math.max(8, maxCols - prefixW);
-  let body = "";
-  if (hasSlot2) {
-    const s1PrefixW = getVisualWidth(`${slot1}: `);
-    const s2PrefixW = getVisualWidth(`${slot2}: `);
-    const fixedOverhead = s1PrefixW + 3 + s2PrefixW;
-    const textAvail = Math.max(4, availW - fixedOverhead);
-    const halfW = Math.max(2, Math.floor(textAvail / 2));
-    const s1 = truncateVisual(cleanSpoken, halfW);
-    const s2 = truncateVisual(cleanWritten, halfW);
-    body = `${slot1}: ${s1} \xB7 ${slot2}: ${s2}`;
-  } else {
-    const s1PrefixW = getVisualWidth(`${slot1}: `);
-    const textAvail = Math.max(2, availW - s1PrefixW);
-    const s1 = truncateVisual(cleanSpoken, textAvail);
-    body = `${slot1}: ${s1}`;
-  }
-  const fullLine = prefix + body;
-  if (getVisualWidth(fullLine) > maxCols) {
-    return truncateVisual(fullLine, maxCols);
-  }
-  return fullLine;
-}
 function renderCardLayout(card, labels, options = {}) {
   const maxCols = getEffectiveMaxCols(options.maxCols);
   const maxLines = options.maxLines || 9;
   const isCompact = Boolean(options.isCompact);
   const pageTag = options.pageTag || "";
-  const allSlots = options.slots;
-  const sourceSlot = allSlots?.find((s) => s.role === "source");
-  const sourceLabel = sourceSlot?.label || labels.sourceLabel || "\u539F\u6587";
-  const slot1Conf = allSlots?.find((s) => s.id === "spoken" || s.role === "translation");
-  const slot2Conf = allSlots?.find((s) => s.id === "written" || s.role === "translation" && s !== slot1Conf);
-  const vocabConf = allSlots?.find((s) => s.id === "vocab" || s.role === "vocab");
-  const slot1Label = slot1Conf?.label || labels.slot1Label || "Spoken";
-  const slot2Label = slot2Conf?.label || labels.slot2Label || "Written";
-  const vocabLabel = vocabConf?.label || labels.vocabLabel || "Vocab";
-  const hasWritten = slot2Conf ? slot2Conf.enabled && Boolean(card.written && card.written.trim()) : allSlots ? false : Boolean(card.written && card.written.trim());
-  const hasVocab = vocabConf ? vocabConf.enabled && Boolean(card.vocab && card.vocab.trim()) : allSlots ? false : Boolean(card.vocab && card.vocab.trim());
-  if (isCompact || maxCols < 35) {
-    const capsuleText = formatCapsuleLine(
-      labels.hudTitle,
-      card.spoken,
-      hasWritten ? card.written : void 0,
-      {
-        slot1Short: slot1Conf?.label ? slot1Conf.label.slice(0, 4) : labels.capsuleSlot1Prefix || labels.slot1Label || "Spk",
-        slot2Short: slot2Conf?.label ? slot2Conf.label.slice(0, 4) : labels.capsuleSlot2Prefix || labels.slot2Label || "Wrt",
-        maxCols
-      }
-    );
-    return [capsuleText + pageTag];
-  }
   const decMuted = options.themeDecorators?.muted || ((s) => s);
   const decAccent = options.themeDecorators?.accent || ((s) => s);
   const decDim = options.themeDecorators?.dim || ((s) => s);
-  const prefixRaw = `  \xB7 [${sourceLabel}] `;
-  const prefixW = getVisualWidth(prefixRaw);
-  const pageTagW = pageTag ? getVisualWidth(pageTag) : 0;
-  const availLine1W = Math.max(20, maxCols - prefixW - pageTagW);
-  const cleanSource = card.sourceText.replace(/\r?\n+/g, " ").trim();
-  let sourceLines = [];
-  if (getVisualWidth(cleanSource) <= availLine1W) {
-    sourceLines = [
-      decMuted("  \xB7 ") + decMuted("[") + decDim(sourceLabel) + decMuted("] ") + cleanSource + pageTag
-    ];
+  let effectiveSlots = [];
+  if (options.slots && options.slots.length > 0) {
+    effectiveSlots = options.slots.filter((s) => s.enabled);
   } else {
-    const wrapped = wrapVisualText(cleanSource, Math.max(20, maxCols - prefixW));
-    sourceLines = wrapped.map((wLine, idx) => {
-      const isLast = idx === wrapped.length - 1;
-      const tagSuffix = isLast ? pageTag : "";
-      if (idx === 0) {
-        return decMuted("  \xB7 ") + decMuted("[") + decDim(sourceLabel) + decMuted("] ") + wLine + tagSuffix;
+    effectiveSlots = [
+      { id: "source", label: labels.sourceLabel || "\u539F\u6587", role: "source", enabled: true },
+      { id: "spoken", label: labels.slot1Label || "Spoken", role: "translation", enabled: true, showMeaning: true },
+      ...card.written ? [{ id: "written", label: labels.slot2Label || "Written", role: "translation", enabled: true, showMeaning: true }] : [],
+      ...card.vocab ? [{ id: "vocab", label: labels.vocabLabel || "Vocab", role: "vocab", enabled: true }] : []
+    ];
+  }
+  const resolveSlotContent = (slot) => {
+    if (slot.role === "source") {
+      return { content: card.sourceText || "" };
+    }
+    if (card.slotOutputs && card.slotOutputs[slot.id]) {
+      const out = card.slotOutputs[slot.id];
+      return { content: out.content || "", meaning: out.meaning };
+    }
+    if (card.slots) {
+      const match = card.slots.find((s) => s.id === slot.id);
+      if (match) {
+        return { content: match.content || "", meaning: match.meaning };
       }
-      return " ".repeat(prefixW) + decDim(wLine) + tagSuffix;
-    });
-  }
-  let lines = [...sourceLines];
-  const branch1Char = hasWritten || hasVocab ? "\u250C" : "\u2514";
-  const cont1Char = hasWritten || hasVocab ? "\u2502" : " ";
-  lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1Label, card.spoken, decMuted, decAccent, decMuted, (s) => s, maxCols));
-  if (card.spokenMeaning) {
-    lines.push(...formatSubRail(cont1Char, card.spokenMeaning, "\u21B3", decMuted, decDim, maxCols));
-  }
-  if (hasWritten) {
-    const branchChar = hasVocab ? "\u251C" : "\u2514";
-    const contChar = hasVocab ? "\u2502" : " ";
-    lines.push(...formatTreeBranch(branchChar, contChar, slot2Label, card.written, decMuted, decAccent, decMuted, (s) => s, maxCols));
-    if (card.writtenMeaning) {
-      lines.push(...formatSubRail(contChar, card.writtenMeaning, "\u21B3", decMuted, decDim, maxCols));
+    }
+    if (slot.id === "spoken" || slot.role === "translation" && !card.slotOutputs) {
+      if (slot.id === "written") {
+        return { content: card.written || "", meaning: card.writtenMeaning };
+      }
+      return { content: card.spoken || "", meaning: card.spokenMeaning };
+    }
+    if (slot.id === "written") {
+      return { content: card.written || "", meaning: card.writtenMeaning };
+    }
+    if (slot.id === "vocab" || slot.role === "vocab") {
+      return { content: card.vocab || "" };
+    }
+    return { content: "" };
+  };
+  const contentBranches = [];
+  for (const slot of effectiveSlots) {
+    if (slot.role === "source") continue;
+    const { content, meaning } = resolveSlotContent(slot);
+    if (content && content.trim()) {
+      contentBranches.push({
+        id: slot.id,
+        label: slot.label,
+        role: slot.role,
+        content: content.trim(),
+        meaning: slot.showMeaning !== false && meaning && meaning.trim() ? meaning.trim() : void 0
+      });
     }
   }
-  if (hasVocab) {
-    lines.push(...formatTreeBranch("\u2514", " ", vocabLabel, card.vocab, decMuted, decMuted, decMuted, decDim, maxCols));
+  if (isCompact || maxCols < 35) {
+    if (contentBranches.length === 0) {
+      return [truncateVisual(`\u21C4 [${labels.hudTitle}] ${card.sourceText}`, maxCols) + pageTag];
+    }
+    const parts = contentBranches.map((b) => {
+      const shortLabel = b.label.slice(0, 4);
+      return `${shortLabel}: ${b.content}`;
+    });
+    const prefix = `\u21C4 [${labels.hudTitle}] `;
+    const fullText = prefix + parts.join(" \xB7 ");
+    return [truncateVisual(fullText, maxCols) + pageTag];
+  }
+  const sourceSlot = effectiveSlots.find((s) => s.role === "source");
+  let sourceLines = [];
+  if (sourceSlot && card.sourceText && card.sourceText.trim()) {
+    const sourceLabel = sourceSlot.label || labels.sourceLabel || "\u539F\u6587";
+    const prefixRaw = `  \xB7 [${sourceLabel}] `;
+    const prefixW = getVisualWidth(prefixRaw);
+    const pageTagW = pageTag ? getVisualWidth(pageTag) : 0;
+    const availLine1W = Math.max(20, maxCols - prefixW - pageTagW);
+    const cleanSource = card.sourceText.replace(/\r?\n+/g, " ").trim();
+    if (getVisualWidth(cleanSource) <= availLine1W) {
+      sourceLines = [
+        decMuted("  \xB7 ") + decMuted("[") + decDim(sourceLabel) + decMuted("] ") + cleanSource + pageTag
+      ];
+    } else {
+      const wrapped = wrapVisualText(cleanSource, Math.max(20, maxCols - prefixW));
+      sourceLines = wrapped.map((wLine, idx) => {
+        const isLast = idx === wrapped.length - 1;
+        const tagSuffix = isLast ? pageTag : "";
+        if (idx === 0) {
+          return decMuted("  \xB7 ") + decMuted("[") + decDim(sourceLabel) + decMuted("] ") + wLine + tagSuffix;
+        }
+        return " ".repeat(prefixW) + decDim(wLine) + tagSuffix;
+      });
+    }
+  }
+  let lines = [...sourceLines];
+  const numBranches = contentBranches.length;
+  for (let i = 0; i < numBranches; i++) {
+    const branch = contentBranches[i];
+    const isFirst = i === 0;
+    const isLast = i === numBranches - 1;
+    let branchChar = "\u251C";
+    let contChar = "\u2502";
+    if (numBranches === 1) {
+      branchChar = "\u2514";
+      contChar = " ";
+    } else if (isFirst) {
+      branchChar = "\u250C";
+      contChar = "\u2502";
+    } else if (isLast) {
+      branchChar = "\u2514";
+      contChar = " ";
+    }
+    const isVocab = branch.role === "vocab";
+    const contentColor = isVocab ? decDim : (s) => s;
+    const headingColor = isVocab ? decMuted : decAccent;
+    lines.push(
+      ...formatTreeBranch(
+        branchChar,
+        contChar,
+        branch.label,
+        branch.content,
+        decMuted,
+        headingColor,
+        decMuted,
+        contentColor,
+        maxCols
+      )
+    );
+    if (branch.meaning) {
+      lines.push(...formatSubRail(contChar, branch.meaning, "\u21B3", decMuted, decDim, maxCols));
+    }
   }
   if (lines.length > maxLines) {
     let clampedSourceLines = sourceLines;
@@ -393,64 +398,93 @@ function renderCardLayout(card, labels, options = {}) {
         truncateVisual(sourceLines[1] + "...", maxCols)
       ];
     }
-    const spInline = card.spokenMeaning ? `${card.spoken} (${card.spokenMeaning})` : card.spoken;
-    const rawSpLines = formatTreeBranch(branch1Char, cont1Char, slot1Label, spInline, decMuted, decAccent, decMuted, (s) => s, maxCols);
-    let rawWrLines = [];
-    if (hasWritten) {
-      const branchChar = hasVocab ? "\u251C" : "\u2514";
-      const contChar = hasVocab ? "\u2502" : " ";
-      const wrInline = card.writtenMeaning ? `${card.written} (${card.writtenMeaning})` : card.written || "";
-      rawWrLines = formatTreeBranch(branchChar, contChar, slot2Label, wrInline, decMuted, decAccent, decMuted, (s) => s, maxCols);
+    const inlineLines = [...clampedSourceLines];
+    for (let i = 0; i < numBranches; i++) {
+      const branch = contentBranches[i];
+      const isFirst = i === 0;
+      const isLast = i === numBranches - 1;
+      const branchChar = numBranches === 1 ? "\u2514" : isFirst ? "\u250C" : isLast ? "\u2514" : "\u251C";
+      const contChar = numBranches === 1 || isLast ? " " : "\u2502";
+      const isVocab = branch.role === "vocab";
+      const headingColor = isVocab ? decMuted : decAccent;
+      const contentColor = isVocab ? decDim : (s) => s;
+      const inlineText = branch.meaning ? `${branch.content} (${branch.meaning})` : branch.content;
+      inlineLines.push(
+        ...formatTreeBranch(
+          branchChar,
+          contChar,
+          branch.label,
+          inlineText,
+          decMuted,
+          headingColor,
+          decMuted,
+          contentColor,
+          maxCols
+        )
+      );
     }
-    let rawVocabLines = [];
-    if (hasVocab) {
-      rawVocabLines = formatTreeBranch("\u2514", " ", vocabLabel, card.vocab, decMuted, decMuted, decMuted, decDim, maxCols);
-    }
-    const totalInline = clampedSourceLines.length + rawSpLines.length + rawWrLines.length + rawVocabLines.length;
-    if (totalInline <= maxLines) {
-      lines = [...clampedSourceLines, ...rawSpLines, ...rawWrLines, ...rawVocabLines];
+    if (inlineLines.length <= maxLines) {
+      lines = inlineLines;
     } else {
-      const branchChar = hasVocab ? "\u251C" : "\u2514";
-      const contChar = hasVocab ? "\u2502" : " ";
-      const pureSpLines = formatTreeBranch(branch1Char, cont1Char, slot1Label, card.spoken, decMuted, decAccent, decMuted, (s) => s, maxCols);
-      const pureWrLines = hasWritten ? formatTreeBranch(branchChar, contChar, slot2Label, card.written, decMuted, decAccent, decMuted, (s) => s, maxCols) : [];
-      const pureVocabLines = hasVocab ? formatTreeBranch("\u2514", " ", vocabLabel, card.vocab, decMuted, decMuted, decMuted, decDim, maxCols) : [];
-      const totalPure = clampedSourceLines.length + pureSpLines.length + pureWrLines.length + pureVocabLines.length;
-      if (totalPure <= maxLines) {
-        if (clampedSourceLines.length + rawSpLines.length + pureWrLines.length + pureVocabLines.length <= maxLines) {
-          lines = [...clampedSourceLines, ...rawSpLines, ...pureWrLines, ...pureVocabLines];
-        } else if (clampedSourceLines.length + pureSpLines.length + rawWrLines.length + pureVocabLines.length <= maxLines) {
-          lines = [...clampedSourceLines, ...pureSpLines, ...rawWrLines, ...pureVocabLines];
-        } else {
-          lines = [...clampedSourceLines, ...pureSpLines, ...pureWrLines, ...pureVocabLines];
-        }
+      const pureLines = [...clampedSourceLines];
+      for (let i = 0; i < numBranches; i++) {
+        const branch = contentBranches[i];
+        const isFirst = i === 0;
+        const isLast = i === numBranches - 1;
+        const branchChar = numBranches === 1 ? "\u2514" : isFirst ? "\u250C" : isLast ? "\u2514" : "\u251C";
+        const contChar = numBranches === 1 || isLast ? " " : "\u2502";
+        const isVocab = branch.role === "vocab";
+        const headingColor = isVocab ? decMuted : decAccent;
+        const contentColor = isVocab ? decDim : (s) => s;
+        pureLines.push(
+          ...formatTreeBranch(
+            branchChar,
+            contChar,
+            branch.label,
+            branch.content,
+            decMuted,
+            headingColor,
+            decMuted,
+            contentColor,
+            maxCols
+          )
+        );
+      }
+      if (pureLines.length <= maxLines) {
+        lines = pureLines;
       } else {
-        const remForText = Math.max(4, maxLines - clampedSourceLines.length - Math.min(2, pureVocabLines.length));
-        const spBudget = Math.max(1, Math.min(pureSpLines.length, Math.floor(remForText / 2)));
-        const wrBudget = Math.max(1, Math.min(pureWrLines.length, remForText - spBudget));
-        const clampLines = (arr, budget) => {
-          if (arr.length <= budget) return arr;
-          const res = arr.slice(0, budget);
-          const last = res.length - 1;
-          res[last] = truncateVisual(res[last] + "...", maxCols);
-          return res;
-        };
-        const spSafe = clampLines(pureSpLines, spBudget);
-        const wrSafe = clampLines(pureWrLines, wrBudget);
-        const remForVocab = Math.max(1, maxLines - clampedSourceLines.length - spSafe.length - wrSafe.length);
-        let vLines = pureVocabLines;
-        if (vLines.length > remForVocab) {
-          if (remForVocab === 1) {
-            const vPrefix = `  \u2514 [${labels.vocabLabel}] `;
-            vLines = [formatVocabItemsAtomic(card.vocab || "", vPrefix, maxCols)];
+        const availForBranches = Math.max(1, maxLines - clampedSourceLines.length);
+        const perBranchBudget = Math.max(1, Math.floor(availForBranches / Math.max(1, numBranches)));
+        const clampedBranchLines = [...clampedSourceLines];
+        for (let i = 0; i < numBranches; i++) {
+          const branch = contentBranches[i];
+          const isFirst = i === 0;
+          const isLast = i === numBranches - 1;
+          const branchChar = numBranches === 1 ? "\u2514" : isFirst ? "\u250C" : isLast ? "\u2514" : "\u251C";
+          const contChar = numBranches === 1 || isLast ? " " : "\u2502";
+          const isVocab = branch.role === "vocab";
+          const headingColor = isVocab ? decMuted : decAccent;
+          const contentColor = isVocab ? decDim : (s) => s;
+          const branchRendered = formatTreeBranch(
+            branchChar,
+            contChar,
+            branch.label,
+            branch.content,
+            decMuted,
+            headingColor,
+            decMuted,
+            contentColor,
+            maxCols
+          );
+          if (branchRendered.length <= perBranchBudget) {
+            clampedBranchLines.push(...branchRendered);
           } else {
-            vLines = vLines.slice(0, remForVocab);
+            const sliced = branchRendered.slice(0, perBranchBudget);
+            sliced[sliced.length - 1] = truncateVisual(sliced[sliced.length - 1] + "...", maxCols);
+            clampedBranchLines.push(...sliced);
           }
         }
-        lines = [...clampedSourceLines, ...spSafe, ...wrSafe, ...vLines];
-        if (lines.length > maxLines) {
-          lines = lines.slice(0, maxLines);
-        }
+        lines = clampedBranchLines.slice(0, maxLines);
       }
     }
   }
@@ -465,7 +499,492 @@ var import_node_fs = __toESM(require("fs"), 1);
 var import_node_path = __toESM(require("path"), 1);
 var import_node_os = __toESM(require("os"), 1);
 
+// src/core/prompts.ts
+function getDefaultSlots(sourceLang = "zh") {
+  const norm = (sourceLang || "zh").toLowerCase().split("-")[0];
+  const labels = {
+    zh: { source: "\u539F\u6587", spoken: "\u53E3\u8BED", written: "\u5199\u4F5C", vocab: "\u91CD\u70B9" },
+    tw: { source: "\u539F\u6587", spoken: "\u53E3\u8A9E", written: "\u66F8\u9762", vocab: "\u91CD\u9EDE" },
+    en: { source: "Original", spoken: "Spoken", written: "Written", vocab: "Vocab" },
+    ja: { source: "\u539F\u6587", spoken: "\u53E3\u8A9E", written: "\u6587\u9762", vocab: "\u5358\u8A9E" },
+    ko: { source: "\uC6D0\uBB38", spoken: "\uAD6C\uC5B4", written: "\uBB38\uC5B4", vocab: "\uD575\uC2EC" },
+    ru: { source: "\u041E\u0440\u0438\u0433\u0438\u043D\u0430\u043B", spoken: "\u0420\u0430\u0437\u0433\u043E\u0432\u043E\u0440\u043D\u044B\u0439", written: "\u041F\u0438\u0441\u044C\u043C\u0435\u043D\u043D\u044B\u0439", vocab: "\u041B\u0435\u043A\u0441\u0438\u043A\u0430" },
+    pt: { source: "Original", spoken: "Falado", written: "Escrito", vocab: "Vocab" },
+    es: { source: "Original", spoken: "Hablado", written: "Escrito", vocab: "Vocab" },
+    vi: { source: "Nguy\xEAn b\u1EA3n", spoken: "Kh\u1EA9u ng\u1EEF", written: "V\u0103n b\u1EA3n", vocab: "T\u1EEB v\u1EF1ng" },
+    tr: { source: "Orijinal", spoken: "Konu\u015Fma", written: "Yaz\u0131l\u0131", vocab: "Kelime" },
+    ar: { source: "\u0627\u0644\u0623\u0635\u0644", spoken: "\u0645\u062D\u0627\u062F\u062B\u0629", written: "\u0643\u062A\u0627\u0628\u0629", vocab: "\u0645\u0641\u0631\u062F\u0627\u062A" },
+    my: { source: "Asal", spoken: "Pertuturan", written: "Penulisan", vocab: "Kosa kata" },
+    ms: { source: "Asal", spoken: "Pertuturan", written: "Penulisan", vocab: "Kosa kata" },
+    fr: { source: "Original", spoken: "Parl\xE9", written: "\xC9crit", vocab: "Vocab" },
+    de: { source: "Original", spoken: "Gesprochen", written: "Schriftlich", vocab: "Wortschatz" }
+  };
+  const l = labels[norm] || labels.zh;
+  return [
+    {
+      id: "source",
+      label: l.source,
+      role: "source",
+      enabled: true
+    },
+    {
+      id: "spoken",
+      label: l.spoken,
+      role: "translation",
+      instruction: "Natural, fluent spoken flow (daily standup, Slack, pair programming, agile collaboration). Authentic Silicon Valley flow, natural contractions, native phrasal verbs, idioms.",
+      showMeaning: true,
+      enabled: true
+    },
+    {
+      id: "written",
+      label: l.written,
+      role: "translation",
+      instruction: "Clear, precise, modern technical written prose (PR descriptions, RFCs, issues, architecture docs). High-level Plain prose: active, concise, professional. STRICTLY AVOID archaic Victorian fluff and AI-slop buzzwords.",
+      showMeaning: true,
+      enabled: true
+    },
+    {
+      id: "vocab",
+      label: l.vocab,
+      role: "vocab",
+      instruction: "Adaptively extract key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging the user to high-level/native fluency.",
+      enabled: true
+    }
+  ];
+}
+var LEGACY_SLOT_PRESETS = {
+  developer: {
+    slot1: {
+      label: "Spoken",
+      name: "Agile Spoken",
+      instruction: "Natural, fluent spoken flow (daily standup, Slack, pair programming, agile collaboration, code reviews). Authentic Silicon Valley flow, natural contractions, native phrasal verbs, idioms."
+    },
+    slot2: {
+      label: "Written",
+      name: "RFC Technical Written",
+      instruction: "Clear, precise, modern technical written prose (PR descriptions, RFCs, issues, architecture docs). High-level Plain prose: active, concise, professional. STRICTLY AVOID archaic Victorian fluff (e.g. 'we may now proceed') and AI-slop buzzwords (e.g. 'delve', 'testament')."
+    }
+  },
+  social: {
+    slot1: {
+      label: "Hook",
+      name: "Twitter/X Viral Hook",
+      instruction: "High-impact, punchy opening hook with authentic Silicon Valley dev slang, rhetorical appeal, or conversational banter for Twitter/X and Reddit. Sharp, memorable, and human."
+    },
+    slot2: {
+      label: "Deep",
+      name: "Technical Insight",
+      instruction: "High-signal, structured technical insight for technical threads, Substack, and long-form posts. Concise, authoritative, and direct without corporate marketing fluff."
+    }
+  },
+  japanese: {
+    slot1: {
+      label: "\u53E3\u8A9E",
+      name: "\u65E5\u5E38\u30BF\u30E1\u53E3 (Casual Spoken)",
+      instruction: "\u89AA\u3057\u3044\u540C\u50DA\u3084\u53CB\u4EBA\u3068\u306E\u65E5\u5E38\u4F1A\u8A71\u30FBSlack\u30CF\u30C9\u30EB\u30FB\u30AB\u30B8\u30E5\u30A2\u30EB\u306A\u3084\u308A\u53D6\u308A\u306B\u6700\u9069\u306A\u81EA\u7136\u306A\u53E3\u8A9E\u8868\u73FE\u3002\u30BF\u30E1\u53E3\u30FB\u89AA\u3057\u307F\u3084\u3059\u3044\u30C8\u30FC\u30F3\u3002"
+    },
+    slot2: {
+      label: "\u656C\u8A9E",
+      name: "\u30D3\u30B8\u30CD\u30B9\u4E01\u5BE7\u8A9E\u30FB\u8B19\u8B72\u8A9E (Business Polite)",
+      instruction: "\u4E0A\u53F8\u30FB\u30AF\u30E9\u30A4\u30A2\u30F3\u30C8\u30FB\u516C\u5F0F\u9023\u7D61\u30FB\u696D\u52D9\u5831\u544A\u306B\u3075\u3055\u308F\u3057\u3044\u6D17\u7DF4\u3055\u308C\u305F\u4E01\u5BE7\u8A9E\u30FB\u8B19\u8B72\u8A9E\u306E\u30D3\u30B8\u30CD\u30B9\u6587\u9762\u3002"
+    }
+  },
+  academic: {
+    slot1: {
+      label: "Discussion",
+      name: "Lab Seminar Colloquy",
+      instruction: "Natural conversational academic discourse (research lab discussions, seminar Q&A, conference banter). Fluent, collegial, and clear."
+    },
+    slot2: {
+      label: "Paper",
+      name: "Peer-Reviewed Paper Prose",
+      instruction: "Rigorous, objective, passive/active balanced academic prose meeting IEEE, ACM, and Nature journal standards. Precise vocabulary, rigorous methodology descriptions."
+    }
+  }
+};
+var LANGUAGE_SPECS = {
+  zh: {
+    name: "Chinese",
+    nativeName: "\u4E2D\u6587",
+    meaningInstruction: "in native Chinese",
+    vocabInstruction: 'in Chinese in parentheses separated by " \xB7 " (e.g. "term1 (\u4E2D\u6587\u91CA\u4E49) \xB7 term2 (\u4E2D\u6587\u91CA\u4E49) \xB7 ...")',
+    anchors: [
+      {
+        input: "\u8BA4\u540C\uFF0C\u5F00\u59CB\u5427",
+        spoken: "Totally on board with that \u2014 let's dive right in.",
+        spoken_meaning: "\u5B8C\u5168\u8D5E\u540C\uFF0C\u54B1\u4EEC\u76F4\u63A5\u5F00\u641E",
+        written: "Acknowledged. Let's proceed with the implementation.",
+        written_meaning: "\u786E\u8BA4\u8D5E\u540C\uFF0C\u7740\u624B\u63A8\u8FDB\u5177\u4F53\u5B9E\u65BD",
+        vocab: "on board with (\u8D5E\u6210/\u652F\u6301) \xB7 dive in (\u7ACB\u523B\u7740\u624B/\u5F00\u641E)"
+      },
+      {
+        input: "\u7EE7\u7EED",
+        spoken: "Let's keep going.",
+        spoken_meaning: "\u7EE7\u7EED\u5F80\u4E0B\u641E",
+        written: "Proceed with the next steps.",
+        written_meaning: "\u63A8\u8FDB\u540E\u7EED\u6B65\u9AA4",
+        vocab: "keep going (\u7EE7\u7EED\u63A8\u8FDB) \xB7 proceed with (\u7740\u624B\u8FDB\u884C)"
+      },
+      {
+        input: "\u8FD9\u4E2A\u65B9\u6848\u6709\u70B9\u8FC7\u5EA6\u8BBE\u8BA1\u4E86\uFF0C\u4E0D\u5982\u76F4\u63A5\u7528\u6807\u51C6\u5E93\u5B9E\u73B0",
+        spoken: "This feels a bit over-engineered; we'd be much better off just sticking with the standard library.",
+        spoken_meaning: "\u611F\u89C9\u6709\u70B9\u8FC7\u5EA6\u8BBE\u8BA1\u4E86\uFF0C\u7528\u6807\u51C6\u5E93\u5212\u7B97\u5F97\u591A",
+        written: "The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.",
+        written_meaning: "\u8BE5\u65B9\u6848\u5F15\u5165\u4E86\u4E0D\u5FC5\u8981\u7684\u590D\u6742\u5EA6\uFF0C\u5EFA\u8BAE\u4F18\u5148\u91C7\u7528\u539F\u751F\u6807\u51C6\u5E93\u5B9E\u73B0",
+        vocab: "over-engineered (\u8FC7\u5EA6\u5DE5\u7A0B\u5316) \xB7 be better off (\u505A\u67D0\u4E8B\u66F4\u5408\u9002/\u5212\u7B97) \xB7 stick with (\u575A\u6301\u4F7F\u7528/\u6CBF\u7528) \xB7 leverage (\u5229\u7528/\u501F\u52A9)"
+      },
+      {
+        input: "\u6211\u4EEC\u629B\u5F03\u4E86\u81C3\u80BF\u7684\u6846\u67B6\uFF0C\u6362\u6210\u96F6\u4F9D\u8D56\u5355\u6587\u4EF6\uFF0C\u51B7\u542F\u52A8\u76F4\u63A5\u63D0\u901F\u4E8610\u500D",
+        spoken: "Ditched the bloated framework for a zero-dep single file \u2014 cold starts are 10x faster now!",
+        spoken_meaning: "\u7529\u6389\u4E86\u81C3\u80BF\u7684\u6846\u67B6\u6362\u6210\u4E86\u96F6\u4F9D\u8D56\u5355\u6587\u4EF6\uFF0C\u51B7\u542F\u52A8\u76F4\u63A5\u98D9\u4E8610\u500D\uFF01",
+        written: "Replaced the monolithic framework with a zero-dependency architecture, yielding a 10x improvement in cold-start latency.",
+        written_meaning: "\u7528\u96F6\u4F9D\u8D56\u67B6\u6784\u53D6\u4EE3\u4E86\u5355\u4F53\u6846\u67B6\uFF0C\u4F7F\u51B7\u542F\u52A8\u5EF6\u8FDF\u964D\u4F4E\u81F3\u539F\u6765\u7684\u5341\u5206\u4E4B\u4E00\u3002",
+        vocab: "ditch ... for ... (\u629B\u5F03\u67D0\u7269\u6362\u7528) \xB7 zero-dep (\u96F6\u5916\u90E8\u4F9D\u8D56) \xB7 cold start (\u51B7\u542F\u52A8) \xB7 yield (\u4EA7\u51FA/\u5B9E\u73B0)"
+      }
+    ]
+  },
+  ja: {
+    name: "Japanese",
+    nativeName: "\u65E5\u672C\u8A9E",
+    meaningInstruction: "in native Japanese",
+    vocabInstruction: 'in Japanese in parentheses separated by " \xB7 " (e.g. "term1 (\u65E5\u672C\u8A9E\u89E3\u8AAC) \xB7 term2 (\u65E5\u672C\u8A9E\u89E3\u8AAC) \xB7 ...")',
+    anchors: [
+      {
+        input: "\u8CDB\u6210\u3001\u59CB\u3081\u307E\u3057\u3087\u3046",
+        spoken: "Totally on board with that \u2014 let's dive right in.",
+        spoken_meaning: "\u5927\u8CDB\u6210\u3001\u3059\u3050\u306B\u59CB\u3081\u3088\u3046",
+        written: "Acknowledged. Let's proceed with the implementation.",
+        written_meaning: "\u540C\u610F\u3057\u307E\u3057\u305F\u3002\u5B9F\u88C5\u3092\u9032\u3081\u307E\u3059",
+        vocab: "on board with (\u8CDB\u6210/\u652F\u6301) \xB7 dive in (\u3059\u3050\u306B\u7740\u624B\u3059\u308B)"
+      },
+      {
+        input: "\u7D9A\u3051\u3066\u304F\u3060\u3055\u3044",
+        spoken: "Let's keep going.",
+        spoken_meaning: "\u305D\u306E\u307E\u307E\u9032\u3081\u3088\u3046",
+        written: "Proceed with the next steps.",
+        written_meaning: "\u6B21\u306E\u5DE5\u7A0B\u306B\u9032\u307F\u307E\u3059",
+        vocab: "keep going (\u7D99\u7D9A\u3059\u308B) \xB7 proceed with (\u7740\u624B\u30FB\u9032\u884C\u3059\u308B)"
+      },
+      {
+        input: "\u3053\u306E\u8A2D\u8A08\u306F\u5C11\u3057\u904E\u5270\u3067\u3059\u3002\u6A19\u6E96\u30E9\u30A4\u30D6\u30E9\u30EA\u3092\u4F7F\u3063\u305F\u307B\u3046\u304C\u3044\u3044\u3067\u3057\u3087\u3046",
+        spoken: "This feels a bit over-engineered; we'd be much better off just sticking with the standard library.",
+        spoken_meaning: "\u5C11\u3057\u904E\u5270\u8A2D\u8A08\u306A\u6C17\u304C\u3057\u307E\u3059\u3002\u6A19\u6E96\u30E9\u30A4\u30D6\u30E9\u30EA\u3067\u5341\u5206\u3067\u3059",
+        written: "The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.",
+        written_meaning: "\u63D0\u6848\u3055\u308C\u305F\u69CB\u6210\u306F\u4E0D\u8981\u306A\u8907\u96D1\u3055\u3092\u3082\u305F\u3089\u3057\u307E\u3059\u3002\u6A19\u6E96\u30E9\u30A4\u30D6\u30E9\u30EA\u306E\u5229\u7528\u3092\u63A8\u5968\u3057\u307E\u3059",
+        vocab: "over-engineered (\u904E\u5270\u8A2D\u8A08) \xB7 be better off (\u301C\u3057\u305F\u307B\u3046\u304C\u3088\u3044) \xB7 stick with (\u301C\u3092\u4F7F\u3044\u7D9A\u3051\u308B) \xB7 leverage (\u6D3B\u7528\u3059\u308B)"
+      },
+      {
+        input: "\u80A5\u5927\u5316\u3057\u305F\u30D5\u30EC\u30FC\u30E0\u30EF\u30FC\u30AF\u3092\u6368\u3066\u3066\u4F9D\u5B58\u30BC\u30ED\u306E\u5358\u4E00\u30D5\u30A1\u30A4\u30EB\u306B\u79FB\u884C\u3057\u305F\u3089\u3001\u30B3\u30FC\u30EB\u30C9\u30B9\u30BF\u30FC\u30C8\u304C10\u500D\u901F\u304F\u306A\u308A\u307E\u3057\u305F",
+        spoken: "Ditched the bloated framework for a zero-dep single file \u2014 cold starts are 10x faster now!",
+        spoken_meaning: "\u91CD\u3044\u30D5\u30EC\u30FC\u30E0\u30EF\u30FC\u30AF\u3092\u3084\u3081\u3066\u4F9D\u5B58\u30BC\u30ED\u306E\u5358\u4E00\u30D5\u30A1\u30A4\u30EB\u306B\u3057\u305F\u3089\u3001\u8D77\u52D5\u304C10\u500D\u901F\u304F\u306A\u308A\u307E\u3057\u305F\uFF01",
+        written: "Replaced the monolithic framework with a zero-dependency architecture, yielding a 10x improvement in cold-start latency.",
+        written_meaning: "\u4E00\u679A\u5CA9\u306E\u30D5\u30EC\u30FC\u30E0\u30EF\u30FC\u30AF\u304B\u3089\u4F9D\u5B58\u95A2\u4FC2\u30BC\u30ED\u306E\u30A2\u30FC\u30AD\u30C6\u30AF\u30C1\u30E3\u3078\u79FB\u884C\u3057\u3001\u30B3\u30FC\u30EB\u30C9\u30B9\u30BF\u30FC\u30C8\u9045\u5EF6\u309210\u500D\u6539\u5584\u3057\u307E\u3057\u305F\u3002",
+        vocab: "ditch ... for ... (\u301C\u3092\u624B\u653E\u3057\u3066\u301C\u306B\u4E57\u308A\u63DB\u3048\u308B) \xB7 zero-dep (\u5916\u90E8\u4F9D\u5B58\u30BC\u30ED) \xB7 cold start (\u30B3\u30FC\u30EB\u30C9\u30B9\u30BF\u30FC\u30C8) \xB7 yield (\u3082\u305F\u3089\u3059)"
+      }
+    ]
+  },
+  en: {
+    name: "English",
+    nativeName: "English",
+    meaningInstruction: "in native English",
+    vocabInstruction: 'in English in parentheses separated by " \xB7 " (e.g. "term1 (English definition) \xB7 term2 (definition) \xB7 ...")',
+    anchors: [
+      {
+        input: "Sounds good, let's ship it.",
+        spoken: "\u3044\u3044\u611F\u3058\u3067\u3059\u306D\u3001\u30EA\u30EA\u30FC\u30B9\u3057\u307E\u3057\u3087\u3046\uFF01",
+        spoken_meaning: "Looks great, let's deploy right away.",
+        written: "\u78BA\u8A8D\u3057\u307E\u3057\u305F\u3002\u672C\u756A\u74B0\u5883\u3078\u30C7\u30D7\u30ED\u30A4\u3092\u9032\u3081\u307E\u3059\u3002",
+        written_meaning: "Reviewed and confirmed. Proceeding with deployment to production.",
+        vocab: "\u30EA\u30EA\u30FC\u30B9\u3059\u308B (ship / deploy) \xB7 \u672C\u756A\u74B0\u5883 (production environment)"
+      },
+      {
+        input: "Keep going.",
+        spoken: "\u7D9A\u3051\u3066\u3044\u304D\u307E\u3057\u3087\u3046\u3002",
+        spoken_meaning: "Let's keep making progress.",
+        written: "\u5F8C\u7D9A\u306E\u51E6\u7406\u3092\u9032\u3081\u3066\u304F\u3060\u3055\u3044\u3002",
+        written_meaning: "Please proceed with the subsequent steps.",
+        vocab: "\u5F8C\u7D9A\u306E\u51E6\u7406 (subsequent processing) \xB7 \u9032\u3081\u308B (proceed)"
+      },
+      {
+        input: "This feels over-engineered; let's stick to the built-in standard library.",
+        spoken: "\u3053\u308C\u3061\u3087\u3063\u3068\u4F5C\u308A\u8FBC\u307F\u3059\u304E\u304B\u3082\u3002\u7D20\u76F4\u306B\u6A19\u6E96\u30E9\u30A4\u30D6\u30E9\u30EA\u3067\u884C\u304D\u307E\u3057\u3087\u3046\u3002",
+        spoken_meaning: "Might be a bit over-complicated; let's simply use the standard library.",
+        written: "\u8A2D\u8A08\u304C\u904E\u5270\u306B\u8907\u96D1\u5316\u3057\u3066\u3044\u307E\u3059\u3002\u6A19\u6E96\u30E9\u30A4\u30D6\u30E9\u30EA\u306E\u6D3B\u7528\u3092\u63A8\u5968\u3057\u307E\u3059\u3002",
+        written_meaning: "Architecture is unnecessarily complex. Recommending the standard library.",
+        vocab: "\u4F5C\u308A\u8FBC\u307F\u3059\u304E (over-engineered) \xB7 \u6A19\u6E96\u30E9\u30A4\u30D6\u30E9\u30EA (standard library) \xB7 \u63A8\u5968\u3059\u308B (recommend)"
+      },
+      {
+        input: "Ditched the bloated framework for a zero-dep single file \u2014 cold starts are 10x faster now!",
+        spoken: "\u91CD\u3044\u30D5\u30EC\u30FC\u30E0\u30EF\u30FC\u30AF\u3092\u3084\u3081\u3066\u4F9D\u5B58\u30BC\u30ED\u306E\u5358\u4E00\u30D5\u30A1\u30A4\u30EB\u306B\u3057\u305F\u3089\u3001\u8D77\u52D5\u304C10\u500D\u901F\u304F\u306A\u308A\u307E\u3057\u305F\uFF01",
+        spoken_meaning: "Discarded the heavy framework and switched to a zero-dep single file; boot speed jumped 10x!",
+        written: "\u80A5\u5927\u5316\u3057\u305F\u30D5\u30EC\u30FC\u30E0\u30EF\u30FC\u30AF\u3092\u5EC3\u6B62\u3057\u3066\u4F9D\u5B58\u6027\u30BC\u30ED\u306E\u5358\u4E00\u30D5\u30A1\u30A4\u30EB\u69CB\u9020\u3092\u63A1\u7528\u3057\u3001\u30B3\u30FC\u30EB\u30C9\u30B9\u30BF\u30FC\u30C8\u901F\u5EA6\u309210\u500D\u5411\u4E0A\u3055\u305B\u307E\u3057\u305F\u3002",
+        written_meaning: "Eliminated the bloated framework in favor of a zero-dependency architecture, achieving a 10x speedup in cold-start times.",
+        vocab: "\u4F9D\u5B58\u30BC\u30ED (zero-dependency) \xB7 \u30B3\u30FC\u30EB\u30C9\u30B9\u30BF\u30FC\u30C8 (cold start) \xB7 \u5411\u4E0A\u3055\u305B\u308B (improve / speed up)"
+      }
+    ]
+  },
+  es: {
+    name: "Spanish",
+    nativeName: "Espa\xF1ol",
+    meaningInstruction: "in native Spanish",
+    vocabInstruction: 'in Spanish in parentheses separated by " \xB7 " (e.g. "term1 (significado en espa\xF1ol) \xB7 term2 (...) \xB7 ...")',
+    anchors: [
+      {
+        input: "De acuerdo, empecemos",
+        spoken: "Totally on board with that \u2014 let's dive right in.",
+        spoken_meaning: "Totalmente de acuerdo, vamos al grano",
+        written: "Acknowledged. Let's proceed with the implementation.",
+        written_meaning: "Confirmado. Procedamos con la implementaci\xF3n",
+        vocab: "on board with (estar de acuerdo) \xB7 dive in (empezar de lleno)"
+      },
+      {
+        input: "Continuar",
+        spoken: "Let's keep going.",
+        spoken_meaning: "Sigamos adelante",
+        written: "Proceed with the next steps.",
+        written_meaning: "Continuar con los siguientes pasos",
+        vocab: "keep going (seguir adelante) \xB7 proceed with (proceder con)"
+      },
+      {
+        input: "Esta propuesta est\xE1 sobrecargada, mejor usar la biblioteca est\xE1ndar",
+        spoken: "This feels a bit over-engineered; we'd be much better off just sticking with the standard library.",
+        spoken_meaning: "Parece demasiado complicado; nos ir\xEDa mucho mejor con la librer\xEDa est\xE1ndar",
+        written: "The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.",
+        written_meaning: "La soluci\xF3n propuesta introduce complejidad innecesaria. Se prefiere la biblioteca est\xE1ndar nativa",
+        vocab: "over-engineered (sobreingenier\xEDa) \xB7 be better off (estar mejor con) \xB7 stick with (quedarse con) \xB7 leverage (aprovechar)"
+      }
+    ]
+  },
+  fr: {
+    name: "French",
+    nativeName: "Fran\xE7ais",
+    meaningInstruction: "in native French",
+    vocabInstruction: 'in French in parentheses separated by " \xB7 " (e.g. "term1 (d\xE9finition en fran\xE7ais) \xB7 term2 (...) \xB7 ...")',
+    anchors: [
+      {
+        input: "D'accord, commen\xE7ons",
+        spoken: "Totally on board with that \u2014 let's dive right in.",
+        spoken_meaning: "Tout \xE0 fait d'accord, allons-y",
+        written: "Acknowledged. Let's proceed with the implementation.",
+        written_meaning: "D'accord. Proc\xE9dons \xE0 l'impl\xE9mentation",
+        vocab: "on board with (\xEAtre d'accord) \xB7 dive in (s'y mettre directement)"
+      },
+      {
+        input: "Continuer",
+        spoken: "Let's keep going.",
+        spoken_meaning: "Continuons",
+        written: "Proceed with the next steps.",
+        written_meaning: "Passer aux \xE9tapes suivantes",
+        vocab: "keep going (continuer) \xB7 proceed with (proc\xE9der \xE0)"
+      },
+      {
+        input: "Cette approche est trop complexe, autant utiliser la biblioth\xE8que standard",
+        spoken: "This feels a bit over-engineered; we'd be much better off just sticking with the standard library.",
+        spoken_meaning: "\xC7a semble surdimensionn\xE9 ; on ferait bien mieux de rester sur la biblioth\xE8que standard",
+        written: "The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.",
+        written_meaning: "L'approche propos\xE9e introduit une complexit\xE9 superflue. L'utilisation de la biblioth\xE8que standard est recommand\xE9e",
+        vocab: "over-engineered (surdimensionn\xE9) \xB7 be better off (avoir tout int\xE9r\xEAt \xE0) \xB7 stick with (s'en tenir \xE0) \xB7 leverage (exploiter)"
+      }
+    ]
+  },
+  de: {
+    name: "German",
+    nativeName: "Deutsch",
+    meaningInstruction: "in native German",
+    vocabInstruction: 'in German in parentheses separated by " \xB7 " (e.g. "term1 (deutsche Definition) \xB7 term2 (...) \xB7 ...")',
+    anchors: [
+      {
+        input: "Einverstanden, fangen wir an",
+        spoken: "Totally on board with that \u2014 let's dive right in.",
+        spoken_meaning: "Voll einverstanden, packen wir es an",
+        written: "Acknowledged. Let's proceed with the implementation.",
+        written_meaning: "Best\xE4tigt. Wir fahren mit der Implementierung fort",
+        vocab: "on board with (einverstanden sein) \xB7 dive in (direkt loslegen)"
+      },
+      {
+        input: "Weiter",
+        spoken: "Let's keep going.",
+        spoken_meaning: "Machen wir weiter",
+        written: "Proceed with the next steps.",
+        written_meaning: "Mit den n\xE4chsten Schritten fortfahren",
+        vocab: "keep going (weitermachen) \xB7 proceed with (fortfahren mit)"
+      },
+      {
+        input: "Dieser Ansatz ist \xFCberdimensioniert, nutzen wir lieber die Standardbibliothek",
+        spoken: "This feels a bit over-engineered; we'd be much better off just sticking with the standard library.",
+        spoken_meaning: "Das wirkt etwas \xFCberdimensioniert; mit der Standardbibliothek fahren wir deutlich besser",
+        written: "The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.",
+        written_meaning: "Der vorgeschlagene Ansatz bringt unn\xF6tige Komplexit\xE4t mit sich. Die native Standardbibliothek wird empfohlen",
+        vocab: "over-engineered (\xFCberdimensioniert) \xB7 be better off (besser dran sein mit) \xB7 stick with (bleiben bei) \xB7 leverage (nutzen/einsetzen)"
+      }
+    ]
+  }
+};
+function buildSystemPrompt(sourceLang = "zh", targetLang = "en", isLongInput = false, context, tone = "general", customSlots) {
+  const normSource = (sourceLang || "zh").toLowerCase().split("-")[0];
+  const spec = LANGUAGE_SPECS[normSource] || LANGUAGE_SPECS.zh;
+  const targetName = targetLang === "ja" ? "Japanese" : targetLang === "zh" ? "Chinese" : "English";
+  if (Array.isArray(customSlots)) {
+    const enabledSlots = customSlots.filter((s) => s.enabled && s.role !== "source");
+    let taskLines = [];
+    let jsonProps = [];
+    if (isLongInput) {
+      jsonProps.push(`  "summary": "Concise core intent/question in native ${spec.name} (under 20 words)"`);
+    }
+    enabledSlots.forEach((slot, idx) => {
+      const num = idx + 1;
+      const instruction = slot.instruction || `Express the message in ${slot.label} style in authentic ${targetName}.`;
+      taskLines.push(`${num}. "${slot.id}" (${slot.label}): ${instruction}`);
+      jsonProps.push(`  "${slot.id}": "..."`);
+      if (slot.showMeaning && slot.role !== "vocab") {
+        taskLines.push(`${num}_meaning. "${slot.id}_meaning": The exact nuance and meaning of "${slot.id}" ${spec.meaningInstruction}.`);
+        jsonProps.push(`  "${slot.id}_meaning": "..."`);
+      }
+    });
+    const dynamicTasks = taskLines.join("\n");
+    const dynamicJsonHint = `Strict JSON format:
+{
+${jsonProps.join(",\n")}
+}`;
+    const condensationDirective2 = isLongInput ? `
+
+[LONG INPUT CONDENSATION DIRECTIVE]:
+The user's input text is long (>90 chars). DO NOT translate verbatim line by line with wordy padding.
+First, distill and synthesize the core intent/question into a concise headline ("summary") in native ${spec.name} (strictly under 20 words).
+Then, render the expressions concisely in ${targetName} so the translation fits cleanly without information bloat.` : "";
+    const contextDirective2 = context && context.trim() ? `
+
+[CONVERSATION & THREAD CONTEXT]:
+The user's message is a reply to or continuation of the following context:
+"""
+${context.trim().slice(0, 500)}
+"""
+Ensure the generated translations fit naturally as a responsive reply to this specific context.` : "";
+    return `You are an elite bilingual language coach and cross-register translation architect.
+Task:
+Translate the user's message from native ${spec.name} (language A) into the following requested authentic ${targetName} registers/slots (language B):
+${dynamicTasks}
+
+[CODE & SYMBOL SHIELD - STRICT RULE]:
+All inline code (\`foo()\`), file paths (@file, path/to/file), SQL keywords, variable names, and technical identifiers MUST be preserved 100% verbatim in all outputs. Never translate, rephrase, or drop code tokens.
+${condensationDirective2}${contextDirective2}
+
+${dynamicJsonHint}
+Output valid JSON ONLY. Never output markdown code fences, backticks, quotes, or explanations.`;
+  }
+  const defaultSlots = LEGACY_SLOT_PRESETS.developer;
+  const legacyConfig = customSlots;
+  const slot1Name = legacyConfig?.slot1?.name || (tone === "social" ? LEGACY_SLOT_PRESETS.social.slot1.name : defaultSlots.slot1.name);
+  const slot1Instruction = legacyConfig?.slot1?.instruction || (tone === "social" ? LEGACY_SLOT_PRESETS.social.slot1.instruction : defaultSlots.slot1.instruction);
+  const slot2Name = legacyConfig?.slot2?.name || (tone === "social" ? LEGACY_SLOT_PRESETS.social.slot2.name : defaultSlots.slot2.name);
+  const slot2Instruction = legacyConfig?.slot2?.instruction || (tone === "social" ? LEGACY_SLOT_PRESETS.social.slot2.instruction : defaultSlots.slot2.instruction);
+  const anchorText = spec.anchors.map(
+    (a) => `Input: ${JSON.stringify(a.input)}
+Output: ${JSON.stringify({
+      spoken: a.spoken,
+      spoken_meaning: a.spoken_meaning,
+      written: a.written,
+      written_meaning: a.written_meaning,
+      vocab: a.vocab
+    })}`
+  ).join("\n\n");
+  const condensationDirective = isLongInput ? `
+
+[LONG INPUT CONDENSATION DIRECTIVE]:
+The user's input text is long (>90 chars). DO NOT translate verbatim line by line with wordy padding.
+First, distill and synthesize the core architectural/technical intent or question into a concise headline ("summary") in native ${spec.name} (strictly under 20 words).
+Then, translate that distilled intent into concise, punchy spoken and written expressions in ${targetName} (strictly under 25 words each) so that the translation fits cleanly on a single card without information bloat.` : "";
+  const contextDirective = context && context.trim() ? `
+
+[CONVERSATION & THREAD CONTEXT]:
+The user's message is a reply to or continuation of the following context (e.g. tweet, thread, issue):
+"""
+${context.trim().slice(0, 500)}
+"""
+Ensure the generated spoken and written translations fit naturally as a responsive reply to this specific context, using authentic conversational grounding.` : "";
+  let toneDirective = "";
+  if (tone === "social") {
+    toneDirective = `
+
+[TONE FOCUS - SOCIAL & COMMUNITY]:
+Prioritize X (Twitter), Reddit, and developer community engagement dynamics:
+- "spoken": Craft a high-impact, punchy opening hook with authentic Silicon Valley dev slang, rhetorical appeal, or conversational banter. Avoid robotic AI clich\xE9 words (e.g., NEVER use "delve", "testament", "tapestry", "revolutionize").
+- "written": High-signal, structured technical insight. Concise, clear, and actionable.`;
+  } else if (tone === "tech") {
+    toneDirective = `
+
+[TONE FOCUS - TECHNICAL RIGOR]:
+Prioritize RFC, Pull Request, and architectural documentation precision:
+- "spoken": Direct, respectful engineering alignment (Slack huddles, technical triage).
+- "written": High-precision Plain ${targetName} matching modern IETF RFC and open-source release notes.`;
+  }
+  const jsonFormatHint = isLongInput ? `Strict JSON format:
+{
+  "summary": "Concise core intent/question in native ${spec.name} (under 20 words)",
+  "spoken": "...",
+  "spoken_meaning": "...",
+  "written": "...",
+  "written_meaning": "...",
+  "vocab": "..."
+}` : `Strict JSON format:
+{
+  "spoken": "...",
+  "spoken_meaning": "...",
+  "written": "...",
+  "written_meaning": "...",
+  "vocab": "..."
+}`;
+  return `You are an elite bilingual developer language coach and cross-register translation architect.
+Task:
+Translate the user's message from native ${spec.name} (language A) into TWO distinct authentic ${targetName} registers (Slot 1 and Slot 2), and provide the exact back-translation/nuance in native ${spec.name} for each register:
+1. "spoken" (Slot 1: ${slot1Name}): ${slot1Instruction}
+2. "spoken_meaning": The exact nuance and meaning of Slot 1 ${spec.meaningInstruction}.
+3. "written" (Slot 2: ${slot2Name}): ${slot2Instruction}
+4. "written_meaning": The exact nuance and meaning of Slot 2 ${spec.meaningInstruction}.
+5. "vocab": Adaptively extract ALL key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging the user to high-level/native fluency. Do NOT artificially cap at 1-2; extract as many as genuinely beneficial, while keeping each definition concise ${spec.vocabInstruction} to ensure the terminal HUD remains vertically compact.
+
+[CODE & SYMBOL SHIELD - STRICT RULE]:
+All inline code (\`foo()\`), file paths (@file, path/to/file), SQL keywords, variable names, and technical identifiers MUST be preserved 100% verbatim in both spoken and written outputs. Never translate, rephrase, or drop code tokens.
+${condensationDirective}${contextDirective}${toneDirective}
+
+[GOLDEN FEW-SHOT ANCHORS]:
+${anchorText}
+
+${jsonFormatHint}
+Output valid JSON ONLY. Never output markdown code fences, backticks, quotes, or explanations.`;
+}
+
 // src/presets.ts
+function createCustomSlot(params) {
+  const normId = params.id.trim().toLowerCase();
+  const role = params.role || (normId === "source" ? "source" : normId === "vocab" ? "vocab" : "translation");
+  return {
+    id: normId,
+    label: params.label.trim(),
+    role,
+    instruction: params.instruction?.trim() || (role === "source" ? void 0 : "Natural, authentic expressions matching requested context."),
+    showMeaning: params.showMeaning !== void 0 ? params.showMeaning : role !== "source" && role !== "vocab",
+    enabled: params.enabled !== void 0 ? params.enabled : true
+  };
+}
+function addSlotToList(slots, newSlot) {
+  const normId = newSlot.id.trim().toLowerCase();
+  const existingIndex = slots.findIndex((s) => s.id.toLowerCase() === normId);
+  if (existingIndex >= 0) {
+    const copy = [...slots];
+    copy[existingIndex] = { ...newSlot, id: normId };
+    return copy;
+  }
+  return [...slots, { ...newSlot, id: normId }];
+}
+function removeSlotFromList(slots, slotId) {
+  const normId = slotId.trim().toLowerCase();
+  return slots.filter((s) => s.id.toLowerCase() !== normId);
+}
+function toggleSlotInList(slots, slotId) {
+  const normId = slotId.trim().toLowerCase();
+  return slots.map((s) => s.id.toLowerCase() === normId ? { ...s, enabled: !s.enabled } : s);
+}
 var SLOT_PRESETS = {
   developer: {
     name: "Developer",
@@ -987,409 +1506,6 @@ ${availableList}
   }
   msg += labels.modelSelectHint || "Specify model with /lingual-model <model-id> or auto.";
   return msg;
-}
-
-// src/core/prompts.ts
-var LEGACY_SLOT_PRESETS = {
-  developer: {
-    slot1: {
-      label: "Spoken",
-      name: "Agile Spoken",
-      instruction: "Natural, fluent spoken flow (daily standup, Slack, pair programming, agile collaboration, code reviews). Authentic Silicon Valley flow, natural contractions, native phrasal verbs, idioms."
-    },
-    slot2: {
-      label: "Written",
-      name: "RFC Technical Written",
-      instruction: "Clear, precise, modern technical written prose (PR descriptions, RFCs, issues, architecture docs). High-level Plain prose: active, concise, professional. STRICTLY AVOID archaic Victorian fluff (e.g. 'we may now proceed') and AI-slop buzzwords (e.g. 'delve', 'testament')."
-    }
-  },
-  social: {
-    slot1: {
-      label: "Hook",
-      name: "Twitter/X Viral Hook",
-      instruction: "High-impact, punchy opening hook with authentic Silicon Valley dev slang, rhetorical appeal, or conversational banter for Twitter/X and Reddit. Sharp, memorable, and human."
-    },
-    slot2: {
-      label: "Deep",
-      name: "Technical Insight",
-      instruction: "High-signal, structured technical insight for technical threads, Substack, and long-form posts. Concise, authoritative, and direct without corporate marketing fluff."
-    }
-  },
-  japanese: {
-    slot1: {
-      label: "\u53E3\u8A9E",
-      name: "\u65E5\u5E38\u30BF\u30E1\u53E3 (Casual Spoken)",
-      instruction: "\u89AA\u3057\u3044\u540C\u50DA\u3084\u53CB\u4EBA\u3068\u306E\u65E5\u5E38\u4F1A\u8A71\u30FBSlack\u30CF\u30C9\u30EB\u30FB\u30AB\u30B8\u30E5\u30A2\u30EB\u306A\u3084\u308A\u53D6\u308A\u306B\u6700\u9069\u306A\u81EA\u7136\u306A\u53E3\u8A9E\u8868\u73FE\u3002\u30BF\u30E1\u53E3\u30FB\u89AA\u3057\u307F\u3084\u3059\u3044\u30C8\u30FC\u30F3\u3002"
-    },
-    slot2: {
-      label: "\u656C\u8A9E",
-      name: "\u30D3\u30B8\u30CD\u30B9\u4E01\u5BE7\u8A9E\u30FB\u8B19\u8B72\u8A9E (Business Polite)",
-      instruction: "\u4E0A\u53F8\u30FB\u30AF\u30E9\u30A4\u30A2\u30F3\u30C8\u30FB\u516C\u5F0F\u9023\u7D61\u30FB\u696D\u52D9\u5831\u544A\u306B\u3075\u3055\u308F\u3057\u3044\u6D17\u7DF4\u3055\u308C\u305F\u4E01\u5BE7\u8A9E\u30FB\u8B19\u8B72\u8A9E\u306E\u30D3\u30B8\u30CD\u30B9\u6587\u9762\u3002"
-    }
-  },
-  academic: {
-    slot1: {
-      label: "Discussion",
-      name: "Lab Seminar Colloquy",
-      instruction: "Natural conversational academic discourse (research lab discussions, seminar Q&A, conference banter). Fluent, collegial, and clear."
-    },
-    slot2: {
-      label: "Paper",
-      name: "Peer-Reviewed Paper Prose",
-      instruction: "Rigorous, objective, passive/active balanced academic prose meeting IEEE, ACM, and Nature journal standards. Precise vocabulary, rigorous methodology descriptions."
-    }
-  }
-};
-var LANGUAGE_SPECS = {
-  zh: {
-    name: "Chinese",
-    nativeName: "\u4E2D\u6587",
-    meaningInstruction: "in native Chinese",
-    vocabInstruction: 'in Chinese in parentheses separated by " \xB7 " (e.g. "term1 (\u4E2D\u6587\u91CA\u4E49) \xB7 term2 (\u4E2D\u6587\u91CA\u4E49) \xB7 ...")',
-    anchors: [
-      {
-        input: "\u8BA4\u540C\uFF0C\u5F00\u59CB\u5427",
-        spoken: "Totally on board with that \u2014 let's dive right in.",
-        spoken_meaning: "\u5B8C\u5168\u8D5E\u540C\uFF0C\u54B1\u4EEC\u76F4\u63A5\u5F00\u641E",
-        written: "Acknowledged. Let's proceed with the implementation.",
-        written_meaning: "\u786E\u8BA4\u8D5E\u540C\uFF0C\u7740\u624B\u63A8\u8FDB\u5177\u4F53\u5B9E\u65BD",
-        vocab: "on board with (\u8D5E\u6210/\u652F\u6301) \xB7 dive in (\u7ACB\u523B\u7740\u624B/\u5F00\u641E)"
-      },
-      {
-        input: "\u7EE7\u7EED",
-        spoken: "Let's keep going.",
-        spoken_meaning: "\u7EE7\u7EED\u5F80\u4E0B\u641E",
-        written: "Proceed with the next steps.",
-        written_meaning: "\u63A8\u8FDB\u540E\u7EED\u6B65\u9AA4",
-        vocab: "keep going (\u7EE7\u7EED\u63A8\u8FDB) \xB7 proceed with (\u7740\u624B\u8FDB\u884C)"
-      },
-      {
-        input: "\u8FD9\u4E2A\u65B9\u6848\u6709\u70B9\u8FC7\u5EA6\u8BBE\u8BA1\u4E86\uFF0C\u4E0D\u5982\u76F4\u63A5\u7528\u6807\u51C6\u5E93\u5B9E\u73B0",
-        spoken: "This feels a bit over-engineered; we'd be much better off just sticking with the standard library.",
-        spoken_meaning: "\u611F\u89C9\u6709\u70B9\u8FC7\u5EA6\u8BBE\u8BA1\u4E86\uFF0C\u7528\u6807\u51C6\u5E93\u5212\u7B97\u5F97\u591A",
-        written: "The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.",
-        written_meaning: "\u8BE5\u65B9\u6848\u5F15\u5165\u4E86\u4E0D\u5FC5\u8981\u7684\u590D\u6742\u5EA6\uFF0C\u5EFA\u8BAE\u4F18\u5148\u91C7\u7528\u539F\u751F\u6807\u51C6\u5E93\u5B9E\u73B0",
-        vocab: "over-engineered (\u8FC7\u5EA6\u5DE5\u7A0B\u5316) \xB7 be better off (\u505A\u67D0\u4E8B\u66F4\u5408\u9002/\u5212\u7B97) \xB7 stick with (\u575A\u6301\u4F7F\u7528/\u6CBF\u7528) \xB7 leverage (\u5229\u7528/\u501F\u52A9)"
-      },
-      {
-        input: "\u6211\u4EEC\u629B\u5F03\u4E86\u81C3\u80BF\u7684\u6846\u67B6\uFF0C\u6362\u6210\u96F6\u4F9D\u8D56\u5355\u6587\u4EF6\uFF0C\u51B7\u542F\u52A8\u76F4\u63A5\u63D0\u901F\u4E8610\u500D",
-        spoken: "Ditched the bloated framework for a zero-dep single file \u2014 cold starts are 10x faster now!",
-        spoken_meaning: "\u7529\u6389\u4E86\u81C3\u80BF\u7684\u6846\u67B6\u6362\u6210\u4E86\u96F6\u4F9D\u8D56\u5355\u6587\u4EF6\uFF0C\u51B7\u542F\u52A8\u76F4\u63A5\u98D9\u4E8610\u500D\uFF01",
-        written: "Replaced the monolithic framework with a zero-dependency architecture, yielding a 10x improvement in cold-start latency.",
-        written_meaning: "\u7528\u96F6\u4F9D\u8D56\u67B6\u6784\u53D6\u4EE3\u4E86\u5355\u4F53\u6846\u67B6\uFF0C\u4F7F\u51B7\u542F\u52A8\u5EF6\u8FDF\u964D\u4F4E\u81F3\u539F\u6765\u7684\u5341\u5206\u4E4B\u4E00\u3002",
-        vocab: "ditch ... for ... (\u629B\u5F03\u67D0\u7269\u6362\u7528) \xB7 zero-dep (\u96F6\u5916\u90E8\u4F9D\u8D56) \xB7 cold start (\u51B7\u542F\u52A8) \xB7 yield (\u4EA7\u51FA/\u5B9E\u73B0)"
-      }
-    ]
-  },
-  ja: {
-    name: "Japanese",
-    nativeName: "\u65E5\u672C\u8A9E",
-    meaningInstruction: "in native Japanese",
-    vocabInstruction: 'in Japanese in parentheses separated by " \xB7 " (e.g. "term1 (\u65E5\u672C\u8A9E\u89E3\u8AAC) \xB7 term2 (\u65E5\u672C\u8A9E\u89E3\u8AAC) \xB7 ...")',
-    anchors: [
-      {
-        input: "\u8CDB\u6210\u3001\u59CB\u3081\u307E\u3057\u3087\u3046",
-        spoken: "Totally on board with that \u2014 let's dive right in.",
-        spoken_meaning: "\u5927\u8CDB\u6210\u3001\u3059\u3050\u306B\u59CB\u3081\u3088\u3046",
-        written: "Acknowledged. Let's proceed with the implementation.",
-        written_meaning: "\u540C\u610F\u3057\u307E\u3057\u305F\u3002\u5B9F\u88C5\u3092\u9032\u3081\u307E\u3059",
-        vocab: "on board with (\u8CDB\u6210/\u652F\u6301) \xB7 dive in (\u3059\u3050\u306B\u7740\u624B\u3059\u308B)"
-      },
-      {
-        input: "\u7D9A\u3051\u3066\u304F\u3060\u3055\u3044",
-        spoken: "Let's keep going.",
-        spoken_meaning: "\u305D\u306E\u307E\u307E\u9032\u3081\u3088\u3046",
-        written: "Proceed with the next steps.",
-        written_meaning: "\u6B21\u306E\u5DE5\u7A0B\u306B\u9032\u307F\u307E\u3059",
-        vocab: "keep going (\u7D99\u7D9A\u3059\u308B) \xB7 proceed with (\u7740\u624B\u30FB\u9032\u884C\u3059\u308B)"
-      },
-      {
-        input: "\u3053\u306E\u8A2D\u8A08\u306F\u5C11\u3057\u904E\u5270\u3067\u3059\u3002\u6A19\u6E96\u30E9\u30A4\u30D6\u30E9\u30EA\u3092\u4F7F\u3063\u305F\u307B\u3046\u304C\u3044\u3044\u3067\u3057\u3087\u3046",
-        spoken: "This feels a bit over-engineered; we'd be much better off just sticking with the standard library.",
-        spoken_meaning: "\u5C11\u3057\u904E\u5270\u8A2D\u8A08\u306A\u6C17\u304C\u3057\u307E\u3059\u3002\u6A19\u6E96\u30E9\u30A4\u30D6\u30E9\u30EA\u3067\u5341\u5206\u3067\u3059",
-        written: "The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.",
-        written_meaning: "\u63D0\u6848\u3055\u308C\u305F\u69CB\u6210\u306F\u4E0D\u8981\u306A\u8907\u96D1\u3055\u3092\u3082\u305F\u3089\u3057\u307E\u3059\u3002\u6A19\u6E96\u30E9\u30A4\u30D6\u30E9\u30EA\u306E\u5229\u7528\u3092\u63A8\u5968\u3057\u307E\u3059",
-        vocab: "over-engineered (\u904E\u5270\u8A2D\u8A08) \xB7 be better off (\u301C\u3057\u305F\u307B\u3046\u304C\u3088\u3044) \xB7 stick with (\u301C\u3092\u4F7F\u3044\u7D9A\u3051\u308B) \xB7 leverage (\u6D3B\u7528\u3059\u308B)"
-      },
-      {
-        input: "\u80A5\u5927\u5316\u3057\u305F\u30D5\u30EC\u30FC\u30E0\u30EF\u30FC\u30AF\u3092\u6368\u3066\u3066\u4F9D\u5B58\u30BC\u30ED\u306E\u5358\u4E00\u30D5\u30A1\u30A4\u30EB\u306B\u79FB\u884C\u3057\u305F\u3089\u3001\u30B3\u30FC\u30EB\u30C9\u30B9\u30BF\u30FC\u30C8\u304C10\u500D\u901F\u304F\u306A\u308A\u307E\u3057\u305F",
-        spoken: "Ditched the bloated framework for a zero-dep single file \u2014 cold starts are 10x faster now!",
-        spoken_meaning: "\u91CD\u3044\u30D5\u30EC\u30FC\u30E0\u30EF\u30FC\u30AF\u3092\u3084\u3081\u3066\u4F9D\u5B58\u30BC\u30ED\u306E\u5358\u4E00\u30D5\u30A1\u30A4\u30EB\u306B\u3057\u305F\u3089\u3001\u8D77\u52D5\u304C10\u500D\u901F\u304F\u306A\u308A\u307E\u3057\u305F\uFF01",
-        written: "Replaced the monolithic framework with a zero-dependency architecture, yielding a 10x improvement in cold-start latency.",
-        written_meaning: "\u4E00\u679A\u5CA9\u306E\u30D5\u30EC\u30FC\u30E0\u30EF\u30FC\u30AF\u304B\u3089\u4F9D\u5B58\u95A2\u4FC2\u30BC\u30ED\u306E\u30A2\u30FC\u30AD\u30C6\u30AF\u30C1\u30E3\u3078\u79FB\u884C\u3057\u3001\u30B3\u30FC\u30EB\u30C9\u30B9\u30BF\u30FC\u30C8\u9045\u5EF6\u309210\u500D\u6539\u5584\u3057\u307E\u3057\u305F\u3002",
-        vocab: "ditch ... for ... (\u301C\u3092\u624B\u653E\u3057\u3066\u301C\u306B\u4E57\u308A\u63DB\u3048\u308B) \xB7 zero-dep (\u5916\u90E8\u4F9D\u5B58\u30BC\u30ED) \xB7 cold start (\u30B3\u30FC\u30EB\u30C9\u30B9\u30BF\u30FC\u30C8) \xB7 yield (\u3082\u305F\u3089\u3059)"
-      }
-    ]
-  },
-  en: {
-    name: "English",
-    nativeName: "English",
-    meaningInstruction: "in native English",
-    vocabInstruction: 'in English in parentheses separated by " \xB7 " (e.g. "term1 (English definition) \xB7 term2 (definition) \xB7 ...")',
-    anchors: [
-      {
-        input: "Sounds good, let's ship it.",
-        spoken: "\u3044\u3044\u611F\u3058\u3067\u3059\u306D\u3001\u30EA\u30EA\u30FC\u30B9\u3057\u307E\u3057\u3087\u3046\uFF01",
-        spoken_meaning: "Looks great, let's deploy right away.",
-        written: "\u78BA\u8A8D\u3057\u307E\u3057\u305F\u3002\u672C\u756A\u74B0\u5883\u3078\u30C7\u30D7\u30ED\u30A4\u3092\u9032\u3081\u307E\u3059\u3002",
-        written_meaning: "Reviewed and confirmed. Proceeding with deployment to production.",
-        vocab: "\u30EA\u30EA\u30FC\u30B9\u3059\u308B (ship / deploy) \xB7 \u672C\u756A\u74B0\u5883 (production environment)"
-      },
-      {
-        input: "Keep going.",
-        spoken: "\u7D9A\u3051\u3066\u3044\u304D\u307E\u3057\u3087\u3046\u3002",
-        spoken_meaning: "Let's keep making progress.",
-        written: "\u5F8C\u7D9A\u306E\u51E6\u7406\u3092\u9032\u3081\u3066\u304F\u3060\u3055\u3044\u3002",
-        written_meaning: "Please proceed with the subsequent steps.",
-        vocab: "\u5F8C\u7D9A\u306E\u51E6\u7406 (subsequent processing) \xB7 \u9032\u3081\u308B (proceed)"
-      },
-      {
-        input: "This feels over-engineered; let's stick to the built-in standard library.",
-        spoken: "\u3053\u308C\u3061\u3087\u3063\u3068\u4F5C\u308A\u8FBC\u307F\u3059\u304E\u304B\u3082\u3002\u7D20\u76F4\u306B\u6A19\u6E96\u30E9\u30A4\u30D6\u30E9\u30EA\u3067\u884C\u304D\u307E\u3057\u3087\u3046\u3002",
-        spoken_meaning: "Might be a bit over-complicated; let's simply use the standard library.",
-        written: "\u8A2D\u8A08\u304C\u904E\u5270\u306B\u8907\u96D1\u5316\u3057\u3066\u3044\u307E\u3059\u3002\u6A19\u6E96\u30E9\u30A4\u30D6\u30E9\u30EA\u306E\u6D3B\u7528\u3092\u63A8\u5968\u3057\u307E\u3059\u3002",
-        written_meaning: "Architecture is unnecessarily complex. Recommending the standard library.",
-        vocab: "\u4F5C\u308A\u8FBC\u307F\u3059\u304E (over-engineered) \xB7 \u6A19\u6E96\u30E9\u30A4\u30D6\u30E9\u30EA (standard library) \xB7 \u63A8\u5968\u3059\u308B (recommend)"
-      },
-      {
-        input: "Ditched the bloated framework for a zero-dep single file \u2014 cold starts are 10x faster now!",
-        spoken: "\u91CD\u3044\u30D5\u30EC\u30FC\u30E0\u30EF\u30FC\u30AF\u3092\u3084\u3081\u3066\u4F9D\u5B58\u30BC\u30ED\u306E\u5358\u4E00\u30D5\u30A1\u30A4\u30EB\u306B\u3057\u305F\u3089\u3001\u8D77\u52D5\u304C10\u500D\u901F\u304F\u306A\u308A\u307E\u3057\u305F\uFF01",
-        spoken_meaning: "Discarded the heavy framework and switched to a zero-dep single file; boot speed jumped 10x!",
-        written: "\u80A5\u5927\u5316\u3057\u305F\u30D5\u30EC\u30FC\u30E0\u30EF\u30FC\u30AF\u3092\u5EC3\u6B62\u3057\u3066\u4F9D\u5B58\u6027\u30BC\u30ED\u306E\u5358\u4E00\u30D5\u30A1\u30A4\u30EB\u69CB\u9020\u3092\u63A1\u7528\u3057\u3001\u30B3\u30FC\u30EB\u30C9\u30B9\u30BF\u30FC\u30C8\u901F\u5EA6\u309210\u500D\u5411\u4E0A\u3055\u305B\u307E\u3057\u305F\u3002",
-        written_meaning: "Eliminated the bloated framework in favor of a zero-dependency architecture, achieving a 10x speedup in cold-start times.",
-        vocab: "\u4F9D\u5B58\u30BC\u30ED (zero-dependency) \xB7 \u30B3\u30FC\u30EB\u30C9\u30B9\u30BF\u30FC\u30C8 (cold start) \xB7 \u5411\u4E0A\u3055\u305B\u308B (improve / speed up)"
-      }
-    ]
-  },
-  es: {
-    name: "Spanish",
-    nativeName: "Espa\xF1ol",
-    meaningInstruction: "in native Spanish",
-    vocabInstruction: 'in Spanish in parentheses separated by " \xB7 " (e.g. "term1 (significado en espa\xF1ol) \xB7 term2 (...) \xB7 ...")',
-    anchors: [
-      {
-        input: "De acuerdo, empecemos",
-        spoken: "Totally on board with that \u2014 let's dive right in.",
-        spoken_meaning: "Totalmente de acuerdo, vamos al grano",
-        written: "Acknowledged. Let's proceed with the implementation.",
-        written_meaning: "Confirmado. Procedamos con la implementaci\xF3n",
-        vocab: "on board with (estar de acuerdo) \xB7 dive in (empezar de lleno)"
-      },
-      {
-        input: "Continuar",
-        spoken: "Let's keep going.",
-        spoken_meaning: "Sigamos adelante",
-        written: "Proceed with the next steps.",
-        written_meaning: "Continuar con los siguientes pasos",
-        vocab: "keep going (seguir adelante) \xB7 proceed with (proceder con)"
-      },
-      {
-        input: "Esta propuesta est\xE1 sobrecargada, mejor usar la biblioteca est\xE1ndar",
-        spoken: "This feels a bit over-engineered; we'd be much better off just sticking with the standard library.",
-        spoken_meaning: "Parece demasiado complicado; nos ir\xEDa mucho mejor con la librer\xEDa est\xE1ndar",
-        written: "The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.",
-        written_meaning: "La soluci\xF3n propuesta introduce complejidad innecesaria. Se prefiere la biblioteca est\xE1ndar nativa",
-        vocab: "over-engineered (sobreingenier\xEDa) \xB7 be better off (estar mejor con) \xB7 stick with (quedarse con) \xB7 leverage (aprovechar)"
-      }
-    ]
-  },
-  fr: {
-    name: "French",
-    nativeName: "Fran\xE7ais",
-    meaningInstruction: "in native French",
-    vocabInstruction: 'in French in parentheses separated by " \xB7 " (e.g. "term1 (d\xE9finition en fran\xE7ais) \xB7 term2 (...) \xB7 ...")',
-    anchors: [
-      {
-        input: "D'accord, commen\xE7ons",
-        spoken: "Totally on board with that \u2014 let's dive right in.",
-        spoken_meaning: "Tout \xE0 fait d'accord, allons-y",
-        written: "Acknowledged. Let's proceed with the implementation.",
-        written_meaning: "D'accord. Proc\xE9dons \xE0 l'impl\xE9mentation",
-        vocab: "on board with (\xEAtre d'accord) \xB7 dive in (s'y mettre directement)"
-      },
-      {
-        input: "Continuer",
-        spoken: "Let's keep going.",
-        spoken_meaning: "Continuons",
-        written: "Proceed with the next steps.",
-        written_meaning: "Passer aux \xE9tapes suivantes",
-        vocab: "keep going (continuer) \xB7 proceed with (proc\xE9der \xE0)"
-      },
-      {
-        input: "Cette approche est trop complexe, autant utiliser la biblioth\xE8que standard",
-        spoken: "This feels a bit over-engineered; we'd be much better off just sticking with the standard library.",
-        spoken_meaning: "\xC7a semble surdimensionn\xE9 ; on ferait bien mieux de rester sur la biblioth\xE8que standard",
-        written: "The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.",
-        written_meaning: "L'approche propos\xE9e introduit une complexit\xE9 superflue. L'utilisation de la biblioth\xE8que standard est recommand\xE9e",
-        vocab: "over-engineered (surdimensionn\xE9) \xB7 be better off (avoir tout int\xE9r\xEAt \xE0) \xB7 stick with (s'en tenir \xE0) \xB7 leverage (exploiter)"
-      }
-    ]
-  },
-  de: {
-    name: "German",
-    nativeName: "Deutsch",
-    meaningInstruction: "in native German",
-    vocabInstruction: 'in German in parentheses separated by " \xB7 " (e.g. "term1 (deutsche Definition) \xB7 term2 (...) \xB7 ...")',
-    anchors: [
-      {
-        input: "Einverstanden, fangen wir an",
-        spoken: "Totally on board with that \u2014 let's dive right in.",
-        spoken_meaning: "Voll einverstanden, packen wir es an",
-        written: "Acknowledged. Let's proceed with the implementation.",
-        written_meaning: "Best\xE4tigt. Wir fahren mit der Implementierung fort",
-        vocab: "on board with (einverstanden sein) \xB7 dive in (direkt loslegen)"
-      },
-      {
-        input: "Weiter",
-        spoken: "Let's keep going.",
-        spoken_meaning: "Machen wir weiter",
-        written: "Proceed with the next steps.",
-        written_meaning: "Mit den n\xE4chsten Schritten fortfahren",
-        vocab: "keep going (weitermachen) \xB7 proceed with (fortfahren mit)"
-      },
-      {
-        input: "Dieser Ansatz ist \xFCberdimensioniert, nutzen wir lieber die Standardbibliothek",
-        spoken: "This feels a bit over-engineered; we'd be much better off just sticking with the standard library.",
-        spoken_meaning: "Das wirkt etwas \xFCberdimensioniert; mit der Standardbibliothek fahren wir deutlich besser",
-        written: "The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.",
-        written_meaning: "Der vorgeschlagene Ansatz bringt unn\xF6tige Komplexit\xE4t mit sich. Die native Standardbibliothek wird empfohlen",
-        vocab: "over-engineered (\xFCberdimensioniert) \xB7 be better off (besser dran sein mit) \xB7 stick with (bleiben bei) \xB7 leverage (nutzen/einsetzen)"
-      }
-    ]
-  }
-};
-function buildSystemPrompt(sourceLang = "zh", targetLang = "en", isLongInput = false, context, tone = "general", customSlots) {
-  const normSource = (sourceLang || "zh").toLowerCase().split("-")[0];
-  const spec = LANGUAGE_SPECS[normSource] || LANGUAGE_SPECS.zh;
-  const targetName = targetLang === "ja" ? "Japanese" : targetLang === "zh" ? "Chinese" : "English";
-  if (Array.isArray(customSlots)) {
-    const enabledSlots = customSlots.filter((s) => s.enabled && s.role !== "source");
-    let taskLines = [];
-    let jsonProps = [];
-    if (isLongInput) {
-      jsonProps.push(`  "summary": "Concise core intent/question in native ${spec.name} (under 20 words)"`);
-    }
-    enabledSlots.forEach((slot, idx) => {
-      const num = idx + 1;
-      const instruction = slot.instruction || `Express the message in ${slot.label} style in authentic ${targetName}.`;
-      taskLines.push(`${num}. "${slot.id}" (${slot.label}): ${instruction}`);
-      jsonProps.push(`  "${slot.id}": "..."`);
-      if (slot.showMeaning && slot.role !== "vocab") {
-        taskLines.push(`${num}_meaning. "${slot.id}_meaning": The exact nuance and meaning of "${slot.id}" ${spec.meaningInstruction}.`);
-        jsonProps.push(`  "${slot.id}_meaning": "..."`);
-      }
-    });
-    const dynamicTasks = taskLines.join("\n");
-    const dynamicJsonHint = `Strict JSON format:
-{
-${jsonProps.join(",\n")}
-}`;
-    const condensationDirective2 = isLongInput ? `
-
-[LONG INPUT CONDENSATION DIRECTIVE]:
-The user's input text is long (>90 chars). DO NOT translate verbatim line by line with wordy padding.
-First, distill and synthesize the core intent/question into a concise headline ("summary") in native ${spec.name} (strictly under 20 words).
-Then, render the expressions concisely in ${targetName} so the translation fits cleanly without information bloat.` : "";
-    const contextDirective2 = context && context.trim() ? `
-
-[CONVERSATION & THREAD CONTEXT]:
-The user's message is a reply to or continuation of the following context:
-"""
-${context.trim().slice(0, 500)}
-"""
-Ensure the generated translations fit naturally as a responsive reply to this specific context.` : "";
-    return `You are an elite bilingual language coach and cross-register translation architect.
-Task:
-Translate the user's message from native ${spec.name} (language A) into the following requested authentic ${targetName} registers/slots (language B):
-${dynamicTasks}
-
-[CODE & SYMBOL SHIELD - STRICT RULE]:
-All inline code (\`foo()\`), file paths (@file, path/to/file), SQL keywords, variable names, and technical identifiers MUST be preserved 100% verbatim in all outputs. Never translate, rephrase, or drop code tokens.
-${condensationDirective2}${contextDirective2}
-
-${dynamicJsonHint}
-Output valid JSON ONLY. Never output markdown code fences, backticks, quotes, or explanations.`;
-  }
-  const defaultSlots = LEGACY_SLOT_PRESETS.developer;
-  const legacyConfig = customSlots;
-  const slot1Name = legacyConfig?.slot1?.name || (tone === "social" ? LEGACY_SLOT_PRESETS.social.slot1.name : defaultSlots.slot1.name);
-  const slot1Instruction = legacyConfig?.slot1?.instruction || (tone === "social" ? LEGACY_SLOT_PRESETS.social.slot1.instruction : defaultSlots.slot1.instruction);
-  const slot2Name = legacyConfig?.slot2?.name || (tone === "social" ? LEGACY_SLOT_PRESETS.social.slot2.name : defaultSlots.slot2.name);
-  const slot2Instruction = legacyConfig?.slot2?.instruction || (tone === "social" ? LEGACY_SLOT_PRESETS.social.slot2.instruction : defaultSlots.slot2.instruction);
-  const anchorText = spec.anchors.map(
-    (a) => `Input: ${JSON.stringify(a.input)}
-Output: ${JSON.stringify({
-      spoken: a.spoken,
-      spoken_meaning: a.spoken_meaning,
-      written: a.written,
-      written_meaning: a.written_meaning,
-      vocab: a.vocab
-    })}`
-  ).join("\n\n");
-  const condensationDirective = isLongInput ? `
-
-[LONG INPUT CONDENSATION DIRECTIVE]:
-The user's input text is long (>90 chars). DO NOT translate verbatim line by line with wordy padding.
-First, distill and synthesize the core architectural/technical intent or question into a concise headline ("summary") in native ${spec.name} (strictly under 20 words).
-Then, translate that distilled intent into concise, punchy spoken and written expressions in ${targetName} (strictly under 25 words each) so that the translation fits cleanly on a single card without information bloat.` : "";
-  const contextDirective = context && context.trim() ? `
-
-[CONVERSATION & THREAD CONTEXT]:
-The user's message is a reply to or continuation of the following context (e.g. tweet, thread, issue):
-"""
-${context.trim().slice(0, 500)}
-"""
-Ensure the generated spoken and written translations fit naturally as a responsive reply to this specific context, using authentic conversational grounding.` : "";
-  let toneDirective = "";
-  if (tone === "social") {
-    toneDirective = `
-
-[TONE FOCUS - SOCIAL & COMMUNITY]:
-Prioritize X (Twitter), Reddit, and developer community engagement dynamics:
-- "spoken": Craft a high-impact, punchy opening hook with authentic Silicon Valley dev slang, rhetorical appeal, or conversational banter. Avoid robotic AI clich\xE9 words (e.g., NEVER use "delve", "testament", "tapestry", "revolutionize").
-- "written": High-signal, structured technical insight. Concise, clear, and actionable.`;
-  } else if (tone === "tech") {
-    toneDirective = `
-
-[TONE FOCUS - TECHNICAL RIGOR]:
-Prioritize RFC, Pull Request, and architectural documentation precision:
-- "spoken": Direct, respectful engineering alignment (Slack huddles, technical triage).
-- "written": High-precision Plain ${targetName} matching modern IETF RFC and open-source release notes.`;
-  }
-  const jsonFormatHint = isLongInput ? `Strict JSON format:
-{
-  "summary": "Concise core intent/question in native ${spec.name} (under 20 words)",
-  "spoken": "...",
-  "spoken_meaning": "...",
-  "written": "...",
-  "written_meaning": "...",
-  "vocab": "..."
-}` : `Strict JSON format:
-{
-  "spoken": "...",
-  "spoken_meaning": "...",
-  "written": "...",
-  "written_meaning": "...",
-  "vocab": "..."
-}`;
-  return `You are an elite bilingual developer language coach and cross-register translation architect.
-Task:
-Translate the user's message from native ${spec.name} (language A) into TWO distinct authentic ${targetName} registers (Slot 1 and Slot 2), and provide the exact back-translation/nuance in native ${spec.name} for each register:
-1. "spoken" (Slot 1: ${slot1Name}): ${slot1Instruction}
-2. "spoken_meaning": The exact nuance and meaning of Slot 1 ${spec.meaningInstruction}.
-3. "written" (Slot 2: ${slot2Name}): ${slot2Instruction}
-4. "written_meaning": The exact nuance and meaning of Slot 2 ${spec.meaningInstruction}.
-5. "vocab": Adaptively extract ALL key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging the user to high-level/native fluency. Do NOT artificially cap at 1-2; extract as many as genuinely beneficial, while keeping each definition concise ${spec.vocabInstruction} to ensure the terminal HUD remains vertically compact.
-
-[CODE & SYMBOL SHIELD - STRICT RULE]:
-All inline code (\`foo()\`), file paths (@file, path/to/file), SQL keywords, variable names, and technical identifiers MUST be preserved 100% verbatim in both spoken and written outputs. Never translate, rephrase, or drop code tokens.
-${condensationDirective}${contextDirective}${toneDirective}
-
-[GOLDEN FEW-SHOT ANCHORS]:
-${anchorText}
-
-${jsonFormatHint}
-Output valid JSON ONLY. Never output markdown code fences, backticks, quotes, or explanations.`;
 }
 
 // src/shield.ts
@@ -2143,8 +2259,8 @@ function isTestEnvironment2() {
 var initialDiskConfig = isTestEnvironment2() ? {} : loadUserLingualConfig();
 var initialSourceLang = initialDiskConfig.sourceLang || "zh";
 var initialTargetLang = initialDiskConfig.targetLang || (initialSourceLang === "en" ? "ja" : "en");
-var initialSlotPreset = initialDiskConfig.slotPreset || "developer";
-var initialSlots = initialDiskConfig.slots || resolveSlotsForPreset(initialSlotPreset, initialSourceLang);
+var initialSlotPreset = initialDiskConfig.slotPreset;
+var initialSlots = Array.isArray(initialDiskConfig.slots) && initialDiskConfig.slots.length > 0 ? initialDiskConfig.slots : initialSlotPreset ? resolveSlotsForPreset(initialSlotPreset, initialSourceLang) : getDefaultSlots(initialSourceLang);
 var initialLabels = resolveLabelsForLang(initialSourceLang, initialDiskConfig.labels, initialTargetLang);
 var state = {
   mode: initialDiskConfig.mode || "original",
@@ -2152,7 +2268,7 @@ var state = {
   sourceLang: initialSourceLang,
   targetLang: initialTargetLang,
   selectedModel: initialDiskConfig.selectedModel || "auto",
-  slotPreset: initialSlotPreset,
+  slotPreset: initialSlotPreset || "",
   slots: initialSlots,
   labels: initialLabels
 };
@@ -2220,7 +2336,15 @@ var lastContext = null;
 function updateFooter(ctx) {
   if (!ctx.hasUI) return;
   let pair = `${state.sourceLang} \u21C4 ${state.targetLang}`;
-  if (state.slotPreset && state.slotPreset !== "developer") {
+  const enabledSlots = (state.slots || []).filter((s) => s.enabled);
+  const hasSource = enabledSlots.some((s) => s.role === "source");
+  const nonSourceCount = enabledSlots.filter((s) => s.role !== "source").length;
+  if (!hasSource) {
+    pair += ` \xB7 no-src`;
+  }
+  if (nonSourceCount !== 2) {
+    pair += ` \xB7 ${enabledSlots.length}s`;
+  } else if (state.slotPreset) {
     pair += ` \xB7 ${state.slotPreset}`;
   }
   switch (state.mode) {
@@ -2415,35 +2539,7 @@ ${usage}`,
       );
     }
   };
-  const switchSlotsHandler = async (args, ctx) => {
-    const trimmed = args.trim().toLowerCase();
-    if (!trimmed) {
-      const activePreset = state.slotPreset || "developer";
-      const enabled = (state.slots || []).filter((s) => s.enabled);
-      const slotList = enabled.map((s, idx) => `  \u2022 #${idx} [${s.label}] (${s.role})`).join("\n");
-      const presetKeys = Object.keys(SLOT_PRESETS).join(", ");
-      const msg = `\u21C4 [${state.labels.hudTitle}] Active Slot Preset: [${activePreset}]
-${slotList}
-
-Available presets: ${presetKeys}
-Usage: /slots <preset> (e.g. /slots compact2, /slots social, /slots developer)`;
-      ctx.ui.notify(msg, "info");
-      return;
-    }
-    if (!SLOT_PRESETS[trimmed]) {
-      const presetKeys = Object.keys(SLOT_PRESETS).join(", ");
-      ctx.ui.notify(`[${state.labels.hudTitle}] Unknown preset "${trimmed}". Available: ${presetKeys}`, "warning");
-      return;
-    }
-    state.slotPreset = trimmed;
-    state.slots = resolveSlotsForPreset(trimmed, state.sourceLang);
-    saveUserLingualConfig({ slotPreset: trimmed === "developer" ? void 0 : trimmed, slots: void 0 });
-    globalLingualCache.clear();
-    const desc = SLOT_PRESETS[trimmed].description;
-    const template = state.labels.notifySlotSwitched || "[{pair}] Switched slot architecture to [{preset}]: {desc}";
-    const notifyMsg = template.replace("{pair}", state.labels.hudTitle).replace("{preset}", trimmed).replace("{desc}", desc);
-    ctx.ui.notify(notifyMsg, "info");
-    updateFooter(ctx);
+  const refreshActiveView = (ctx) => {
     if (session.getReadyPages().length > 0) {
       renderActiveCard(ctx);
     } else if (session.getLastResult()) {
@@ -2458,6 +2554,119 @@ Usage: /slots <preset> (e.g. /slots compact2, /slots social, /slots developer)`;
         last.writtenMeaning
       );
     }
+  };
+  const switchSlotsHandler = async (args, ctx) => {
+    const rawArgs = args.trim();
+    const parts = rawArgs.split(/\s+/).filter(Boolean);
+    const subCmd = (parts[0] || "").toLowerCase();
+    if (!subCmd || subCmd === "list" || subCmd === "ls") {
+      const slots = state.slots || [];
+      const lines = slots.map((s, idx) => {
+        const status = s.enabled ? "enabled" : "disabled";
+        const meaning = s.showMeaning ? " +nuance" : "";
+        const inst = s.instruction ? ` // ${s.instruction.slice(0, 45)}...` : "";
+        return `  ${idx + 1}. [${s.id}] "${s.label}" (${s.role}, ${status}${meaning})${inst}`;
+      });
+      const enabledCount = slots.filter((s) => s.enabled).length;
+      const help = `\u21C4 [${state.labels.hudTitle}] Dynamic Slots (${enabledCount}/${slots.length} active):
+` + (lines.length > 0 ? lines.join("\n") : "  (No slots configured)") + `
+
+Slot Management:
+  \u2022 /slots add <id> <label> [instruction...] - Add or customize slot
+  \u2022 /slots rm <id>                           - Remove slot (e.g. /slots rm source to hide original text!)
+  \u2022 /slots toggle <id>                       - Toggle enable/disable
+  \u2022 /slots reset                             - Reset to clean initial defaults
+  \u2022 /slots <preset>                          - Quick apply template (e.g. compact2, social, developer)`;
+      ctx.ui.notify(help, "info");
+      return;
+    }
+    if (subCmd === "reset") {
+      state.slots = getDefaultSlots(state.sourceLang);
+      state.slotPreset = "";
+      saveUserLingualConfig({ slots: void 0, slotPreset: void 0 });
+      globalLingualCache.clear();
+      ctx.ui.notify(`\u21C4 [${state.labels.hudTitle}] Reset slots to clean defaults (source + spoken + written).`, "info");
+      updateFooter(ctx);
+      refreshActiveView(ctx);
+      return;
+    }
+    if (subCmd === "rm" || subCmd === "remove" || subCmd === "del") {
+      const targetId = (parts[1] || "").toLowerCase();
+      if (!targetId) {
+        ctx.ui.notify(`Usage: /slots rm <slot-id> (e.g. /slots rm source to hide original text, or /slots rm written)`, "warning");
+        return;
+      }
+      const existing = (state.slots || []).find((s) => s.id.toLowerCase() === targetId);
+      if (!existing) {
+        ctx.ui.notify(`Slot [${targetId}] not found in active slots. Run /slots to inspect.`, "warning");
+        return;
+      }
+      state.slots = removeSlotFromList(state.slots || [], targetId);
+      state.slotPreset = "";
+      saveUserLingualConfig({ slots: state.slots, slotPreset: void 0 });
+      globalLingualCache.clear();
+      const extraHint = targetId === "source" ? " Original source line will no longer appear on cards." : "";
+      ctx.ui.notify(`\u21C4 [${state.labels.hudTitle}] Removed slot [${targetId}] ("${existing.label}").${extraHint}`, "info");
+      updateFooter(ctx);
+      refreshActiveView(ctx);
+      return;
+    }
+    if (subCmd === "toggle") {
+      const targetId = (parts[1] || "").toLowerCase();
+      if (!targetId) {
+        ctx.ui.notify(`Usage: /slots toggle <slot-id>`, "warning");
+        return;
+      }
+      const existing = (state.slots || []).find((s) => s.id.toLowerCase() === targetId);
+      if (!existing) {
+        ctx.ui.notify(`Slot [${targetId}] not found in active slots.`, "warning");
+        return;
+      }
+      state.slots = toggleSlotInList(state.slots || [], targetId);
+      state.slotPreset = "";
+      saveUserLingualConfig({ slots: state.slots, slotPreset: void 0 });
+      globalLingualCache.clear();
+      const updated = state.slots.find((s) => s.id.toLowerCase() === targetId);
+      ctx.ui.notify(`\u21C4 [${state.labels.hudTitle}] Slot [${targetId}] is now ${updated?.enabled ? "enabled" : "disabled"}.`, "info");
+      updateFooter(ctx);
+      refreshActiveView(ctx);
+      return;
+    }
+    if (subCmd === "add") {
+      const id = (parts[1] || "").toLowerCase();
+      const label = parts[2];
+      const instruction = parts.slice(3).join(" ");
+      if (!id || !label) {
+        ctx.ui.notify(`Usage: /slots add <id> <label> [instruction...]
+Example: /slots add twitter \u63A8\u6587 Short punchy tweet under 280 chars`, "warning");
+        return;
+      }
+      const newSlot = createCustomSlot({
+        id,
+        label,
+        instruction: instruction || void 0
+      });
+      state.slots = addSlotToList(state.slots || [], newSlot);
+      state.slotPreset = "";
+      saveUserLingualConfig({ slots: state.slots, slotPreset: void 0 });
+      globalLingualCache.clear();
+      ctx.ui.notify(`\u21C4 [${state.labels.hudTitle}] Added/updated slot [${id}] "${label}" (${newSlot.role}).`, "info");
+      updateFooter(ctx);
+      refreshActiveView(ctx);
+      return;
+    }
+    const matchedPreset = SLOT_PRESETS[subCmd];
+    if (matchedPreset) {
+      state.slotPreset = subCmd;
+      state.slots = resolveSlotsForPreset(subCmd, state.sourceLang);
+      saveUserLingualConfig({ slotPreset: subCmd === "developer" ? void 0 : subCmd, slots: state.slots });
+      globalLingualCache.clear();
+      ctx.ui.notify(`\u21C4 [${state.labels.hudTitle}] Applied preset [${subCmd}]: ${matchedPreset.description}`, "info");
+      updateFooter(ctx);
+      refreshActiveView(ctx);
+      return;
+    }
+    ctx.ui.notify(`Unknown slot command or preset "${subCmd}". Type /slots to view slots and commands.`, "warning");
   };
   const showStatusHandler = async (_args, ctx) => {
     const followDesc = state.labels.modelFollowSession || "follow session";
@@ -2560,15 +2769,15 @@ Usage: /slots <preset> (e.g. /slots compact2, /slots social, /slots developer)`;
     handler: setModeHandler
   });
   pi.registerCommand("slots", {
-    description: state.labels.cmdDescSlots || "Inspect or switch slot architecture: /slots [developer|social|japanese|academic|compact2]",
+    description: state.labels.cmdDescSlots || "Inspect, add, remove, or customize dynamic slots: /slots [add|rm|toggle|reset]",
     handler: switchSlotsHandler
   });
   pi.registerCommand("lingual-slots", {
-    description: state.labels.cmdDescSlots || "Inspect or switch slot architecture (alias): /lingual-slots [preset]",
+    description: state.labels.cmdDescSlots || "Dynamic slots management (alias): /lingual-slots [add|rm|toggle|reset]",
     handler: switchSlotsHandler
   });
   pi.registerCommand("2-slots", {
-    description: state.labels.cmdDescSlots || "Quick switch slot architecture (alias): /2-slots [preset]",
+    description: state.labels.cmdDescSlots || "Dynamic slots management (alias): /2-slots [add|rm|toggle|reset]",
     handler: switchSlotsHandler
   });
   pi.registerCommand("lang", {

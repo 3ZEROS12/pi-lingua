@@ -104,6 +104,10 @@ interface LingualResponse {
     vocab?: string;
     summary?: string;
     slots?: SlotResult[];
+    slotOutputs?: Record<string, {
+        content: string;
+        meaning?: string;
+    }>;
     cached: boolean;
     shieldBypassed: boolean;
 }
@@ -134,6 +138,11 @@ interface LingualResult {
     sourceText: string;
     summary?: string;
     annotated: string;
+    slots?: SlotResult[];
+    slotOutputs?: Record<string, {
+        content: string;
+        meaning?: string;
+    }>;
 }
 type LinguaResult = LingualResult;
 interface TranslationPayload {
@@ -143,6 +152,11 @@ interface TranslationPayload {
     writtenMeaning?: string;
     vocab?: string;
     summary?: string;
+    slots?: SlotResult[];
+    slotOutputs?: Record<string, {
+        content: string;
+        meaning?: string;
+    }>;
 }
 
 declare function getDefaultSlots(sourceLang?: string): SlotConfig[];
@@ -222,6 +236,34 @@ interface SlotPresetDefinition {
     description: string;
     slots: (sourceLang?: string) => SlotConfig[];
 }
+
+/**
+ * 创建自定义槽位配置
+ */
+declare function createCustomSlot(params: Partial<SlotConfig> & {
+    id: string;
+    label: string;
+}): SlotConfig;
+/**
+ * 纯函数：向槽位列表中添加槽位（若已存在同名 id 则覆盖更新，否则追加在末尾）
+ */
+declare function addSlotToList(slots: SlotConfig[], newSlot: SlotConfig): SlotConfig[];
+/**
+ * 纯函数：从槽位列表中彻底移除指定 id 的槽位（支持删除 source 原文槽位）
+ */
+declare function removeSlotFromList(slots: SlotConfig[], slotId: string): SlotConfig[];
+/**
+ * 纯函数：更新指定槽位的属性
+ */
+declare function updateSlotInList(slots: SlotConfig[], slotId: string, patch: Partial<SlotConfig>): SlotConfig[];
+/**
+ * 纯函数：切换指定槽位的启用/禁用状态
+ */
+declare function toggleSlotInList(slots: SlotConfig[], slotId: string): SlotConfig[];
+/**
+ * 纯函数：调整槽位在列表中的排列顺序
+ */
+declare function moveSlotInList(slots: SlotConfig[], slotId: string, targetIndex: number): SlotConfig[];
 declare const SLOT_PRESETS: Record<string, SlotPresetDefinition>;
 declare function resolveSlotsForPreset(presetName?: string, sourceLang?: string): SlotConfig[];
 /**
@@ -283,4 +325,4 @@ interface SanitizedPromptResult {
  */
 declare function sanitizePromptForTranslation(raw: string): SanitizedPromptResult;
 
-export { globalLingualCache as A, parseLlmResponse as B, type CacheStats as C, resolveLabelsForLang as D, resolveSlotsForPreset as E, sanitizePromptForTranslation as F, shouldShieldBypass as G, translateCore as H, type LingualResult as L, type SlotConfig as S, type TranslationPayload as T, type LingualI18nLabels as a, type LingualConfig as b, type CustomSlotsConfig as c, LANGUAGE_PRESETS as d, LEGACY_SLOT_PRESETS as e, type LinguaConfig as f, type LinguaI18nLabels as g, LinguaLruCache as h, type LinguaMode as i, type LinguaResult as j, type LingualCoreOptions as k, LingualLruCache as l, type LingualMode as m, type LingualRequest as n, type LingualResponse as o, SLOT_PRESETS as p, type SanitizedPromptResult as q, type SlotDefinition as r, type SlotPresetDefinition as s, type SlotResult as t, type SlotRole as u, buildSystemPrompt as v, formatModelSelectionMessage as w, formatStatusReport as x, getDefaultSlots as y, globalLinguaCache as z };
+export { getDefaultSlots as A, globalLinguaCache as B, type CacheStats as C, globalLingualCache as D, moveSlotInList as E, parseLlmResponse as F, removeSlotFromList as G, resolveLabelsForLang as H, resolveSlotsForPreset as I, sanitizePromptForTranslation as J, shouldShieldBypass as K, type LingualResult as L, toggleSlotInList as M, translateCore as N, updateSlotInList as O, type SlotConfig as S, type TranslationPayload as T, type LingualI18nLabels as a, type LingualConfig as b, type CustomSlotsConfig as c, LANGUAGE_PRESETS as d, LEGACY_SLOT_PRESETS as e, type LinguaConfig as f, type LinguaI18nLabels as g, LinguaLruCache as h, type LinguaMode as i, type LinguaResult as j, type LingualCoreOptions as k, LingualLruCache as l, type LingualMode as m, type LingualRequest as n, type LingualResponse as o, SLOT_PRESETS as p, type SanitizedPromptResult as q, type SlotDefinition as r, type SlotPresetDefinition as s, type SlotResult as t, type SlotRole as u, addSlotToList as v, buildSystemPrompt as w, createCustomSlot as x, formatModelSelectionMessage as y, formatStatusReport as z };

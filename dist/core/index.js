@@ -787,6 +787,51 @@ async function translateCore(req, options) {
 }
 
 // src/presets.ts
+function createCustomSlot(params) {
+  const normId = params.id.trim().toLowerCase();
+  const role = params.role || (normId === "source" ? "source" : normId === "vocab" ? "vocab" : "translation");
+  return {
+    id: normId,
+    label: params.label.trim(),
+    role,
+    instruction: params.instruction?.trim() || (role === "source" ? void 0 : "Natural, authentic expressions matching requested context."),
+    showMeaning: params.showMeaning !== void 0 ? params.showMeaning : role !== "source" && role !== "vocab",
+    enabled: params.enabled !== void 0 ? params.enabled : true
+  };
+}
+function addSlotToList(slots, newSlot) {
+  const normId = newSlot.id.trim().toLowerCase();
+  const existingIndex = slots.findIndex((s) => s.id.toLowerCase() === normId);
+  if (existingIndex >= 0) {
+    const copy = [...slots];
+    copy[existingIndex] = { ...newSlot, id: normId };
+    return copy;
+  }
+  return [...slots, { ...newSlot, id: normId }];
+}
+function removeSlotFromList(slots, slotId) {
+  const normId = slotId.trim().toLowerCase();
+  return slots.filter((s) => s.id.toLowerCase() !== normId);
+}
+function updateSlotInList(slots, slotId, patch) {
+  const normId = slotId.trim().toLowerCase();
+  return slots.map((s) => s.id.toLowerCase() === normId ? { ...s, ...patch } : s);
+}
+function toggleSlotInList(slots, slotId) {
+  const normId = slotId.trim().toLowerCase();
+  return slots.map((s) => s.id.toLowerCase() === normId ? { ...s, enabled: !s.enabled } : s);
+}
+function moveSlotInList(slots, slotId, targetIndex) {
+  const normId = slotId.trim().toLowerCase();
+  const currentIndex = slots.findIndex((s) => s.id.toLowerCase() === normId);
+  if (currentIndex === -1 || targetIndex < 0 || targetIndex >= slots.length || currentIndex === targetIndex) {
+    return slots;
+  }
+  const copy = [...slots];
+  const [removed] = copy.splice(currentIndex, 1);
+  copy.splice(targetIndex, 0, removed);
+  return copy;
+}
 var SLOT_PRESETS = {
   developer: {
     name: "Developer",
@@ -1488,16 +1533,22 @@ export {
   LinguaLruCache,
   LingualLruCache,
   SLOT_PRESETS,
+  addSlotToList,
   buildSystemPrompt,
+  createCustomSlot,
   formatModelSelectionMessage,
   formatStatusReport,
   getDefaultSlots,
   globalLinguaCache,
   globalLingualCache,
+  moveSlotInList,
   parseLlmResponse,
+  removeSlotFromList,
   resolveLabelsForLang,
   resolveSlotsForPreset,
   sanitizePromptForTranslation,
   shouldShieldBypass,
-  translateCore
+  toggleSlotInList,
+  translateCore,
+  updateSlotInList
 };

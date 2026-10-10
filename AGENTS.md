@@ -1,7 +1,7 @@
 # SYSTEM CONTEXT & OPERATIONAL PROFILE: PI-LINGUAL
 
 ## 1. Domain & Runtime Environment (RFC 2119)
-- **Package / Target**: `pi-lingual` (v0.3.3)
+- **Package / Target**: `pi-lingual` (v0.3.6)
 - **Primary Domain**: Zero-friction developer translator & dual-register language companion (Spoken vs Written) for AI coding agents.
 - **Runtime & Toolchain**: Node.js v20+ / TypeScript Strict / tsup (dual ESM+CJS+DTS) / native Node test runner.
 - **Extension Entry**: `dist/extension.js` (authored in `src/extension.ts`).
@@ -55,6 +55,18 @@
 - **Zero Volatile Model/Tech Name-Dropping**: Never sprinkle specific, fast-changing external model tags (e.g. Claude 3.5 Sonnet, GPT-4) without up-to-the-minute research. Prefer functional categories ("high-tier reasoning models vs. lightweight models") and generic command placeholders (`<model-id>`). Evergreen docs age gracefully.
 - **Rich, Self-Contained Storefront over Hollow Fragmentation**: The main README MUST be rich, substantive, and high-desire. Never hollow out the main page into a bare-bones skeleton by scattering core user values and engineering designs into sub-files. Exhaustive proofs belong in `docs/architecture.md`, but the main page must stand completely self-contained.
 
+### Invariant 9: Universal Dynamic Slot Pipeline & Agent Clarification Mandate (RFC 2119)
+- **All Slots Are First-Class & Fully Movable (Including `source`)**:
+  - The `source` (original text) slot is NOT a permanent immutable header.
+  - If a user prefers not to display the source text row (to conserve terminal height or focus purely on translations), the Agent MUST respect that choice. The slot can be removed via `/slots rm source` or `removeSlotFromList(slots, "source")`. The layout engine MUST gracefully render translation branches without any orphan source line.
+- **Zero Rigid Preset Dogma**:
+  - Forcing hardcoded templates (`developer`, `social`, `compact2`) onto users is STRICTLY FORBIDDEN. All slot definitions (id, label, role, instruction, showMeaning) MUST be customizable and extensible.
+- **Mandatory Agent Active Confirmation Protocol**:
+  - Whenever a user asks to configure, customize, or set up `pi-lingual`, the Agent MUST actively query and confirm:
+    1. **Desired Slot Count**: How many output slots or lines does the user prefer (e.g. 1-slot minimal translation, 2-slot dual register, 3-slot with twitter/deep)?
+    2. **Desired Function & Tone per Slot**: What specific style or role is needed for each slot? Crucially, ask: **"Do you want to keep the original source text row, or remove it entirely?"**
+  - Agents MUST NOT silently inject arbitrary fixed presets without this interactive confirmation.
+
 ---
 
 ## 3. Physical Verification & Build Commands
@@ -64,7 +76,7 @@
   npm test
   # or from workspace root: node .scripts/fleet.mjs test pi-lingual
   ```
-  *Executes 79 test suites verifying cache, chunker, commands, engine, layout, prompts, sanitizer, shield, and sovereignty (100% green).*
+  *Executes 87 test suites verifying cache, chunker, commands, engine, layout, prompts, sanitizer, shield, slots, and sovereignty (100% green).*
 
 - **Build Distribution Bundles**:
   ```bash
