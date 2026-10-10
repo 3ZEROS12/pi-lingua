@@ -610,6 +610,80 @@ export default function (pi: ExtensionAPI) {
     ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] Restored previous companion card`, "info");
   };
 
+  // 伴学定制与 lingual-tuner 深度指引处理器 (严格依从母语 A 统治权，零跨语言残留)
+  const showAgentGuideHandler = async (_args: string, ctx: ExtensionContext) => {
+    const isZh = state.sourceLang === "zh" || state.sourceLang === "tw";
+    const isJa = state.sourceLang === "ja";
+    const isEs = state.sourceLang === "es";
+    const isFr = state.sourceLang === "fr";
+    const isDe = state.sourceLang === "de";
+
+    let guide = "";
+    if (isZh) {
+      guide =
+        `🤖 lingual-tuner 槽位调优与伴学定制指南:\n\n` +
+        `pi-lingual 内置 lingual-tuner 技能。您完全无需记忆或手敲复杂的 /slots 命令，直接向当前 Agent 描述偏好：\n` +
+        `  • 隐去原文: "伴学卡片不要显示中文原文，只要纯译文"\n` +
+        `  • 社媒风格: "帮我配置推特推文和深度分析两个槽位，不要原文"\n` +
+        `  • 极简双模: "把伴学改成单槽位纯译文"\n` +
+        `  • 恢复开箱: "恢复默认伴学槽位"\n\n` +
+        `Agent 会自动通过 lingual-tuner 技能直接装配并更新 ~/.pi/agent/lingual.json，单回合即刻生效！\n` +
+        `若需切换母语，请直接运行 /lang <zh|ja|en|es|fr|de>。`;
+    } else if (isJa) {
+      guide =
+        `🤖 lingual-tuner スロット調整・カスタマイズ案内:\n\n` +
+        `pi-lingual は lingual-tuner スキルを内蔵しています。複雑なコマンドを覚える必要はありません。Agent に直接ご要望をお伝えください：\n` +
+        `  • 原文非表示: 「伴走カードに原文を表示せず、訳文のみ表示して」\n` +
+        `  • SNS向け: 「ツイートと技術的洞察の2スロットにカスタマイズして、原文は不要」\n` +
+        `  • ミニマル: 「1行の純粋な訳文のみに変更して」\n` +
+        `  • リセット: 「デフォルトのスロット構成に戻して」\n\n` +
+        `Agent が lingual-tuner スキル経由で ~/.pi/agent/lingual.json を直接更新し、1ターンで反映されます！\n` +
+        `母語の切り替えは /lang <zh|ja|en|es|fr|de> をご利用ください。`;
+    } else if (isEs) {
+      guide =
+        `🤖 Guía de personalización con lingual-tuner:\n\n` +
+        `pi-lingual incluye la habilidad lingual-tuner. No necesita memorizar comandos complejos; simplemente hable con su Agente:\n` +
+        `  • Ocultar original: "No muestres el texto original, solo las traducciones"\n` +
+        `  • Tono social: "Configura ranuras para tuit y análisis técnico, sin texto original"\n` +
+        `  • Minimalista: "Cambia a traducción limpia de una sola ranura"\n` +
+        `  • Restablecer: "Restablece las ranuras predeterminadas"\n\n` +
+        `Su Agente actualizará ~/.pi/agent/lingual.json automáticamente en un solo turno.\n` +
+        `Para cambiar de idioma: /lang <zh|ja|en|es|fr|de>.`;
+    } else if (isFr) {
+      guide =
+        `🤖 Guide de personnalisation lingual-tuner :\n\n` +
+        `pi-lingual intègre la compétence lingual-tuner. Inutile de taper des commandes complexes, parlez simplement à votre Agent :\n` +
+        `  • Masquer l'original : "Ne montre pas le texte original, uniquement la traduction"\n` +
+        `  • Réseaux sociaux : "Configure les emplacements pour tweet et analyse, sans texte original"\n` +
+        `  • Épuré : "Passe à une traduction unique épurée"\n` +
+        `  • Réinitialiser : "Réinitialise les emplacements par défaut"\n\n` +
+        `Votre Agent mettra à jour ~/.pi/agent/lingual.json automatiquement en un seul tour.\n` +
+        `Pour changer de langue : /lang <zh|ja|en|es|fr|de>.`;
+    } else if (isDe) {
+      guide =
+        `🤖 Anleitung zur Anpassung mit lingual-tuner:\n\n` +
+        `pi-lingual enthält den integrierten lingual-tuner Skill. Sie müssen keine Befehle tippen; sprechen Sie einfach mit Ihrem Agenten:\n` +
+        `  • Original ausblenden: "Originaltext ausblenden, nur Übersetzungen anzeigen"\n` +
+        `  • Social-Media: "Slots für Tweet und technische Einsicht einrichten, kein Originaltext"\n` +
+        `  • Minimalistisch: "Auf reine einzeilige Übersetzung umstellen"\n` +
+        `  • Zurücksetzen: "Slots auf Standard zurücksetzen"\n\n` +
+        `Ihr Agent aktualisiert ~/.pi/agent/lingual.json automatisch in einer einzigen Runde.\n` +
+        `Sprache wechseln: /lang <zh|ja|en|es|fr|de>.`;
+    } else {
+      guide =
+        `🤖 lingual-tuner Companion Customization Guide:\n\n` +
+        `pi-lingual includes a built-in lingual-tuner skill. No need to memorize complex CLI flags; just describe your preferences to your Agent:\n` +
+        `  • Suppress original: "Hide original text on companion cards, show translations only"\n` +
+        `  • Social tone: "Configure companion with Twitter Hook and Technical Insight slots, no source text"\n` +
+        `  • Minimalist: "Switch to 1-line translation only"\n` +
+        `  • Reset: "Reset companion slots to default"\n\n` +
+        `Your Agent will update ~/.pi/agent/lingual.json directly in a single turn!\n` +
+        `To switch native language: /lang <zh|ja|en|es|fr|de>.`;
+    }
+
+    ctx.ui.notify(guide, "info");
+  };
+
   // 核心主命令总线调度器：处理 /lingual 下的子命令路由与平滑轮转
   const masterCommandHandler = async (args: string, ctx: ExtensionContext) => {
     const trimmed = args?.trim();
@@ -662,11 +736,7 @@ export default function (pi: ExtensionAPI) {
 
     // 6. 子命令路由: 伴学定制指南 (/lingual agent 或 /lingual help)
     if (sub === "agent" || sub === "help" || sub === "?") {
-      ctx.ui.notify(
-        state.labels.notifyAgentHelp ||
-          "💡 Switch native language with /lang <zh|ja|en|es|fr|de> anytime; for advanced prompt or style customization, simply describe your preferences to your Agent.",
-        "info"
-      );
+      await showAgentGuideHandler(subArgs, ctx);
       return;
     }
 
@@ -765,25 +835,7 @@ export default function (pi: ExtensionAPI) {
   // 伴学定制指南
   pi.registerCommand("lingual-agent", {
     description: state.labels.cmdDescAgent || "View companion customization and language guide: /lingual-agent",
-    handler: async (_args, ctx) => {
-      const isZh = state.sourceLang === "zh" || state.sourceLang === "tw";
-      const helpMsg = isZh
-        ? `🤖 lingual-tuner Agent 伴学定制指南:\n\n` +
-          `无需手动记忆复杂的配置或长命令，直接向当前会话的 Agent 表达你的偏好：\n` +
-          `  • 隐去原文: "伴学卡片不要显示中文原文，只要纯译文"\n` +
-          `  • 社媒风格: "帮我配置推特推文和架构洞察两个槽位"\n` +
-          `  • 极简单行: "改成单行纯译文"\n` +
-          `  • 恢复开箱: "恢复默认伴学设置"\n\n` +
-          `Agent 会自动通过 lingual-tuner 技能或写入 ~/.pi/agent/lingual.json 单回合为您完成装配。`
-        : `🤖 lingual-tuner Agent Customization Guide:\n\n` +
-          `No need to memorize complex CLI flags. Just talk to your Agent in natural language:\n` +
-          `  • Suppress original: "Hide original text on companion cards, show translations only"\n` +
-          `  • Social tone: "Configure companion with Twitter Hook and Technical Insight slots"\n` +
-          `  • Minimalist: "Switch to 1-line translation only"\n` +
-          `  • Reset: "Reset companion slots to default"\n\n` +
-          `Your Agent will configure ~/.pi/agent/lingual.json automatically in a single turn.`;
-      ctx.ui.notify(helpMsg, "info");
-    },
+    handler: showAgentGuideHandler,
   });
 
   if (typeof pi.registerShortcut === "function") {

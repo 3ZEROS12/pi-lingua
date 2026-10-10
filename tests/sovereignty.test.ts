@@ -19,7 +19,8 @@ test("Primary Language Sovereignty - Japanese (ja) leaves ZERO Chinese in UI and
   assert.ok(jaLabels.notifyEnglish?.includes("【英語モード】に切り替えました"));
   assert.ok(jaLabels.notifyOff?.includes("オフにしました"));
   assert.ok(jaLabels.notifyPaging?.includes("長文を分割しました"));
-  assert.ok(jaLabels.notifyAgentHelp?.includes("母語の変更は /lingual-lang"));
+  assert.ok(jaLabels.notifyAgentHelp?.includes("lingual-tuner"));
+  assert.ok(jaLabels.notifyAgentHelp?.includes("母語切替"));
 
   // Status report contains Japanese chrome
   const report = formatStatusReport(jaLabels, {
@@ -94,6 +95,10 @@ test("Primary Language Sovereignty - English (en) leaves ZERO Chinese in UI and 
   for (const cmd of enLabels.slotsCliHelp || []) {
     assert.ok(!/[\u4e00-\u9fa5]/.test(cmd));
   }
+  // Status report tuner line in English has zero Chinese characters
+  assert.ok(enLabels.statusReportTuner?.includes("lingual-tuner"));
+  assert.ok(!/[\u4e00-\u9fa5]/.test(enLabels.statusReportTuner!));
+  assert.ok(!/[\u4e00-\u9fa5]/.test(enLabels.notifyAgentHelp!));
 });
 
 test("Primary Language Sovereignty - Chinese (zh) dynamic slots chrome has ZERO English residue in UI headers & commands", () => {
@@ -108,6 +113,10 @@ test("Primary Language Sovereignty - Chinese (zh) dynamic slots chrome has ZERO 
   assert.ok(zhLabels.slotsResetSuccess?.includes("已重置槽位为初始默认状态"));
   assert.ok(zhLabels.slotsRemovedSuccess?.includes("已移除槽位"));
   assert.ok(zhLabels.slotsRemovedSourceNote?.includes("已物理隐藏原文行"));
+  assert.ok(zhLabels.statusReportTuner?.includes("lingual-tuner"));
+  assert.ok(zhLabels.statusReportTuner?.includes("槽位调优"));
+  assert.ok(zhLabels.notifyAgentHelp?.includes("lingual-tuner"));
+  assert.ok(zhLabels.notifyAgentHelp?.includes("槽位调优技能"));
 });
 
 test("System Prompt Sovereignty - Generates authentic Language A anchors and rules", () => {

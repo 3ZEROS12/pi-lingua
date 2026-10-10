@@ -1100,7 +1100,7 @@ var LANGUAGE_PRESETS = {
     notifyPaging: "[zh \u21C4 en] \u957F\u53E5\u5DF2\u5207\u5206\u591A\u6BB5\uFF0C\u6309 Alt+. \u6216 Alt+, \u7FFB\u9875\u6D4F\u89C8",
     notifyNoHistory: "[zh \u21C4 en] \u6682\u65E0\u4E0A\u4E00\u6761\u4F34\u5B66\u8BB0\u5F55",
     notifyHistoryRestored: "[zh \u21C4 en] \u5DF2\u91CD\u65B0\u663E\u793A\u4E0A\u4E00\u6761\u4F34\u5B66\u5361\u7247",
-    notifyAgentHelp: "\u{1F4A1} \u5207\u6362\u6BCD\u8BED\uFF1F\u76F4\u63A5\u8FD0\u884C /lingual-lang <zh|ja|en|es|fr|de> \u5373\u53EF\u5B9E\u65F6\u5207\u6362\u5E76\u6301\u4E45\u5316\uFF1B\u82E5\u9700\u5B9A\u5236\u7279\u6B8A\u98CE\u683C\uFF0C\u53EF\u76F4\u63A5\u5411 Agent \u63CF\u8FF0\u4F60\u7684\u5B9A\u5236\u504F\u597D\u3002",
+    notifyAgentHelp: '\u{1F4A1} \u5185\u7F6E lingual-tuner \u69FD\u4F4D\u8C03\u4F18\u6280\u80FD\uFF1A\u76F4\u63A5\u5BF9\u5F53\u524D Agent \u8BF4 "\u5E2E\u6211\u5B9A\u5236\u4F34\u5B66\uFF1A\u53EA\u8981\u63A8\u6587\u548C\u6DF1\u5EA6\u5206\u6790\uFF0C\u4E0D\u8981\u539F\u6587" \u5373\u53EF\u514D\u547D\u4EE4\u81EA\u52A8\u88C5\u914D\uFF01\u5207\u6362\u6BCD\u8BED\u8BF7\u8FD0\u884C /lang <code>\u3002',
     notifyModelSwitched: "\u4F34\u5B66\u6A21\u578B\u5DF2\u5207\u6362\u4E3A: {model}",
     notifyLangSwitched: "\u4F34\u5B66\u8BED\u8A00\u5DF2\u5207\u6362\u4E3A: {lang}\uFF08\u63D0\u793A\uFF1A\u547D\u4EE4\u8865\u5168\u83DC\u5355\u6587\u9762\u5C06\u5728\u91CD\u542F\u7EC8\u7AEF\u540E\u5B8C\u5168\u540C\u6B65\uFF09",
     notifyLangInvalid: "\u65E0\u6548\u7684\u8BED\u8A00\u4EE3\u7801\u3002\u652F\u6301\u7684\u8BED\u8A00\u4EE3\u7801: zh, ja, en, es, fr, de",
@@ -1129,6 +1129,7 @@ var LANGUAGE_PRESETS = {
     statusReportLayout: "HUD\u5E03\u5C40: Trifecta \u5F00\u653E\u5F0F\u5DE6\u5BFC\u8F68\u6811\u72B6\u67B6\u6784 (\xB7 \u250C \u251C \u2514)",
     statusReportAuth: "\u51ED\u636E\u6A21\u5F0F: Pi \u539F\u751F\u8FDB\u7A0B\u5185\u8BA4\u8BC1 (Zero Config \xB7 \u96F6Token\u6CC4\u9732)",
     statusReportShortcuts: "\u5FEB\u6377\u64CD\u4F5C: /lingual (\u5207\u6362\u6A21\u5F0F) \xB7 /slots (\u7BA1\u7406\u69FD\u4F4D) \xB7 /lang (\u5207\u8BED\u8A00) \xB7 /lingual-compact (\u5207\u6362\u5E03\u5C40)",
+    statusReportTuner: "\u69FD\u4F4D\u8C03\u4F18: \u5185\u7F6E lingual-tuner \u6280\u80FD\uFF08\u76F4\u63A5\u5411 Agent \u63CF\u8FF0\u5373\u53EF\u514D\u547D\u4EE4\u5B9A\u5236\uFF09",
     modeDescOriginal: "\u539F\u6587\u76F4\u901A \xB7 0ms\u975E\u963B\u585E",
     modeDescEnglish: "\u82F1\u6587\u6A21\u5F0F \xB7 \u6DF1\u5EA6\u4EE3\u7801\u63A8\u7406",
     modeDescOff: "\u5DF2\u5173\u95ED",
@@ -1193,7 +1194,7 @@ var LANGUAGE_PRESETS = {
     notifyPaging: "[ja \u21C4 en] \u9577\u6587\u3092\u5206\u5272\u3057\u307E\u3057\u305F\u3002Alt+. \u307E\u305F\u306F Alt+, \u3067\u30DA\u30FC\u30B8\u9001\u308A",
     notifyNoHistory: "[ja \u21C4 en] \u524D\u56DE\u306E\u8A18\u9332\u306F\u3042\u308A\u307E\u305B\u3093",
     notifyHistoryRestored: "[ja \u21C4 en] \u524D\u56DE\u306E\u30AB\u30FC\u30C9\u3092\u5FA9\u5143\u3057\u307E\u3057\u305F",
-    notifyAgentHelp: "\u{1F4A1} \u6BCD\u8A9E\u306E\u5909\u66F4\u306F /lingual-lang <zh|ja|en|es|fr|de> \u3067\u5373\u6642\u5207\u308A\u66FF\u3048\u30FB\u4FDD\u5B58\u3067\u304D\u307E\u3059\u3002\u7279\u5225\u306A\u6587\u4F53\u3084\u8A9E\u57DF\u306E\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA\u304C\u5FC5\u8981\u306A\u5834\u5408\u306F\u3001Agent \u306B\u76F4\u63A5\u3054\u8981\u671B\u3092\u304A\u4F1D\u3048\u304F\u3060\u3055\u3044\u3002",
+    notifyAgentHelp: "\u{1F4A1} lingual-tuner \u30B9\u30ED\u30C3\u30C8\u8ABF\u6574\u30B9\u30AD\u30EB\u642D\u8F09\uFF1AAgent\u306B\u300C\u30C4\u30A4\u30FC\u30C8\u3068\u6280\u8853\u7684\u6D1E\u5BDF\u306E\u307F\u3001\u539F\u6587\u306F\u4E0D\u8981\u300D\u3068\u4F1D\u3048\u308B\u3060\u3051\u3067\u81EA\u52D5\u8A2D\u5B9A\u5B8C\u4E86\uFF01\u6BCD\u8A9E\u5207\u66FF\u306F /lang <code> \u3067\u3059\u3002",
     notifyModelSwitched: "\u30E2\u30C7\u30EB\u3092\u5207\u308A\u66FF\u3048\u307E\u3057\u305F: {model}",
     notifyLangSwitched: "\u6BCD\u8A9E\u3092\u5207\u308A\u66FF\u3048\u307E\u3057\u305F: {lang}\uFF08\u203B\u30B3\u30DE\u30F3\u30C9\u88DC\u5B8C\u30E1\u30CB\u30E5\u30FC\u306E\u6587\u9762\u306F\u7AEF\u672B\u518D\u8D77\u52D5\u5F8C\u306B\u5B8C\u5168\u306B\u53CD\u6620\u3055\u308C\u307E\u3059\uFF09",
     notifyLangInvalid: "\u7121\u52B9\u306A\u8A00\u8A9E\u30B3\u30FC\u30C9\u3067\u3059\u3002\u5BFE\u5FDC\u8A00\u8A9E: zh, ja, en, es, fr, de",
@@ -1224,6 +1225,7 @@ var LANGUAGE_PRESETS = {
     statusReportLayout: "HUD\u30EC\u30A4\u30A2\u30A6\u30C8: Trifecta \u30AA\u30FC\u30D7\u30F3\u5DE6\u30EC\u30FC\u30EB\u30C4\u30EA\u30FC\u69CB\u9020 (\xB7 \u250C \u251C \u2514)",
     statusReportAuth: "\u8A8D\u8A3C\u65B9\u5F0F: Pi \u30CD\u30A4\u30C6\u30A3\u30D6\u30A4\u30F3\u30D7\u30ED\u30BB\u30B9\u8A8D\u8A3C (\u30BC\u30ED\u8A2D\u5B9A\u30FBToken\u5B89\u5168)",
     statusReportShortcuts: "\u30AF\u30A4\u30C3\u30AF\u64CD\u4F5C: /lingual (\u30E2\u30FC\u30C9\u5207\u66FF) \xB7 /slots (\u30B9\u30ED\u30C3\u30C8\u7BA1\u7406) \xB7 /lang (\u8A00\u8A9E\u5207\u66FF) \xB7 /lingual-compact (\u30EC\u30A4\u30A2\u30A6\u30C8\u5207\u66FF)",
+    statusReportTuner: "\u30B9\u30ED\u30C3\u30C8\u8ABF\u6574: lingual-tuner \u30B9\u30AD\u30EB\u642D\u8F09\uFF08Agent\u306B\u8981\u671B\u3092\u4F1D\u3048\u308B\u3060\u3051\u3067\u8A2D\u5B9A\uFF09",
     modeDescOriginal: "\u539F\u6587\u30D1\u30B9\u30B9\u30EB\u30FC \xB7 0ms\u975E\u540C\u671F",
     modeDescEnglish: "\u82F1\u8A9E\u30E2\u30FC\u30C9 \xB7 \u9AD8\u5EA6\u30B3\u30FC\u30C9\u63A8\u8AD6",
     modeDescOff: "\u30AA\u30D5",
@@ -1288,7 +1290,7 @@ var LANGUAGE_PRESETS = {
     notifyPaging: "[en \u21C4 ja] Long prompt segmented. Press Alt+. or Alt+, to navigate pages",
     notifyNoHistory: "[en \u21C4 ja] No previous companion card recorded",
     notifyHistoryRestored: "[en \u21C4 ja] Restored previous companion card",
-    notifyAgentHelp: "\u{1F4A1} Switch native language with /lingual-lang <zh|ja|en|es|fr|de> anytime; for advanced prompt or style customization, simply describe your preferences to your Agent.",
+    notifyAgentHelp: '\u{1F4A1} Built-in lingual-tuner skill: Just tell your Agent "Customize companion: tweet and deep insight only, no source text" to tune slots in 1 turn! Switch language via /lang <code>.',
     notifyModelSwitched: "Companion model switched to: {model}",
     notifyLangSwitched: "Native language switched to: {lang} (Note: Command autocomplete descriptions will fully refresh on terminal restart)",
     notifyLangInvalid: "Invalid language code. Supported: zh, ja, en, es, fr, de",
@@ -1319,6 +1321,7 @@ var LANGUAGE_PRESETS = {
     statusReportLayout: "HUD Layout: Trifecta Minimalist Left-Rail Tree (\xB7 \u250C \u251C \u2514)",
     statusReportAuth: "Auth: Pi Native In-Process Auth (Zero Config \xB7 Secure)",
     statusReportShortcuts: "Shortcuts: /lingual (mode) \xB7 /slots (slots) \xB7 /lang (lang) \xB7 /lingual-compact (layout)",
+    statusReportTuner: "Slot Tuner: Built-in lingual-tuner skill (Just describe your preferences to Agent)",
     modeDescOriginal: "Pass-through \xB7 0ms non-blocking",
     modeDescEnglish: "English mode \xB7 Deep reasoning",
     modeDescOff: "Disabled",
@@ -1383,7 +1386,7 @@ var LANGUAGE_PRESETS = {
     notifyPaging: "[es \u21C4 en] Texto largo segmentado. Presione Alt+. o Alt+, para navegar",
     notifyNoHistory: "[es \u21C4 en] No hay registros anteriores",
     notifyHistoryRestored: "[es \u21C4 en] Tarjeta anterior restaurada",
-    notifyAgentHelp: "\u{1F4A1} Cambie su idioma nativo con /lingual-lang <zh|ja|en|es|fr|de> al instante; para estilos personalizados, simplemente ind\xEDquele sus preferencias a su Agente.",
+    notifyAgentHelp: '\u{1F4A1} Habilidad lingual-tuner integrada: Simplemente p\xEDdale a su Agente "Personaliza el asistente: solo tuit y an\xE1lisis, sin texto original" para configurar las ranuras al instante. Cambie de idioma con /lang <code>.',
     notifyModelSwitched: "Modelo cambiado a: {model}",
     notifyLangSwitched: "Idioma nativo cambiado a: {lang} (Nota: Las descripciones del men\xFA de comandos se actualizar\xE1n tras reiniciar la terminal)",
     notifyLangInvalid: "C\xF3digo de idioma no v\xE1lido. Admitidos: zh, ja, en, es, fr, de",
@@ -1414,6 +1417,7 @@ var LANGUAGE_PRESETS = {
     statusReportLayout: "Dise\xF1o HUD: Trifecta \xE1rbol de gu\xEDa izquierda (\xB7 \u250C \u251C \u2514)",
     statusReportAuth: "Autenticaci\xF3n: Proceso nativo de Pi (Sin config \xB7 Seguro)",
     statusReportShortcuts: "Accesos directos: /lingual (modo) \xB7 /slots (ranuras) \xB7 /lang (idioma) \xB7 /lingual-compact (dise\xF1o)",
+    statusReportTuner: "Ajuste de ranuras: Habilidad lingual-tuner integrada (configure hablando con su Agente)",
     modeDescOriginal: "Directo \xB7 0ms no bloqueante",
     modeDescEnglish: "Modo ingl\xE9s \xB7 Razonamiento profundo",
     modeDescOff: "Apagado",
@@ -1478,7 +1482,7 @@ var LANGUAGE_PRESETS = {
     notifyPaging: "[fr \u21C4 en] Long texte segment\xE9. Appuyez sur Alt+. ou Alt+, pour parcourir",
     notifyNoHistory: "[fr \u21C4 en] Aucun historique pr\xE9c\xE9dent",
     notifyHistoryRestored: "[fr \u21C4 en] Carte pr\xE9c\xE9dente restaur\xE9e",
-    notifyAgentHelp: "\u{1F4A1} Changez de langue avec /lingual-lang <zh|ja|en|es|fr|de> \xE0 tout moment ; pour personnaliser le style ou le ton, d\xE9crivez simplement vos pr\xE9f\xE9rences \xE0 votre Agent.",
+    notifyAgentHelp: '\u{1F4A1} Comp\xE9tence lingual-tuner int\xE9gr\xE9e : Dites simplement \xE0 votre Agent "Personnalise le compagnon : uniquement tweet et analyse, sans texte original" pour ajuster les emplacements. Changez de langue avec /lang <code>.',
     notifyModelSwitched: "Mod\xE8le chang\xE9 pour : {model}",
     notifyLangSwitched: "Langue maternelle chang\xE9e en : {lang} (Note : L'autocompl\xE9tion des commandes sera actualis\xE9e apr\xE8s red\xE9marrage du terminal)",
     notifyLangInvalid: "Code de langue invalide. Pris en charge : zh, ja, en, es, fr, de",
@@ -1507,6 +1511,7 @@ var LANGUAGE_PRESETS = {
     statusReportLayout: "Disposition HUD : Arbre guide gauche Trifecta (\xB7 \u250C \u251C \u2514)",
     statusReportAuth: "Authentification : Processus interne Pi natif (Z\xE9ro config \xB7 S\xE9curis\xE9)",
     statusReportShortcuts: "Raccourcis : /lingual (mode) \xB7 /slots (emplacements) \xB7 /lang (langue) \xB7 /lingual-compact (mise en page)",
+    statusReportTuner: "Ajustement d'emplacements : Comp\xE9tence lingual-tuner int\xE9gr\xE9e (d\xE9crivez vos pr\xE9f\xE9rences \xE0 l'Agent)",
     modeDescOriginal: "Passerelle directe \xB7 0ms non bloquant",
     modeDescEnglish: "Mode anglais \xB7 Raisonnement approfondi",
     modeDescOff: "D\xE9sactiv\xE9",
@@ -1571,7 +1576,7 @@ var LANGUAGE_PRESETS = {
     notifyPaging: "[de \u21C4 en] Langer Text segmentiert. Mit Alt+. oder Alt+, bl\xE4ttern",
     notifyNoHistory: "[de \u21C4 en] Kein vorheriger Eintrag vorhanden",
     notifyHistoryRestored: "[de \u21C4 en] Vorherige Karte wiederhergestellt",
-    notifyAgentHelp: "\u{1F4A1} Wechseln Sie die Muttersprache mit /lingual-lang <zh|ja|en|es|fr|de> jederzeit; f\xFCr benutzerdefinierte Stile teilen Sie Ihrem Agenten einfach Ihre W\xFCnsche mit.",
+    notifyAgentHelp: '\u{1F4A1} Integrierter lingual-tuner Skill: Sagen Sie Ihrem Agenten einfach "Passen Sie die Begleitung an: nur Tweet und tiefe Einsicht, kein Originaltext", um Slots anzupassen. Sprache wechseln mit /lang <code>.',
     notifyModelSwitched: "Modell gewechselt zu: {model}",
     notifyLangSwitched: "Muttersprache ge\xE4ndert zu: {lang} (Hinweis: Befehlsbeschreibungen werden nach dem Terminal-Neustart vollst\xE4ndig aktualisiert)",
     notifyLangInvalid: "Ung\xFCltiger Sprachcode. Unterst\xFCtzt: zh, ja, en, es, fr, de",
@@ -1602,6 +1607,7 @@ var LANGUAGE_PRESETS = {
     statusReportLayout: "HUD-Layout: Trifecta Minimalistische Baumstruktur (\xB7 \u250C \u251C \u2514)",
     statusReportAuth: "Authentifizierung: Pi nativer In-Process Modus (Zero Config \xB7 Sicher)",
     statusReportShortcuts: "Befehle: /lingual (Modus) \xB7 /slots (Slots) \xB7 /lang (Sprache) \xB7 /lingual-compact (Layout)",
+    statusReportTuner: "Slot-Anpassung: Integrierter lingual-tuner Skill (Pr\xE4ferenzen einfach dem Agenten beschreiben)",
     modeDescOriginal: "Direkt \xB7 0ms nicht blockierend",
     modeDescEnglish: "Englisch-Modus \xB7 Tiefgreifende Logik",
     modeDescOff: "Aus",
@@ -1694,6 +1700,7 @@ function formatStatusReport(labels, info) {
   lines.push(
     `\u2022 ${labels.statusReportLayout || "Layout"}: ${layoutDesc}`,
     `\u2022 ${labels.statusReportAuth || "Auth: Pi Native In-Process Auth"}`,
+    `\u2022 ${labels.statusReportTuner || "Slot Tuner: Built-in lingual-tuner skill (Just describe preferences to Agent)"}`,
     `\u2022 ${labels.statusReportShortcuts || "Shortcuts: /lingual \xB7 /slots \xB7 /lang \xB7 /lingual-compact \xB7 /status"}`
   );
   return lines.join("\n");
@@ -2981,6 +2988,82 @@ ${lbl.slotsCliTitle}
     );
     ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] Restored previous companion card`, "info");
   };
+  const showAgentGuideHandler = async (_args, ctx) => {
+    const isZh = state.sourceLang === "zh" || state.sourceLang === "tw";
+    const isJa = state.sourceLang === "ja";
+    const isEs = state.sourceLang === "es";
+    const isFr = state.sourceLang === "fr";
+    const isDe = state.sourceLang === "de";
+    let guide = "";
+    if (isZh) {
+      guide = `\u{1F916} lingual-tuner \u69FD\u4F4D\u8C03\u4F18\u4E0E\u4F34\u5B66\u5B9A\u5236\u6307\u5357:
+
+pi-lingual \u5185\u7F6E lingual-tuner \u6280\u80FD\u3002\u60A8\u5B8C\u5168\u65E0\u9700\u8BB0\u5FC6\u6216\u624B\u6572\u590D\u6742\u7684 /slots \u547D\u4EE4\uFF0C\u76F4\u63A5\u5411\u5F53\u524D Agent \u63CF\u8FF0\u504F\u597D\uFF1A
+  \u2022 \u9690\u53BB\u539F\u6587: "\u4F34\u5B66\u5361\u7247\u4E0D\u8981\u663E\u793A\u4E2D\u6587\u539F\u6587\uFF0C\u53EA\u8981\u7EAF\u8BD1\u6587"
+  \u2022 \u793E\u5A92\u98CE\u683C: "\u5E2E\u6211\u914D\u7F6E\u63A8\u7279\u63A8\u6587\u548C\u6DF1\u5EA6\u5206\u6790\u4E24\u4E2A\u69FD\u4F4D\uFF0C\u4E0D\u8981\u539F\u6587"
+  \u2022 \u6781\u7B80\u53CC\u6A21: "\u628A\u4F34\u5B66\u6539\u6210\u5355\u69FD\u4F4D\u7EAF\u8BD1\u6587"
+  \u2022 \u6062\u590D\u5F00\u7BB1: "\u6062\u590D\u9ED8\u8BA4\u4F34\u5B66\u69FD\u4F4D"
+
+Agent \u4F1A\u81EA\u52A8\u901A\u8FC7 lingual-tuner \u6280\u80FD\u76F4\u63A5\u88C5\u914D\u5E76\u66F4\u65B0 ~/.pi/agent/lingual.json\uFF0C\u5355\u56DE\u5408\u5373\u523B\u751F\u6548\uFF01
+\u82E5\u9700\u5207\u6362\u6BCD\u8BED\uFF0C\u8BF7\u76F4\u63A5\u8FD0\u884C /lang <zh|ja|en|es|fr|de>\u3002`;
+    } else if (isJa) {
+      guide = `\u{1F916} lingual-tuner \u30B9\u30ED\u30C3\u30C8\u8ABF\u6574\u30FB\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA\u6848\u5185:
+
+pi-lingual \u306F lingual-tuner \u30B9\u30AD\u30EB\u3092\u5185\u8535\u3057\u3066\u3044\u307E\u3059\u3002\u8907\u96D1\u306A\u30B3\u30DE\u30F3\u30C9\u3092\u899A\u3048\u308B\u5FC5\u8981\u306F\u3042\u308A\u307E\u305B\u3093\u3002Agent \u306B\u76F4\u63A5\u3054\u8981\u671B\u3092\u304A\u4F1D\u3048\u304F\u3060\u3055\u3044\uFF1A
+  \u2022 \u539F\u6587\u975E\u8868\u793A: \u300C\u4F34\u8D70\u30AB\u30FC\u30C9\u306B\u539F\u6587\u3092\u8868\u793A\u305B\u305A\u3001\u8A33\u6587\u306E\u307F\u8868\u793A\u3057\u3066\u300D
+  \u2022 SNS\u5411\u3051: \u300C\u30C4\u30A4\u30FC\u30C8\u3068\u6280\u8853\u7684\u6D1E\u5BDF\u306E2\u30B9\u30ED\u30C3\u30C8\u306B\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA\u3057\u3066\u3001\u539F\u6587\u306F\u4E0D\u8981\u300D
+  \u2022 \u30DF\u30CB\u30DE\u30EB: \u300C1\u884C\u306E\u7D14\u7C8B\u306A\u8A33\u6587\u306E\u307F\u306B\u5909\u66F4\u3057\u3066\u300D
+  \u2022 \u30EA\u30BB\u30C3\u30C8: \u300C\u30C7\u30D5\u30A9\u30EB\u30C8\u306E\u30B9\u30ED\u30C3\u30C8\u69CB\u6210\u306B\u623B\u3057\u3066\u300D
+
+Agent \u304C lingual-tuner \u30B9\u30AD\u30EB\u7D4C\u7531\u3067 ~/.pi/agent/lingual.json \u3092\u76F4\u63A5\u66F4\u65B0\u3057\u30011\u30BF\u30FC\u30F3\u3067\u53CD\u6620\u3055\u308C\u307E\u3059\uFF01
+\u6BCD\u8A9E\u306E\u5207\u308A\u66FF\u3048\u306F /lang <zh|ja|en|es|fr|de> \u3092\u3054\u5229\u7528\u304F\u3060\u3055\u3044\u3002`;
+    } else if (isEs) {
+      guide = `\u{1F916} Gu\xEDa de personalizaci\xF3n con lingual-tuner:
+
+pi-lingual incluye la habilidad lingual-tuner. No necesita memorizar comandos complejos; simplemente hable con su Agente:
+  \u2022 Ocultar original: "No muestres el texto original, solo las traducciones"
+  \u2022 Tono social: "Configura ranuras para tuit y an\xE1lisis t\xE9cnico, sin texto original"
+  \u2022 Minimalista: "Cambia a traducci\xF3n limpia de una sola ranura"
+  \u2022 Restablecer: "Restablece las ranuras predeterminadas"
+
+Su Agente actualizar\xE1 ~/.pi/agent/lingual.json autom\xE1ticamente en un solo turno.
+Para cambiar de idioma: /lang <zh|ja|en|es|fr|de>.`;
+    } else if (isFr) {
+      guide = `\u{1F916} Guide de personnalisation lingual-tuner :
+
+pi-lingual int\xE8gre la comp\xE9tence lingual-tuner. Inutile de taper des commandes complexes, parlez simplement \xE0 votre Agent :
+  \u2022 Masquer l'original : "Ne montre pas le texte original, uniquement la traduction"
+  \u2022 R\xE9seaux sociaux : "Configure les emplacements pour tweet et analyse, sans texte original"
+  \u2022 \xC9pur\xE9 : "Passe \xE0 une traduction unique \xE9pur\xE9e"
+  \u2022 R\xE9initialiser : "R\xE9initialise les emplacements par d\xE9faut"
+
+Votre Agent mettra \xE0 jour ~/.pi/agent/lingual.json automatiquement en un seul tour.
+Pour changer de langue : /lang <zh|ja|en|es|fr|de>.`;
+    } else if (isDe) {
+      guide = `\u{1F916} Anleitung zur Anpassung mit lingual-tuner:
+
+pi-lingual enth\xE4lt den integrierten lingual-tuner Skill. Sie m\xFCssen keine Befehle tippen; sprechen Sie einfach mit Ihrem Agenten:
+  \u2022 Original ausblenden: "Originaltext ausblenden, nur \xDCbersetzungen anzeigen"
+  \u2022 Social-Media: "Slots f\xFCr Tweet und technische Einsicht einrichten, kein Originaltext"
+  \u2022 Minimalistisch: "Auf reine einzeilige \xDCbersetzung umstellen"
+  \u2022 Zur\xFCcksetzen: "Slots auf Standard zur\xFCcksetzen"
+
+Ihr Agent aktualisiert ~/.pi/agent/lingual.json automatisch in einer einzigen Runde.
+Sprache wechseln: /lang <zh|ja|en|es|fr|de>.`;
+    } else {
+      guide = `\u{1F916} lingual-tuner Companion Customization Guide:
+
+pi-lingual includes a built-in lingual-tuner skill. No need to memorize complex CLI flags; just describe your preferences to your Agent:
+  \u2022 Suppress original: "Hide original text on companion cards, show translations only"
+  \u2022 Social tone: "Configure companion with Twitter Hook and Technical Insight slots, no source text"
+  \u2022 Minimalist: "Switch to 1-line translation only"
+  \u2022 Reset: "Reset companion slots to default"
+
+Your Agent will update ~/.pi/agent/lingual.json directly in a single turn!
+To switch native language: /lang <zh|ja|en|es|fr|de>.`;
+    }
+    ctx.ui.notify(guide, "info");
+  };
   const masterCommandHandler = async (args, ctx) => {
     const trimmed = args?.trim();
     if (!trimmed) {
@@ -3016,10 +3099,7 @@ ${lbl.slotsCliTitle}
       return;
     }
     if (sub === "agent" || sub === "help" || sub === "?") {
-      ctx.ui.notify(
-        state.labels.notifyAgentHelp || "\u{1F4A1} Switch native language with /lang <zh|ja|en|es|fr|de> anytime; for advanced prompt or style customization, simply describe your preferences to your Agent.",
-        "info"
-      );
+      await showAgentGuideHandler(subArgs, ctx);
       return;
     }
     if (sub === "mode" || sub === "original" || sub === "english" || sub === "off" || sub === "orig" || sub === "disable" || sub === "stop") {
@@ -3083,27 +3163,7 @@ ${lbl.slotsCliTitle}
   });
   pi.registerCommand("lingual-agent", {
     description: state.labels.cmdDescAgent || "View companion customization and language guide: /lingual-agent",
-    handler: async (_args, ctx) => {
-      const isZh = state.sourceLang === "zh" || state.sourceLang === "tw";
-      const helpMsg = isZh ? `\u{1F916} lingual-tuner Agent \u4F34\u5B66\u5B9A\u5236\u6307\u5357:
-
-\u65E0\u9700\u624B\u52A8\u8BB0\u5FC6\u590D\u6742\u7684\u914D\u7F6E\u6216\u957F\u547D\u4EE4\uFF0C\u76F4\u63A5\u5411\u5F53\u524D\u4F1A\u8BDD\u7684 Agent \u8868\u8FBE\u4F60\u7684\u504F\u597D\uFF1A
-  \u2022 \u9690\u53BB\u539F\u6587: "\u4F34\u5B66\u5361\u7247\u4E0D\u8981\u663E\u793A\u4E2D\u6587\u539F\u6587\uFF0C\u53EA\u8981\u7EAF\u8BD1\u6587"
-  \u2022 \u793E\u5A92\u98CE\u683C: "\u5E2E\u6211\u914D\u7F6E\u63A8\u7279\u63A8\u6587\u548C\u67B6\u6784\u6D1E\u5BDF\u4E24\u4E2A\u69FD\u4F4D"
-  \u2022 \u6781\u7B80\u5355\u884C: "\u6539\u6210\u5355\u884C\u7EAF\u8BD1\u6587"
-  \u2022 \u6062\u590D\u5F00\u7BB1: "\u6062\u590D\u9ED8\u8BA4\u4F34\u5B66\u8BBE\u7F6E"
-
-Agent \u4F1A\u81EA\u52A8\u901A\u8FC7 lingual-tuner \u6280\u80FD\u6216\u5199\u5165 ~/.pi/agent/lingual.json \u5355\u56DE\u5408\u4E3A\u60A8\u5B8C\u6210\u88C5\u914D\u3002` : `\u{1F916} lingual-tuner Agent Customization Guide:
-
-No need to memorize complex CLI flags. Just talk to your Agent in natural language:
-  \u2022 Suppress original: "Hide original text on companion cards, show translations only"
-  \u2022 Social tone: "Configure companion with Twitter Hook and Technical Insight slots"
-  \u2022 Minimalist: "Switch to 1-line translation only"
-  \u2022 Reset: "Reset companion slots to default"
-
-Your Agent will configure ~/.pi/agent/lingual.json automatically in a single turn.`;
-      ctx.ui.notify(helpMsg, "info");
-    }
+    handler: showAgentGuideHandler
   });
   if (typeof pi.registerShortcut === "function") {
     pi.registerShortcut("alt+.", {

@@ -45,6 +45,7 @@ interface LingualI18nLabels {
     statusReportLayout?: string;
     statusReportAuth?: string;
     statusReportShortcuts?: string;
+    statusReportTuner?: string;
     modeDescOriginal?: string;
     modeDescEnglish?: string;
     modeDescOff?: string;
