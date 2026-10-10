@@ -1,7 +1,7 @@
 # SYSTEM CONTEXT & OPERATIONAL PROFILE: PI-LINGUAL
 
 ## 1. Domain & Runtime Environment (RFC 2119)
-- **Package / Target**: `pi-lingual` (v0.3.6)
+- **Package / Target**: `pi-lingual` (v0.3.10)
 - **Primary Domain**: Zero-friction developer translator & dual-register language companion (Spoken vs Written) for AI coding agents.
 - **Runtime & Toolchain**: Node.js v20+ / TypeScript Strict / tsup (dual ESM+CJS+DTS) / native Node test runner.
 - **Extension Entry**: `dist/extension.js` (authored in `src/extension.ts`).
@@ -56,16 +56,91 @@
 - **Rich, Self-Contained Storefront over Hollow Fragmentation**: The main README MUST be rich, substantive, and high-desire. Never hollow out the main page into a bare-bones skeleton by scattering core user values and engineering designs into sub-files. Exhaustive proofs belong in `docs/architecture.md`, but the main page must stand completely self-contained.
 
 ### Invariant 9: Universal Dynamic Slot Pipeline & Agent Clarification Mandate (RFC 2119)
+- **Universal English Baseline & Dynamic Language Mirroring**:
+  - The default international baseline for prompts, templates, and Agent clarification questions MUST be in universal English.
+  - When communicating with the user, the Agent MUST dynamically mirror the user's active session language:
+    - If the user interacts in English (or indeterminate default), the Agent MUST query in English;
+    - If the user interacts in Chinese (e.g. `zh ⇄ en`), the Agent MUST mirror in Chinese;
+    - If the user interacts in Japanese, the Agent MUST mirror in Japanese.
 - **All Slots Are First-Class & Fully Movable (Including `source`)**:
   - The `source` (original text) slot is NOT a permanent immutable header.
-  - If a user prefers not to display the source text row (to conserve terminal height or focus purely on translations), the Agent MUST respect that choice. The slot can be removed via `/slots rm source` or `removeSlotFromList(slots, "source")`. The layout engine MUST gracefully render translation branches without any orphan source line.
+  - If a user prefers not to display the source text row (to conserve terminal height or focus purely on translations), the Agent MUST respect that choice. The slot can be removed via `/slots rm source`, `removeSlotFromList(slots, "source")`, or by omitting the `{ role: "source" }` entry from `~/.pi/agent/lingual.json`. The layout engine MUST gracefully render translation branches without any orphan source line.
 - **Zero Rigid Preset Dogma**:
-  - Forcing hardcoded templates (`developer`, `social`, `compact2`) onto users is STRICTLY FORBIDDEN. All slot definitions (id, label, role, instruction, showMeaning) MUST be customizable and extensible.
+  - Forcing hardcoded templates (`developer`, `social`, `compact2`) onto users is STRICTLY FORBIDDEN. All slot definitions (`id`, `label`, `role`, `instruction`, `showMeaning`) MUST be customizable and extensible.
 - **Mandatory Agent Active Confirmation Protocol**:
-  - Whenever a user asks to configure, customize, or set up `pi-lingual`, the Agent MUST actively query and confirm:
+  - Whenever a user asks to configure, customize, or set up `pi-lingual`, the Agent MUST actively query and confirm 3 dimensions:
     1. **Desired Slot Count**: How many output slots or lines does the user prefer (e.g. 1-slot minimal translation, 2-slot dual register, 3-slot with twitter/deep)?
-    2. **Desired Function & Tone per Slot**: What specific style or role is needed for each slot? Crucially, ask: **"Do you want to keep the original source text row, or remove it entirely?"**
+    2. **Desired Function & Tone per Slot**: What specific style or role is needed for each slot (e.g. casual Slack, formal RFC/PR, viral tweet, technical insight, vocab)?
+    3. **Source Text Row Retention**: Crucially ask: **"Do you want to keep the original source text row, or remove it entirely to save terminal vertical space?"**
   - Agents MUST NOT silently inject arbitrary fixed presets without this interactive confirmation.
+- **Zero-Friction Agent Execution SOP (Direct Configuration Modification)**:
+  - Once the user answers the clarification questions, the Agent MUST directly apply the configuration in a single turn without requiring the user to type manual CLI commands or edit files themselves.
+  - The Agent MUST write the customized `slots` array directly to `~/.pi/agent/lingual.json` (Single Source of Truth).
+  - **Slot Configuration Interface**:
+    ```typescript
+    interface SlotConfig {
+      id: string;            // Unique identifier, e.g. "source", "spoken", "written", "twitter", "deep"
+      label: string;         // Card display label, e.g. "Source", "Spoken", "Written", "Tweet", "Deep"
+      role: "source" | "translation" | "vocab" | "custom";
+      instruction?: string;  // Explicit LLM translation/style prompt for this slot
+      showMeaning?: boolean; // Whether to generate nuance back-translation in user's native language
+      enabled: boolean;
+    }
+    ```
+  - **Universal English Template (`~/.pi/agent/lingual.json`)**:
+    ```json
+    {
+      "slots": [
+        {
+          "id": "source",
+          "label": "Source",
+          "role": "source",
+          "enabled": true
+        },
+        {
+          "id": "spoken",
+          "label": "Spoken",
+          "role": "translation",
+          "instruction": "Natural, fluent spoken flow (daily standup, Slack, agile collaboration). Authentic Silicon Valley flow, natural contractions, idioms.",
+          "showMeaning": true,
+          "enabled": true
+        },
+        {
+          "id": "written",
+          "label": "Written",
+          "role": "translation",
+          "instruction": "Clear, precise, modern technical written prose (PR descriptions, RFCs, documentation). Plain, active, professional.",
+          "showMeaning": true,
+          "enabled": true
+        }
+      ]
+    }
+    ```
+  - **Example: Suppressing Source Text & Customizing Social Tones**:
+    If the user chooses to suppress the original text and have Twitter Hook + Technical Insight:
+    ```json
+    {
+      "slots": [
+        {
+          "id": "twitter",
+          "label": "Tweet",
+          "role": "translation",
+          "instruction": "Punchy opening hook and viral developer tweet under 280 chars with authentic dev slang.",
+          "showMeaning": true,
+          "enabled": true
+        },
+        {
+          "id": "deep",
+          "label": "Deep",
+          "role": "translation",
+          "instruction": "High-signal architecture reasoning and nuanced technical value.",
+          "showMeaning": true,
+          "enabled": true
+        }
+      ]
+    }
+    ```
+    *(Note: omitting `{ role: "source" }` physically eliminates the source line from HUD rendering).*
 
 ---
 
@@ -76,7 +151,7 @@
   npm test
   # or from workspace root: node .scripts/fleet.mjs test pi-lingual
   ```
-  *Executes 87 test suites verifying cache, chunker, commands, engine, layout, prompts, sanitizer, shield, slots, and sovereignty (100% green).*
+  *Executes 89 test suites verifying cache, chunker, commands, engine, layout, prompts, sanitizer, shield, slots, and sovereignty (100% green).*
 
 - **Build Distribution Bundles**:
   ```bash
@@ -99,4 +174,4 @@
 ## 4. Architectural Boundaries & Quality Gates
 
 - **Kinetic Line Budget Guard**: Card layouts MUST NOT exceed 9 lines under any column width, mathematically guaranteeing zero host widget truncation warnings.
-- **Documentation Linting**: Documentation MUST pass `node .scripts/fleet.mjs docs pi-lingual` with 0 corporate buzzwords, 0 pseudo-contrasts, and 1:1 verified 74/74 test metrics.
+- **Documentation Linting**: Documentation MUST pass `node .scripts/fleet.mjs docs pi-lingual` with 0 corporate buzzwords, 0 pseudo-contrasts, and 1:1 verified 89/89 test metrics.

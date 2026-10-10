@@ -88,14 +88,14 @@ __export(index_exports, {
 module.exports = __toCommonJS(index_exports);
 
 // src/core/prompts.ts
-function getDefaultSlots(sourceLang = "zh") {
-  const norm = (sourceLang || "zh").toLowerCase().split("-")[0];
+function getDefaultSlots(sourceLang = "en") {
+  const norm = (sourceLang || "en").toLowerCase().split("-")[0];
   const labels = {
+    en: { source: "Original", spoken: "Spoken", written: "Written", vocab: "Vocab" },
     zh: { source: "\u539F\u6587", spoken: "\u53E3\u8BED", written: "\u5199\u4F5C", vocab: "\u91CD\u70B9" },
     tw: { source: "\u539F\u6587", spoken: "\u53E3\u8A9E", written: "\u66F8\u9762", vocab: "\u91CD\u9EDE" },
-    en: { source: "Original", spoken: "Spoken", written: "Written", vocab: "Vocab" },
     ja: { source: "\u539F\u6587", spoken: "\u53E3\u8A9E", written: "\u6587\u9762", vocab: "\u5358\u8A9E" },
-    ko: { source: "\uC6D0\uBB38", spoken: "\uAD6C\uC5B4", written: "\uBB38\uC5B4", vocab: "\uD575\uC2EC" },
+    ko: { source: "\uC6D0\uBB38", spoken: "\uAD6C\uC5B4", written: "\uBB38\uC5B4", vocab: "\uD575\u5FC3" },
     ru: { source: "\u041E\u0440\u0438\u0433\u0438\u043D\u0430\u043B", spoken: "\u0420\u0430\u0437\u0433\u043E\u0432\u043E\u0440\u043D\u044B\u0439", written: "\u041F\u0438\u0441\u044C\u043C\u0435\u043D\u043D\u044B\u0439", vocab: "\u041B\u0435\u043A\u0441\u0438\u043A\u0430" },
     pt: { source: "Original", spoken: "Falado", written: "Escrito", vocab: "Vocab" },
     es: { source: "Original", spoken: "Hablado", written: "Escrito", vocab: "Vocab" },
@@ -107,7 +107,7 @@ function getDefaultSlots(sourceLang = "zh") {
     fr: { source: "Original", spoken: "Parl\xE9", written: "\xC9crit", vocab: "Vocab" },
     de: { source: "Original", spoken: "Gesprochen", written: "Schriftlich", vocab: "Wortschatz" }
   };
-  const l = labels[norm] || labels.zh;
+  const l = labels[norm] || labels.en;
   return [
     {
       id: "source",
@@ -592,7 +592,7 @@ var SLOT_PRESETS = {
   developer: {
     name: "Developer",
     description: "Standard agile collaboration: Spoken + Written + Vocab",
-    slots: (sourceLang = "zh") => {
+    slots: (sourceLang = "en") => {
       const isZh = sourceLang === "zh" || sourceLang === "tw";
       const isJa = sourceLang === "ja";
       return [
@@ -606,7 +606,7 @@ var SLOT_PRESETS = {
   social: {
     name: "Social",
     description: "Overseas Twitter / Community building: Hook + Deep + Vocab",
-    slots: (sourceLang = "zh") => {
+    slots: (sourceLang = "en") => {
       const isZh = sourceLang === "zh" || sourceLang === "tw";
       return [
         { id: "source", label: isZh ? "\u539F\u6587" : "Source", role: "source", enabled: true },
@@ -618,8 +618,8 @@ var SLOT_PRESETS = {
   },
   japanese: {
     name: "Japanese",
-    description: "Dual-register Japanese companion: \u53E3\u8A9E + \u656C\u8A9E + \u5358\u8A9E",
-    slots: (sourceLang = "zh") => {
+    description: "Dual-register Japanese companion: \u53E3\u8A9E + \u656C\u8A9E + \u5358\u8BED",
+    slots: (sourceLang = "en") => {
       const isZh = sourceLang === "zh" || sourceLang === "tw";
       const isJa = sourceLang === "ja";
       return [
@@ -633,7 +633,7 @@ var SLOT_PRESETS = {
   academic: {
     name: "Academic",
     description: "Paper & rigorous discussion: Discussion + Paper",
-    slots: (sourceLang = "zh") => {
+    slots: (sourceLang = "en") => {
       const isZh = sourceLang === "zh" || sourceLang === "tw";
       return [
         { id: "source", label: isZh ? "\u539F\u6587" : "Source", role: "source", enabled: true },
@@ -646,7 +646,7 @@ var SLOT_PRESETS = {
   compact2: {
     name: "Compact 2-Slot",
     description: "Minimalist dual-slot: Source + Target translation only",
-    slots: (sourceLang = "zh") => {
+    slots: (sourceLang = "en") => {
       const isZh = sourceLang === "zh" || sourceLang === "tw";
       const isJa = sourceLang === "ja";
       return [
@@ -658,7 +658,7 @@ var SLOT_PRESETS = {
     }
   }
 };
-function resolveSlotsForPreset(presetName = "developer", sourceLang = "zh") {
+function resolveSlotsForPreset(presetName = "developer", sourceLang = "en") {
   const normPreset = (presetName || "developer").toLowerCase().trim();
   const preset = SLOT_PRESETS[normPreset] || SLOT_PRESETS.developer;
   return preset.slots(sourceLang);

@@ -1,13 +1,13 @@
 import type { SlotDefinition, CustomSlotsConfig, SlotConfig, SlotRole } from "./types.js";
 
-export function getDefaultSlots(sourceLang = "zh"): SlotConfig[] {
-  const norm = (sourceLang || "zh").toLowerCase().split("-")[0];
+export function getDefaultSlots(sourceLang = "en"): SlotConfig[] {
+  const norm = (sourceLang || "en").toLowerCase().split("-")[0];
   const labels: Record<string, { source: string; spoken: string; written: string; vocab: string }> = {
+    en: { source: "Original", spoken: "Spoken", written: "Written", vocab: "Vocab" },
     zh: { source: "原文", spoken: "口语", written: "写作", vocab: "重点" },
     tw: { source: "原文", spoken: "口語", written: "書面", vocab: "重點" },
-    en: { source: "Original", spoken: "Spoken", written: "Written", vocab: "Vocab" },
     ja: { source: "原文", spoken: "口語", written: "文面", vocab: "単語" },
-    ko: { source: "원문", spoken: "구어", written: "문어", vocab: "핵심" },
+    ko: { source: "원문", spoken: "구어", written: "문어", vocab: "핵心" },
     ru: { source: "Оригинал", spoken: "Разговорный", written: "Письменный", vocab: "Лексика" },
     pt: { source: "Original", spoken: "Falado", written: "Escrito", vocab: "Vocab" },
     es: { source: "Original", spoken: "Hablado", written: "Escrito", vocab: "Vocab" },
@@ -19,7 +19,7 @@ export function getDefaultSlots(sourceLang = "zh"): SlotConfig[] {
     fr: { source: "Original", spoken: "Parlé", written: "Écrit", vocab: "Vocab" },
     de: { source: "Original", spoken: "Gesprochen", written: "Schriftlich", vocab: "Wortschatz" },
   };
-  const l = labels[norm] || labels.zh;
+  const l = labels[norm] || labels.en;
 
   return [
     {

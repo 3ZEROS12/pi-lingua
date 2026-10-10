@@ -81,7 +81,7 @@ export const SLOT_PRESETS: Record<string, SlotPresetDefinition> = {
   developer: {
     name: "Developer",
     description: "Standard agile collaboration: Spoken + Written + Vocab",
-    slots: (sourceLang = "zh") => {
+    slots: (sourceLang = "en") => {
       const isZh = sourceLang === "zh" || sourceLang === "tw";
       const isJa = sourceLang === "ja";
       return [
@@ -95,7 +95,7 @@ export const SLOT_PRESETS: Record<string, SlotPresetDefinition> = {
   social: {
     name: "Social",
     description: "Overseas Twitter / Community building: Hook + Deep + Vocab",
-    slots: (sourceLang = "zh") => {
+    slots: (sourceLang = "en") => {
       const isZh = sourceLang === "zh" || sourceLang === "tw";
       return [
         { id: "source", label: isZh ? "原文" : "Source", role: "source", enabled: true },
@@ -107,8 +107,8 @@ export const SLOT_PRESETS: Record<string, SlotPresetDefinition> = {
   },
   japanese: {
     name: "Japanese",
-    description: "Dual-register Japanese companion: 口語 + 敬語 + 単語",
-    slots: (sourceLang = "zh") => {
+    description: "Dual-register Japanese companion: 口語 + 敬語 + 単语",
+    slots: (sourceLang = "en") => {
       const isZh = sourceLang === "zh" || sourceLang === "tw";
       const isJa = sourceLang === "ja";
       return [
@@ -122,7 +122,7 @@ export const SLOT_PRESETS: Record<string, SlotPresetDefinition> = {
   academic: {
     name: "Academic",
     description: "Paper & rigorous discussion: Discussion + Paper",
-    slots: (sourceLang = "zh") => {
+    slots: (sourceLang = "en") => {
       const isZh = sourceLang === "zh" || sourceLang === "tw";
       return [
         { id: "source", label: isZh ? "原文" : "Source", role: "source", enabled: true },
@@ -135,7 +135,7 @@ export const SLOT_PRESETS: Record<string, SlotPresetDefinition> = {
   compact2: {
     name: "Compact 2-Slot",
     description: "Minimalist dual-slot: Source + Target translation only",
-    slots: (sourceLang = "zh") => {
+    slots: (sourceLang = "en") => {
       const isZh = sourceLang === "zh" || sourceLang === "tw";
       const isJa = sourceLang === "ja";
       return [
@@ -148,7 +148,7 @@ export const SLOT_PRESETS: Record<string, SlotPresetDefinition> = {
   },
 };
 
-export function resolveSlotsForPreset(presetName = "developer", sourceLang = "zh"): SlotConfig[] {
+export function resolveSlotsForPreset(presetName = "developer", sourceLang = "en"): SlotConfig[] {
   const normPreset = (presetName || "developer").toLowerCase().trim();
   const preset = SLOT_PRESETS[normPreset] || SLOT_PRESETS.developer;
   return preset.slots(sourceLang);

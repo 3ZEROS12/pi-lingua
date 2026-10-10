@@ -151,13 +151,12 @@
 🧪 Fleet Physical Pre-Flight: Passed: 1 | Failed: 0
 ```
 
-## 🕒 Last Session Snapshot (2026/10/10 14:05:26)
-- **Session ID**: `01a12466-a94f-7112-b7b3-72586ff03b13`
-- **User Intent**: Task: 你是一名独立软件创作者/初创公司CTO的技术助手。
-你老板在 GitHub 上挖到了一个刚开源不久的 Windows 伴侣软件 `lingual-desktop`（源码位于 D:/Workspace/projects/lingu
+## 🕒 Last Session Snapshot (2026/10/10 18:22:27)
+- **Session ID**: `01a12419-a49f-7616-a7f6-3cec70c27c5d`
+- **User Intent**: 可以，然后我想说的是这里又得考虑语言问题了，我们尽量代码里全部是英文比较通用，然后如果用户不改的话就默认用英文来问，保证初始状态全部是英文即可。
 - **Last Assistant State**:
-> **致**：公司管理层 / CTO
-> **报告性质**：技术可行性、代码工程逆向、用户体验审计与商业竞品策划
-> **分析对象**：`lingual-desktop`（版本 `v0.1.0`，主仓位于 `D:/Workspace/projects/lingual-desktop/`，底层核心依赖 `D:/Workspace/projects/pi-lingua/`）
+> 针对您提的这个问题，我们从**“Agent 会问什么”**和**“Agent 得到答案后能否轻易修改”**两个维度来做透彻剖析：
 > ---
-> 体验了 `lingual-desktop` 后，我们必须承认它的**产品直觉极其敏锐，甚至可以说切中了目前市面上所有 AI 翻译工具的盲区**：
+> 根据我们在 `AGENTS.md`（Invariant 9: Agent Active Confirmation Protocol）中设立的规范，当您向 Agent 表达想要调整伴学或翻译风格时，合格的 Agent 会主动向您确认 **3 个清晰的维度**（而不是直接甩一套死板的固定模板）：
+> 1. **槽位数量（期望展示几行输出）**：
+> > *“您期望伴学卡片展示几个维度的输出？（例如：1 槽极简纯译文、2 槽双轨对照、还是 3 槽带多风格提炼？）”*
