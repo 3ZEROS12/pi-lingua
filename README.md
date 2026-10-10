@@ -16,7 +16,14 @@ Code in your native language. See real-time Silicon Valley spoken phrasing and f
   <img src="assets/hero.svg" alt="pi-lingual Terminal Companion HUD Experience" width="840">
 </p>
 
----
+```text
+  · [Original] 这个方案有点过度设计了，不如直接用标准库实现
+  ┌ [Spoken]   This feels a bit over-engineered; we'd be much better off sticking with the standard library.
+  │            (感觉有点过度设计了，用标准库划算得多)
+  ├ [Written]  The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.
+  │            (该方案引入了不必要的复杂度，建议优先采用原生标准库实现)
+  └ [Vocab]    over-engineered (过度工程化) · be better off (更合适) · stick with (沿用) · leverage (利用)
+```
 
 ## Quick Start
 
@@ -30,9 +37,57 @@ Works out of the box with your current session model credentials. No extra API k
 
 ---
 
-## In Action: Dual-Register HUD
+## Core Value: Why Do Developers Need This?
 
-Type in your native language, and an interactive HUD appears right above your prompt:
+Pairing with terminal AI coding agents creates four acute frictions for developers:
+
+### 1. Global & Team Repositories Require Clean English
+In open-source projects or cross-border teams, code comments, commit messages, and PR descriptions must be strictly in English.
+When you prompt an AI agent in your native language, the model frequently generates code with native-language comments and explanations. You have to manually review and clean them up before every push.
+In `english` mode: You type naturally in your native language. `pi-lingual` automatically rewrites your instruction into standard technical English before passing it to the AI. **All generated code, comments, and documentation remain uniformly in clean English.**
+
+### 2. Catching the 5-Second Generation Gap
+After hitting Enter, an LLM typically takes 5 to 15 seconds to synthesize code or execute refactorings.
+That window is too short to switch to a browser, yet long enough for your focus to drift into idle staring.
+`pi-lingual` creates a low-cognitive-load window right above your prompt. During that brief generation gap, glance at how the same thought maps between daily engineering chat (Slack / standups) and formal documentation (RFCs / PRs), cultivating authentic fluency effortlessly.
+
+### 3. Zero Context Pollution & Zero Token Waste
+Standard translation tools append English translations directly onto your prompt.
+Across multi-turn conversations, this clutters chat history with redundant text, burning token budgets and diluting the model's reasoning focus.
+`pi-lingual` operates as an ambient TUI sidecar overlay. **Your prompts to the AI remain completely clean; no translation tokens are injected into your conversation history.**
+
+### 4. Rock-Solid Terminal Layout (No More Border Tears)
+East Asian full-width (CJK) characters occupy 2 visual columns.
+Traditional closed rectangular boxes (`│ ... │`) fracture when character widths are miscalculated, causing ghost lines, wrapping tears, and cursor desync.
+`pi-lingual` discards closed borders entirely, using an open left-rail tree branch (`· ┌ ├ └`) built on Unicode UAX #11 metrics. It stays visually solid even on narrow split panes.
+
+---
+
+## Three Operating Modes
+
+Toggle modes anytime with `/2` or `/lingual`:
+
+```text
+  /2 (cycles: original ➔ english ➔ off ➔ original)
+```
+
+| Mode | What You Type | What the AI Receives | What You See | Best For |
+| :--- | :--- | :--- | :--- | :--- |
+| **`original`** *(Default)* | Native Language *(e.g. Chinese / Japanese)* | **Raw Native Prompt**<br>*(0ms pass-through, 0 context pollution)* | Interactive dual-register HUD *(Spoken + Written + Vocab)* | Solo coding while absorbing authentic engineering phrasing |
+| **`english`** *(Transform)* | Native Language *(e.g. Chinese / Japanese)* | **Standard Technical English**<br>*(Rewrites prompts into RFC-grade English)* | Companion card previewing the generated English | Team/open-source repos requiring English comments and commits |
+| **`off`** | Any Text | **Raw Text** *(0 background calls, 0 widgets)* | Hidden / disabled | Pure coding sessions with zero UI overlays |
+
+### Hybrid Intent Grafting (Code Stays Untouched)
+In `english` mode, pasting code blocks or error logs never translates the code:
+- **Translates intent only**: Converts natural language instructions into crisp technical English.
+- **Keeps code untouched**: Grafts your original code block or stack trace right back onto the prompt.
+- **The result**: Clean English instructions paired with complete technical context.
+
+---
+
+## In Action: Dual-Register Philosophy
+
+Memorizing isolated vocabulary lists does not build expressive capability. Real software engineering naturally divides into two distinct registers:
 
 ```text
   · [Original] 这个方案有点过度设计了，不如直接用标准库实现
@@ -43,28 +98,9 @@ Type in your native language, and an interactive HUD appears right above your pr
   └ [Vocab]    over-engineered (过度工程化) · be better off (更合适) · stick with (沿用) · leverage (利用)
 ```
 
-The HUD presents three distinct layers:
-* **`[Spoken]`**: Casual phrasing for standups, Slack chats, and pair programming.
-* **`[Written]`**: Architecture-grade prose for RFC proposals, PR descriptions, and issue reviews.
-* **`[Vocab]`**: Extracted collocations with spotlight underline matching.
-
----
-
-## Three Operating Modes
-
-Toggle modes anytime with `/2` or `/lingual`:
-
-| Mode | What You Type | What the AI Receives | What You See | Best For |
-| :--- | :--- | :--- | :--- | :--- |
-| **`original`** *(Default)* | Native Language *(e.g. Chinese / Japanese)* | **Raw Native Prompt**<br>*(0ms pass-through, 0 context pollution)* | Interactive dual-register HUD *(Spoken + Written + Vocab)* | Solo coding while absorbing authentic engineering phrasing |
-| **`english`** *(Transform)* | Native Language *(e.g. Chinese / Japanese)* | **Standard Technical English**<br>*(Replaces prompt with RFC-grade English)* | Companion card previewing the generated English | Team/open-source repos requiring English comments and commits |
-| **`off`** | Any Text | **Raw Text** *(0 background calls, 0 widgets)* | Hidden / disabled | Pure coding sessions with zero UI overlays |
-
-### Hybrid Intent Grafting (Code Stays Untouched)
-In `english` mode, pasting code blocks or error logs never translates the code:
-- **Translates intent only**: Converts natural language instructions into crisp technical English.
-- **Keeps code untouched**: Grafts your original code block or stack trace right back onto the prompt.
-- **The result**: Clean English instructions paired with complete technical context.
+* **`[Spoken] (Conversational Register)`**: High-frequency phrasing used by Silicon Valley engineering teams. Includes daily standups, Slack huddles, pair-programming chats, and common phrasal verbs.
+* **`[Written] (Architecture Register)`**: Formal technical prose. Built for RFC proposals, pull request descriptions, architecture reviews, and issue trackers.
+* **`[Vocab] (Collocations)`**: Extracted engineering collocations. Automatically highlighted with non-destructive ANSI underline formatting when matched in sentences.
 
 ---
 
@@ -76,7 +112,7 @@ Two layouts designed to protect your editor workspace:
   <img src="assets/capsule-mode.svg" alt="pi-lingual Layout Modes" width="840">
 </p>
 
-1. **Left-Rail Tree HUD (Default)**: Open-branch layout (`· ┌ ├ └`) using Unicode UAX #11 metrics. Eliminates closed borders to prevent terminal wrapping tears. Stays strictly within 9 lines.
+1. **Left-Rail Tree HUD (Default)**: Open-branch layout (`· ┌ ├ └`) using Unicode UAX #11 metrics. Eliminates closed borders to prevent terminal wrapping tears. Stays strictly within 9 lines to avoid host widget truncation warnings.
 2. **Single-Line Capsule Mode (`/compact`)**: Compresses the HUD into a dense single-line stream:
    ```text
    zh ⇄ en · [Spk] This feels over-engineered... │ [Wrt] Proposed approach introduces unnecessary complexity...
@@ -110,7 +146,7 @@ Switch language pairs anytime:
 /lang 日语       # Natural language aliases supported
 ```
 
-Switching languages updates status badges, command hints, and UI chrome with zero hardcoded residues.
+**Primary Language Sovereignty**: Switching languages updates status badges, command hints, and UI chrome with zero hardcoded residues.
 
 ---
 
@@ -118,7 +154,7 @@ Switching languages updates status badges, command hints, and UI chrome with zer
 
 - 🛡️ **Zero Context Pollution**: Runs as an ambient TUI sidecar. Never injects translation tokens into your LLM chat history.
 - ⚡ **Instant & Non-Blocking**: Press Enter to clear cards immediately. Stale background requests abort on the fly via `AbortController`.
-- 📐 **Rock-Solid Terminal Layout**: Open tree branches (`· ┌ ├ └`) using Unicode UAX #11. Never breaks borders or wraps awkwardly on wide characters.
+- 📐 **Rock-Solid Terminal Layout**: Open tree branches (`· ┌ ├ └`) using Unicode UAX #11 metrics. Never breaks borders or wraps awkwardly on wide characters.
 - ⚡ **Command Pass-Through Shield**: 40+ common CLI prefixes (`git`, `docker`, `npm`, `cargo`) and code blocks bypass translation with zero token spend.
 - 🧠 **In-Memory LRU Cache**: Frequent affirmations (`继续`, `认同`, `开始吧`) return instantly at 0ms from a 50-entry cache.
 - 🧹 **Noise Filtering**: Automatically strips clipboard screenshot paths (`pi-clipboard-*.png`) and folds compiler logs before translation.
@@ -161,13 +197,6 @@ Local Ollama or custom OpenAI-compatible endpoints can also be configured in `~/
 ```
 
 > 🔒 **Absolute Privacy Guarantee**: `pi-lingual` has **zero external dependencies** (`dependencies: {}`), zero telemetry, and zero tracking. Requests go only to your authenticated model endpoints.
-
----
-
-## Deep Dive & Engineering Notes
-
-- **[Architecture & Layout Engine Spec](./docs/architecture.md)**: Details on UAX #11 box model math, punctuation wrapping rules, line-budget fallbacks, and concurrency controls.
-- **[Why pi-lingual: A Note on Language Intuition](./docs/philosophy.md)**: Reflections on why vocabulary flashcards fail, and how the 5-second model generation gap builds authentic fluency.
 
 ---
 

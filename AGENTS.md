@@ -53,7 +53,7 @@
 - **Friction Breakers**: Preemptively explain why code/stack traces remain untouched (`Hybrid Intent Grafting`), why no extra tokens pollute chat history, and why latency is zero.
 - **Zero Terminology Inflation**: Never brand ordinary 20-line functions as capitalized buzzwords ("Shield", "FSM", "Sovereignty"). Use real, standard engineering terms (Input Event Hook, UAX #11 Box Model, AbortController, LRU Cache).
 - **Zero Volatile Model/Tech Name-Dropping**: Never sprinkle specific, fast-changing external model tags (e.g. Claude 3.5 Sonnet, GPT-4) without up-to-the-minute research. Prefer functional categories ("high-tier reasoning models vs. lightweight models") and generic command placeholders (`<model-id>`). Evergreen docs age gracefully.
-- **Doorway vs. Workshop**: Main README is the clean storefront; deep algorithmic math and personal reflections belong in `docs/architecture.md` and `docs/philosophy.md`.
+- **Rich, Self-Contained Storefront over Hollow Fragmentation**: The main README MUST be rich, substantive, and high-desire. Never hollow out the main page into a bare-bones skeleton by scattering core user values and engineering designs into sub-files. Exhaustive proofs belong in `docs/architecture.md`, but the main page must stand completely self-contained.
 
 ---
 
@@ -64,7 +64,7 @@
   npm test
   # or from workspace root: node .scripts/fleet.mjs test pi-lingual
   ```
-  *Executes 74 test suites verifying cache, chunker, commands, engine, layout, prompts, sanitizer, shield, and sovereignty (100% green).*
+  *Executes 79 test suites verifying cache, chunker, commands, engine, layout, prompts, sanitizer, shield, and sovereignty (100% green).*
 
 - **Build Distribution Bundles**:
   ```bash
