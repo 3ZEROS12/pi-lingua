@@ -124,6 +124,7 @@ export function loadUserLingualConfig(): Partial<LingualConfig> {
     const slots = Array.isArray(target.slots) ? target.slots : undefined;
     const reasoning = typeof target.reasoning === "string" ? target.reasoning : undefined;
     const timeoutMs = typeof target.timeoutMs === "number" ? target.timeoutMs : undefined;
+    const replyInSourceLang = target.replyInSourceLang !== undefined ? Boolean(target.replyInSourceLang) : undefined;
     const labels = resolveLabelsForLang(sourceLang || "zh", target.labels);
 
     cachedUserConfig = {
@@ -139,6 +140,7 @@ export function loadUserLingualConfig(): Partial<LingualConfig> {
       ...(targetLang ? { targetLang } : {}),
       ...(reasoning ? { reasoning } : {}),
       ...(timeoutMs ? { timeoutMs } : {}),
+      ...(replyInSourceLang !== undefined ? { replyInSourceLang } : {}),
       labels,
     };
     lastConfigCheckTime = now;
@@ -460,3 +462,45 @@ export async function translatePrompt(
 export const LINGUA_SYSTEM_PROMPT = LINGUAL_SYSTEM_PROMPT;
 export const stripLinguaAnnotation = stripLingualAnnotation;
 export const loadUserConfig = loadUserLingualConfig;
+
+/**
+ * 智能判定是否需要注入母语回复守护指引 (Opt-in Native Reply Guard)
+ * 1. 只有当用户显式开启 replyInSourceLang 时；
+ * 2. 原始输入必须为母语（如中文/日文等，包含 CJK 字符）；
+ * 3. 严格排除用户主动要求撰写英文文本（如 PR description, commit message, 英文邮件等）的意图。
+ */
+export function shouldInjectNativeReplyGuard(originalText: string, _sourceLang = "zh", enabled = false): boolean {
+  if (!enabled) return false;
+  const trimmed = originalText.trim();
+  if (!trimmed) return false;
+
+  // 必须是母语自然语言输入
+  if (!isNonEnglish(trimmed)) return false;
+
+  // 意图守卫：若用户本意就是在要求生成英文文本，严禁强加母语回复指示！
+  const isEnglishWritingIntent = /(?:英文|英语|english|in english|pr\b|pull request|commit message|git commit|tweet|twitter|email|邮件|readme)/i.test(trimmed);
+  if (isEnglishWritingIntent) {
+    return false;
+  }
+
+  return true;
+}
+
+export function formatNativeReplyGuardHint(sourceLang = "zh"): string {
+  if (sourceLang === "ja") {
+    return "\n\n(Please reply and explain in Japanese.)";
+  }
+  if (sourceLang === "zh" || sourceLang === "tw") {
+    return "\n\n(Please reply and explain in Chinese.)";
+  }
+  if (sourceLang === "es") {
+    return "\n\n(Please reply and explain in Spanish.)";
+  }
+  if (sourceLang === "fr") {
+    return "\n\n(Please reply and explain in French.)";
+  }
+  if (sourceLang === "de") {
+    return "\n\n(Please reply and explain in German.)";
+  }
+  return "\n\n(Please reply in the user's native language.)";
+}

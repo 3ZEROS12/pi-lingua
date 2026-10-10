@@ -48,6 +48,7 @@ __export(index_exports, {
   extractVocabPhrases: () => extractVocabPhrases,
   formatCapsuleLine: () => formatCapsuleLine,
   formatModelSelectionMessage: () => formatModelSelectionMessage,
+  formatNativeReplyGuardHint: () => formatNativeReplyGuardHint,
   formatStatusReport: () => formatStatusReport,
   formatSubRail: () => formatSubRail,
   formatTerminalAnnotation: () => formatTerminalAnnotation,
@@ -70,6 +71,7 @@ __export(index_exports, {
   resolveLabelsForLang: () => resolveLabelsForLang,
   resolveSlotsForPreset: () => resolveSlotsForPreset,
   sanitizePromptForTranslation: () => sanitizePromptForTranslation,
+  shouldInjectNativeReplyGuard: () => shouldInjectNativeReplyGuard,
   shouldShieldBypass: () => shouldShieldBypass,
   shouldTriggerTranslation: () => shouldTriggerTranslation,
   splitSemanticChunks: () => splitSemanticChunks,
@@ -2126,6 +2128,7 @@ function loadUserLingualConfig() {
     const slots = Array.isArray(target.slots) ? target.slots : void 0;
     const reasoning = typeof target.reasoning === "string" ? target.reasoning : void 0;
     const timeoutMs = typeof target.timeoutMs === "number" ? target.timeoutMs : void 0;
+    const replyInSourceLang = target.replyInSourceLang !== void 0 ? Boolean(target.replyInSourceLang) : void 0;
     const labels = resolveLabelsForLang(sourceLang || "zh", target.labels);
     cachedUserConfig = {
       ...endpoint ? { endpoint } : {},
@@ -2140,6 +2143,7 @@ function loadUserLingualConfig() {
       ...targetLang ? { targetLang } : {},
       ...reasoning ? { reasoning } : {},
       ...timeoutMs ? { timeoutMs } : {},
+      ...replyInSourceLang !== void 0 ? { replyInSourceLang } : {},
       labels
     };
     lastConfigCheckTime = now;
@@ -2355,6 +2359,35 @@ async function translatePrompt(text, userConfig = {}) {
 var LINGUA_SYSTEM_PROMPT = LINGUAL_SYSTEM_PROMPT;
 var stripLinguaAnnotation = stripLingualAnnotation;
 var loadUserConfig = loadUserLingualConfig;
+function shouldInjectNativeReplyGuard(originalText, _sourceLang = "zh", enabled = false) {
+  if (!enabled) return false;
+  const trimmed = originalText.trim();
+  if (!trimmed) return false;
+  if (!isNonEnglish(trimmed)) return false;
+  const isEnglishWritingIntent = /(?:英文|英语|english|in english|pr\b|pull request|commit message|git commit|tweet|twitter|email|邮件|readme)/i.test(trimmed);
+  if (isEnglishWritingIntent) {
+    return false;
+  }
+  return true;
+}
+function formatNativeReplyGuardHint(sourceLang = "zh") {
+  if (sourceLang === "ja") {
+    return "\n\n(Please reply and explain in Japanese.)";
+  }
+  if (sourceLang === "zh" || sourceLang === "tw") {
+    return "\n\n(Please reply and explain in Chinese.)";
+  }
+  if (sourceLang === "es") {
+    return "\n\n(Please reply and explain in Spanish.)";
+  }
+  if (sourceLang === "fr") {
+    return "\n\n(Please reply and explain in French.)";
+  }
+  if (sourceLang === "de") {
+    return "\n\n(Please reply and explain in German.)";
+  }
+  return "\n\n(Please reply in the user's native language.)";
+}
 
 // src/sanitizer.ts
 var TARGETED_CLIPBOARD_PATH_REGEX = /(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png|\/(?:[^\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png)/gi;
@@ -2674,6 +2707,7 @@ var LingualSessionController = class {
   extractVocabPhrases,
   formatCapsuleLine,
   formatModelSelectionMessage,
+  formatNativeReplyGuardHint,
   formatStatusReport,
   formatSubRail,
   formatTerminalAnnotation,
@@ -2696,6 +2730,7 @@ var LingualSessionController = class {
   resolveLabelsForLang,
   resolveSlotsForPreset,
   sanitizePromptForTranslation,
+  shouldInjectNativeReplyGuard,
   shouldShieldBypass,
   shouldTriggerTranslation,
   splitSemanticChunks,

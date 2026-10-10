@@ -99,7 +99,7 @@ interface LingualRequest {
 interface LingualResponse {
     spoken: string;
     spokenMeaning?: string;
-    written: string;
+    written?: string;
     writtenMeaning?: string;
     vocab?: string;
     summary?: string;
@@ -122,6 +122,7 @@ interface LingualConfig {
     slots?: SlotConfig[];
     sourceLang?: string;
     targetLang?: string;
+    replyInSourceLang?: boolean;
     labels?: Partial<LingualI18nLabels>;
     temperature?: number;
     reasoning?: string;
@@ -133,7 +134,7 @@ type LinguaConfig = LingualConfig;
 interface LingualResult {
     spoken: string;
     spokenMeaning?: string;
-    written: string;
+    written?: string;
     writtenMeaning?: string;
     vocab?: string;
     sourceText: string;

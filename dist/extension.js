@@ -1775,6 +1775,7 @@ function loadUserLingualConfig() {
     const slots = Array.isArray(target.slots) ? target.slots : void 0;
     const reasoning = typeof target.reasoning === "string" ? target.reasoning : void 0;
     const timeoutMs = typeof target.timeoutMs === "number" ? target.timeoutMs : void 0;
+    const replyInSourceLang = target.replyInSourceLang !== void 0 ? Boolean(target.replyInSourceLang) : void 0;
     const labels = resolveLabelsForLang(sourceLang || "zh", target.labels);
     cachedUserConfig = {
       ...endpoint ? { endpoint } : {},
@@ -1789,6 +1790,7 @@ function loadUserLingualConfig() {
       ...targetLang ? { targetLang } : {},
       ...reasoning ? { reasoning } : {},
       ...timeoutMs ? { timeoutMs } : {},
+      ...replyInSourceLang !== void 0 ? { replyInSourceLang } : {},
       labels
     };
     lastConfigCheckTime = now;
@@ -1958,6 +1960,35 @@ async function translatePrompt(text, userConfig = {}) {
   } finally {
     clearTimeout(timer);
   }
+}
+function shouldInjectNativeReplyGuard(originalText, _sourceLang = "zh", enabled = false) {
+  if (!enabled) return false;
+  const trimmed = originalText.trim();
+  if (!trimmed) return false;
+  if (!isNonEnglish(trimmed)) return false;
+  const isEnglishWritingIntent = /(?:英文|英语|english|in english|pr\b|pull request|commit message|git commit|tweet|twitter|email|邮件|readme)/i.test(trimmed);
+  if (isEnglishWritingIntent) {
+    return false;
+  }
+  return true;
+}
+function formatNativeReplyGuardHint(sourceLang = "zh") {
+  if (sourceLang === "ja") {
+    return "\n\n(Please reply and explain in Japanese.)";
+  }
+  if (sourceLang === "zh" || sourceLang === "tw") {
+    return "\n\n(Please reply and explain in Chinese.)";
+  }
+  if (sourceLang === "es") {
+    return "\n\n(Please reply and explain in Spanish.)";
+  }
+  if (sourceLang === "fr") {
+    return "\n\n(Please reply and explain in French.)";
+  }
+  if (sourceLang === "de") {
+    return "\n\n(Please reply and explain in German.)";
+  }
+  return "\n\n(Please reply in the user's native language.)";
 }
 
 // src/fsm.ts
@@ -2979,9 +3010,13 @@ Example: /slots add twitter \u63A8\u6587 Short punchy tweet under 280 chars`, "w
         );
       }
       const combinedEnglish = result.written && result.written.trim() ? result.written : result.spoken;
-      const finalText = sanitized.rawPayload ? `${combinedEnglish}
+      let finalText = sanitized.rawPayload ? `${combinedEnglish}
 
 ${sanitized.rawPayload}` : combinedEnglish;
+      const diskConfig = loadUserLingualConfig();
+      if (shouldInjectNativeReplyGuard(event.text, state.sourceLang, diskConfig.replyInSourceLang)) {
+        finalText += formatNativeReplyGuardHint(state.sourceLang);
+      }
       return {
         action: "transform",
         text: finalText,

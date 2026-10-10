@@ -1,5 +1,5 @@
-import { L as LingualResult, a as LingualI18nLabels, S as SlotConfig, b as LingualConfig } from './index-CCJ3ZbfJ.js';
-export { C as CacheStats, c as CustomSlotsConfig, d as LANGUAGE_PRESETS, e as LEGACY_SLOT_PRESETS, f as LinguaConfig, g as LinguaI18nLabels, h as LinguaLruCache, i as LinguaMode, j as LinguaResult, k as LingualCoreOptions, l as LingualLruCache, m as LingualMode, n as LingualRequest, o as LingualResponse, p as SLOT_PRESETS, q as SanitizedPromptResult, r as SlotDefinition, s as SlotPresetDefinition, t as SlotResult, u as SlotRole, T as TranslationPayload, v as addSlotToList, w as buildSystemPrompt, x as createCustomSlot, y as formatModelSelectionMessage, z as formatStatusReport, A as getDefaultSlots, B as globalLinguaCache, D as globalLingualCache, E as moveSlotInList, F as parseLlmResponse, G as removeSlotFromList, H as resolveLabelsForLang, I as resolveSlotsForPreset, J as sanitizePromptForTranslation, K as shouldShieldBypass, M as toggleSlotInList, N as translateCore, O as updateSlotInList } from './index-CCJ3ZbfJ.js';
+import { L as LingualResult, a as LingualI18nLabels, S as SlotConfig, b as LingualConfig } from './index-Yt4qcdMu.js';
+export { C as CacheStats, c as CustomSlotsConfig, d as LANGUAGE_PRESETS, e as LEGACY_SLOT_PRESETS, f as LinguaConfig, g as LinguaI18nLabels, h as LinguaLruCache, i as LinguaMode, j as LinguaResult, k as LingualCoreOptions, l as LingualLruCache, m as LingualMode, n as LingualRequest, o as LingualResponse, p as SLOT_PRESETS, q as SanitizedPromptResult, r as SlotDefinition, s as SlotPresetDefinition, t as SlotResult, u as SlotRole, T as TranslationPayload, v as addSlotToList, w as buildSystemPrompt, x as createCustomSlot, y as formatModelSelectionMessage, z as formatStatusReport, A as getDefaultSlots, B as globalLinguaCache, D as globalLingualCache, E as moveSlotInList, F as parseLlmResponse, G as removeSlotFromList, H as resolveLabelsForLang, I as resolveSlotsForPreset, J as sanitizePromptForTranslation, K as shouldShieldBypass, M as toggleSlotInList, N as translateCore, O as updateSlotInList } from './index-Yt4qcdMu.js';
 
 /**
  * Splits text into atomic natural sentence chunks when long.
@@ -263,5 +263,13 @@ declare function translatePrompt(text: string, userConfig?: Partial<LingualConfi
 declare const LINGUA_SYSTEM_PROMPT: string;
 declare const stripLinguaAnnotation: typeof stripLingualAnnotation;
 declare const loadUserConfig: typeof loadUserLingualConfig;
+/**
+ * 智能判定是否需要注入母语回复守护指引 (Opt-in Native Reply Guard)
+ * 1. 只有当用户显式开启 replyInSourceLang 时；
+ * 2. 原始输入必须为母语（如中文/日文等，包含 CJK 字符）；
+ * 3. 严格排除用户主动要求撰写英文文本（如 PR description, commit message, 英文邮件等）的意图。
+ */
+declare function shouldInjectNativeReplyGuard(originalText: string, _sourceLang?: string, enabled?: boolean): boolean;
+declare function formatNativeReplyGuardHint(sourceLang?: string): string;
 
-export { CANNOT_START_LINE_CHARS, DEFAULT_CONFIG, LINGUAL_SYSTEM_PROMPT, LINGUA_SYSTEM_PROMPT, LingualConfig, LingualI18nLabels, LingualResult, LingualSessionController, MAX_TRANSLATION_CHARS, MAX_TRANSLATION_LINES, type PaginationSnapshot, type SessionRequestToken, SlotConfig, extractVocabPhrases, formatCapsuleLine, formatSubRail, formatTerminalAnnotation, formatTreeBranch, formatVocabItemsAtomic, getEffectiveMaxCols, getVisualWidth, invalidateUserConfigCache, isDynamicLongInput, isNonEnglish, loadUserConfig, loadUserLingualConfig, renderCardLayout, shouldTriggerTranslation, splitSemanticChunks, spotlightPhrases, stripLinguaAnnotation, stripLingualAnnotation, translatePrompt, truncateVisual, wrapVisualText };
+export { CANNOT_START_LINE_CHARS, DEFAULT_CONFIG, LINGUAL_SYSTEM_PROMPT, LINGUA_SYSTEM_PROMPT, LingualConfig, LingualI18nLabels, LingualResult, LingualSessionController, MAX_TRANSLATION_CHARS, MAX_TRANSLATION_LINES, type PaginationSnapshot, type SessionRequestToken, SlotConfig, extractVocabPhrases, formatCapsuleLine, formatNativeReplyGuardHint, formatSubRail, formatTerminalAnnotation, formatTreeBranch, formatVocabItemsAtomic, getEffectiveMaxCols, getVisualWidth, invalidateUserConfigCache, isDynamicLongInput, isNonEnglish, loadUserConfig, loadUserLingualConfig, renderCardLayout, shouldInjectNativeReplyGuard, shouldTriggerTranslation, splitSemanticChunks, spotlightPhrases, stripLinguaAnnotation, stripLingualAnnotation, translatePrompt, truncateVisual, wrapVisualText };

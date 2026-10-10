@@ -8,6 +8,8 @@ import {
   isNonEnglish,
   shouldTriggerTranslation,
   isDynamicLongInput,
+  shouldInjectNativeReplyGuard,
+  formatNativeReplyGuardHint,
 } from "../src/engine.js";
 
 test("isNonEnglish - correctly identifies natural language scripts and ignores emojis & typography", () => {
@@ -246,9 +248,29 @@ test("translatePrompt - live integration test against local gateway if configure
       return;
     }
     assert.ok(res.spoken.length > 0, "Spoken register should be non-empty");
-    assert.ok(res.written.length > 0, "Written register should be non-empty");
+    assert.ok((res.written || "").length > 0, "Written register should be non-empty");
     assert.ok(res.annotated.includes("· 原文"), "Should contain source anchor");
   } catch (err: any) {
     console.log(`Live gateway offline (${err.message}), skipping gracefully`);
   }
+});
+
+test("shouldInjectNativeReplyGuard - opt-in guard protects native language without breaking English intent", () => {
+  // 1. Disabled by default
+  assert.equal(shouldInjectNativeReplyGuard("帮我看看这个报错", "zh", false), false);
+
+  // 2. Enabled + Chinese code question -> Should inject
+  assert.equal(shouldInjectNativeReplyGuard("帮我分析为什么这个 SQL 执行慢", "zh", true), true);
+
+  // 3. Enabled + Pure English input -> Should NOT inject
+  assert.equal(shouldInjectNativeReplyGuard("Why is this query slow?", "zh", true), false);
+
+  // 4. Enabled + User explicitly asks for English PR/email/content -> Guard blocks injection
+  assert.equal(shouldInjectNativeReplyGuard("帮我写一个英文PR描述修复这个内存泄漏", "zh", true), false);
+  assert.equal(shouldInjectNativeReplyGuard("用英语给外国客户写一封邮件说明交付延迟", "zh", true), false);
+  assert.equal(shouldInjectNativeReplyGuard("Write a commit message for this change", "zh", true), false);
+
+  // 5. Hint text formatting
+  assert.ok(formatNativeReplyGuardHint("zh").includes("Chinese"));
+  assert.ok(formatNativeReplyGuardHint("ja").includes("Japanese"));
 });

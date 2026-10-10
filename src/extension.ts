@@ -13,6 +13,8 @@ import {
   shouldTriggerTranslation,
   loadUserLingualConfig,
   invalidateUserConfigCache,
+  shouldInjectNativeReplyGuard,
+  formatNativeReplyGuardHint,
   formatTreeBranch,
   formatSubRail,
   truncateVisual,
@@ -975,9 +977,17 @@ export default function (pi: ExtensionAPI) {
       // 【核心体验跃升 · 混合意图嫁接 (Hybrid Intent Grafting)】:
       // 若原始输入包含大段被折叠的堆栈追踪或代码块，将纯英文专业指令与原始真实堆栈缝合，
       // 既驱动大模型展开顶级全英文代码推理，又绝不丢失排查必需的代码与堆栈物理上下文！
-      const finalText = sanitized.rawPayload
+      let finalText = sanitized.rawPayload
         ? `${combinedEnglish}\n\n${sanitized.rawPayload}`
         : combinedEnglish;
+
+      // 【可选母语回复守护】(Opt-in Native Reply Guard):
+      // 仅当用户在 lingual.json 中显式开启 replyInSourceLang: true 时，
+      // 且输入为母语提问而非英文写作意图时，温和附带母语回复指引，防止大模型语言劫持
+      const diskConfig = loadUserLingualConfig();
+      if (shouldInjectNativeReplyGuard(event.text, state.sourceLang, diskConfig.replyInSourceLang)) {
+        finalText += formatNativeReplyGuardHint(state.sourceLang);
+      }
 
       return {
         action: "transform",

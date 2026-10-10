@@ -46,7 +46,7 @@ export interface LingualRequest {
 export interface LingualResponse {
   spoken: string;
   spokenMeaning?: string;
-  written: string;
+  written?: string;
   writtenMeaning?: string;
   vocab?: string;
   summary?: string;
@@ -67,6 +67,7 @@ export interface LingualConfig {
   slots?: SlotConfig[];     // Dynamic multi-slot list
   sourceLang?: string;      // e.g. "zh" (default) | "en" | "ja"
   targetLang?: string;      // e.g. "en" (default) | "ja" | "zh"
+  replyInSourceLang?: boolean; // Optional guard: whether to hint AI to reply in native language when in english mode
   labels?: Partial<LingualI18nLabels>;
   temperature?: number;
   reasoning?: string;
@@ -79,7 +80,7 @@ export type LinguaConfig = LingualConfig;
 export interface LingualResult {
   spoken: string;           // Slot 1 target expression
   spokenMeaning?: string;   // Slot 1 exact nuance/meaning in native language A
-  written: string;          // Slot 2 target expression
+  written?: string;         // Slot 2 target expression (optional in dynamic single-slot architectures)
   writtenMeaning?: string;  // Slot 2 exact nuance/meaning in native language A
   vocab?: string;           // Vocab/idiom highlights
   sourceText: string;       // Original source text in language A (or distilled intent headline)
