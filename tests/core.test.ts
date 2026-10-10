@@ -1,0 +1,136 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import {
+  translateCore,
+  parseLlmResponse,
+  buildSystemPrompt,
+  LingualLruCache,
+  shouldShieldBypass,
+} from "../src/core/index.js";
+
+test("core: translateCore invokes mock completer and returns parsed response", async () => {
+  let completerCalled = false;
+  let receivedPrompt = "";
+  let receivedSystemPrompt = "";
+
+  const mockCompleter = async (prompt: string, systemPrompt: string) => {
+    completerCalled = true;
+    receivedPrompt = prompt;
+    receivedSystemPrompt = systemPrompt;
+    return JSON.stringify({
+      spoken: "Let's kick this off right away.",
+      spoken_meaning: "咱们立刻开搞",
+      written: "Proceed with initial project setup.",
+      written_meaning: "推进初始项目设置",
+      vocab: "kick off (开启/开搞)",
+    });
+  };
+
+  const res = await translateCore(
+    {
+      text: "开始这个项目吧",
+      sourceLang: "zh",
+      targetLang: "en",
+    },
+    { completer: mockCompleter }
+  );
+
+  assert.equal(completerCalled, true);
+  assert.equal(receivedPrompt, "开始这个项目吧");
+  assert.match(receivedSystemPrompt, /You are an elite bilingual developer language coach/);
+  assert.equal(res.spoken, "Let's kick this off right away.");
+  assert.equal(res.spokenMeaning, "咱们立刻开搞");
+  assert.equal(res.written, "Proceed with initial project setup.");
+  assert.equal(res.vocab, "kick off (开启/开搞)");
+  assert.equal(res.cached, false);
+  assert.equal(res.shieldBypassed, false);
+});
+
+test("core: translateCore 0ms shield bypass for code and CLI commands", async () => {
+  let completerCalled = false;
+  const mockCompleter = async () => {
+    completerCalled = true;
+    return null;
+  };
+
+  const cliRes = await translateCore(
+    { text: "git checkout -b feature/core-decouple" },
+    { completer: mockCompleter }
+  );
+
+  assert.equal(completerCalled, false, "Completer should not be called for CLI command");
+  assert.equal(cliRes.shieldBypassed, true);
+  assert.equal(cliRes.spoken, "git checkout -b feature/core-decouple");
+
+  const codeRes = await translateCore(
+    { text: "const handler = async (req, res) => {}" },
+    { completer: mockCompleter }
+  );
+  assert.equal(completerCalled, false, "Completer should not be called for code statement");
+  assert.equal(codeRes.shieldBypassed, true);
+});
+
+test("core: translateCore caches results in LRU cache for 0ms second hit", async () => {
+  let callCount = 0;
+  const customCache = new LingualLruCache<any>(10);
+
+  const mockCompleter = async () => {
+    callCount++;
+    return JSON.stringify({
+      spoken: "Understood, will do.",
+      written: "Acknowledged. Proceeding accordingly.",
+    });
+  };
+
+  const first = await translateCore(
+    { text: "明白，按这个来" },
+    { completer: mockCompleter, cache: customCache }
+  );
+  assert.equal(callCount, 1);
+  assert.equal(first.cached, false);
+
+  const second = await translateCore(
+    { text: "明白，按这个来" },
+    { completer: mockCompleter, cache: customCache }
+  );
+  assert.equal(callCount, 1, "Second call should hit cache without calling completer");
+  assert.equal(second.cached, true);
+  assert.equal(second.spoken, "Understood, will do.");
+});
+
+test("core: buildSystemPrompt injects thread context and social tone directives", () => {
+  const promptWithContext = buildSystemPrompt(
+    "zh",
+    "en",
+    false,
+    "Replying to @sama: Compute is scaling linearly with test-time search.",
+    "social"
+  );
+
+  assert.match(promptWithContext, /\[CONVERSATION & THREAD CONTEXT\]/);
+  assert.match(promptWithContext, /Replying to @sama: Compute is scaling linearly/);
+  assert.match(promptWithContext, /\[TONE FOCUS - SOCIAL & COMMUNITY\]/);
+  assert.match(promptWithContext, /Prioritize X \(Twitter\), Reddit, and developer community/);
+  assert.match(promptWithContext, /NEVER use "delve", "testament"/);
+});
+
+test("core: parseLlmResponse handles thought tags and markdown fences", () => {
+  const rawWithThoughts = `<think>
+Translating input to natural Silicon Valley flow.
+</think>
+\`\`\`json
+{
+  "spoken": "Totally down with that.",
+  "spoken_meaning": "完全赞成",
+  "written": "In full agreement with the proposed direction.",
+  "vocab": "down with (赞同/支持)"
+}
+\`\`\``;
+
+  const parsed = parseLlmResponse(rawWithThoughts);
+  assert.ok(parsed);
+  assert.equal(parsed.spoken, "Totally down with that.");
+  assert.equal(parsed.spokenMeaning, "完全赞成");
+  assert.equal(parsed.written, "In full agreement with the proposed direction.");
+  assert.equal(parsed.vocab, "down with (赞同/支持)");
+});

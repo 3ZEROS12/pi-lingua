@@ -1,5 +1,14 @@
-export type LingualMode = "original" | "english" | "off";
-export type LinguaMode = LingualMode;
+export type {
+  LingualRequest,
+  LingualResponse,
+  LingualMode,
+  LinguaMode,
+  LingualConfig,
+  LinguaConfig,
+  LingualResult,
+  LinguaResult,
+  TranslationPayload,
+} from "./core/types.js";
 
 export interface LingualI18nLabels {
   slot1Label: string;      // e.g. "Spoken" | "口語" | "Slack"
@@ -74,41 +83,3 @@ export interface LingualI18nLabels {
   writtenLabel?: string;
 }
 export type LinguaI18nLabels = LingualI18nLabels;
-
-export interface LingualConfig {
-  endpoint: string;
-  apiKey: string;
-  model: string;
-  selectedModel?: string;   // e.g. "auto" (default) | "gemini-3.8-flash" | "claude-sonnet-5-5"
-  mode?: LingualMode;
-  compact?: boolean;        // e.g. false (default) | true (1-line capsule)
-  sourceLang?: string;      // e.g. "zh" (default) | "en" | "ja"
-  targetLang?: string;      // e.g. "en" (default) | "ja" | "zh"
-  labels?: Partial<LingualI18nLabels>;
-  temperature?: number;
-  timeoutMs?: number;
-  complete?: (text: string, systemPrompt: string, signal?: AbortSignal) => Promise<string | null>;
-  signal?: AbortSignal;
-}
-export type LinguaConfig = LingualConfig;
-
-export interface LingualResult {
-  spoken: string;           // Slot 1 target expression
-  spokenMeaning?: string;   // Slot 1 exact nuance/meaning in native language A
-  written: string;          // Slot 2 target expression
-  writtenMeaning?: string;  // Slot 2 exact nuance/meaning in native language A
-  vocab?: string;           // Vocab/idiom highlights
-  sourceText: string;       // Original source text in language A (or distilled intent headline)
-  summary?: string;         // Distilled core intent / question title in language A for long inputs
-  annotated: string;
-}
-export type LinguaResult = LingualResult;
-
-export interface TranslationPayload {
-  spoken: string;
-  spokenMeaning?: string;
-  written?: string;
-  writtenMeaning?: string;
-  vocab?: string;
-  summary?: string;
-}

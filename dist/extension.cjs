@@ -756,7 +756,7 @@ ${availableList}
   return msg;
 }
 
-// src/prompts.ts
+// src/core/prompts.ts
 var LANGUAGE_SPECS = {
   zh: {
     name: "Chinese",
@@ -787,6 +787,14 @@ var LANGUAGE_SPECS = {
         written: "The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.",
         written_meaning: "\u8BE5\u65B9\u6848\u5F15\u5165\u4E86\u4E0D\u5FC5\u8981\u7684\u590D\u6742\u5EA6\uFF0C\u5EFA\u8BAE\u4F18\u5148\u91C7\u7528\u539F\u751F\u6807\u51C6\u5E93\u5B9E\u73B0",
         vocab: "over-engineered (\u8FC7\u5EA6\u5DE5\u7A0B\u5316) \xB7 be better off (\u505A\u67D0\u4E8B\u66F4\u5408\u9002/\u5212\u7B97) \xB7 stick with (\u575A\u6301\u4F7F\u7528/\u6CBF\u7528) \xB7 leverage (\u5229\u7528/\u501F\u52A9)"
+      },
+      {
+        input: "\u6211\u4EEC\u629B\u5F03\u4E86\u81C3\u80BF\u7684\u6846\u67B6\uFF0C\u6362\u6210\u96F6\u4F9D\u8D56\u5355\u6587\u4EF6\uFF0C\u51B7\u542F\u52A8\u76F4\u63A5\u63D0\u901F\u4E8610\u500D",
+        spoken: "Ditched the bloated framework for a zero-dep single file \u2014 cold starts are 10x faster now!",
+        spoken_meaning: "\u7529\u6389\u4E86\u81C3\u80BF\u7684\u6846\u67B6\u6362\u6210\u4E86\u96F6\u4F9D\u8D56\u5355\u6587\u4EF6\uFF0C\u51B7\u542F\u52A8\u76F4\u63A5\u98D9\u4E8610\u500D\uFF01",
+        written: "Replaced the monolithic framework with a zero-dependency architecture, yielding a 10x improvement in cold-start latency.",
+        written_meaning: "\u7528\u96F6\u4F9D\u8D56\u67B6\u6784\u53D6\u4EE3\u4E86\u5355\u4F53\u6846\u67B6\uFF0C\u4F7F\u51B7\u542F\u52A8\u5EF6\u8FDF\u964D\u4F4E\u81F3\u539F\u6765\u7684\u5341\u5206\u4E4B\u4E00\u3002",
+        vocab: "ditch ... for ... (\u629B\u5F03\u67D0\u7269\u6362\u7528) \xB7 zero-dep (\u96F6\u5916\u90E8\u4F9D\u8D56) \xB7 cold start (\u51B7\u542F\u52A8) \xB7 yield (\u4EA7\u51FA/\u5B9E\u73B0)"
       }
     ]
   },
@@ -819,6 +827,14 @@ var LANGUAGE_SPECS = {
         written: "The proposed approach introduces unnecessary complexity. Leveraging native standard library implementations is preferred.",
         written_meaning: "\u63D0\u6848\u3055\u308C\u305F\u69CB\u6210\u306F\u4E0D\u8981\u306A\u8907\u96D1\u3055\u3092\u3082\u305F\u3089\u3057\u307E\u3059\u3002\u6A19\u6E96\u30E9\u30A4\u30D6\u30E9\u30EA\u306E\u5229\u7528\u3092\u63A8\u5968\u3057\u307E\u3059",
         vocab: "over-engineered (\u904E\u5270\u8A2D\u8A08) \xB7 be better off (\u301C\u3057\u305F\u307B\u3046\u304C\u3088\u3044) \xB7 stick with (\u301C\u3092\u4F7F\u3044\u7D9A\u3051\u308B) \xB7 leverage (\u6D3B\u7528\u3059\u308B)"
+      },
+      {
+        input: "\u80A5\u5927\u5316\u3057\u305F\u30D5\u30EC\u30FC\u30E0\u30EF\u30FC\u30AF\u3092\u6368\u3066\u3066\u4F9D\u5B58\u30BC\u30ED\u306E\u5358\u4E00\u30D5\u30A1\u30A4\u30EB\u306B\u79FB\u884C\u3057\u305F\u3089\u3001\u30B3\u30FC\u30EB\u30C9\u30B9\u30BF\u30FC\u30C8\u304C10\u500D\u901F\u304F\u306A\u308A\u307E\u3057\u305F",
+        spoken: "Ditched the bloated framework for a zero-dep single file \u2014 cold starts are 10x faster now!",
+        spoken_meaning: "\u91CD\u3044\u30D5\u30EC\u30FC\u30E0\u30EF\u30FC\u30AF\u3092\u3084\u3081\u3066\u4F9D\u5B58\u30BC\u30ED\u306E\u5358\u4E00\u30D5\u30A1\u30A4\u30EB\u306B\u3057\u305F\u3089\u3001\u8D77\u52D5\u304C10\u500D\u901F\u304F\u306A\u308A\u307E\u3057\u305F\uFF01",
+        written: "Replaced the monolithic framework with a zero-dependency architecture, yielding a 10x improvement in cold-start latency.",
+        written_meaning: "\u4E00\u679A\u5CA9\u306E\u30D5\u30EC\u30FC\u30E0\u30EF\u30FC\u30AF\u304B\u3089\u4F9D\u5B58\u95A2\u4FC2\u30BC\u30ED\u306E\u30A2\u30FC\u30AD\u30C6\u30AF\u30C1\u30E3\u3078\u79FB\u884C\u3057\u3001\u30B3\u30FC\u30EB\u30C9\u30B9\u30BF\u30FC\u30C8\u9045\u5EF6\u309210\u500D\u6539\u5584\u3057\u307E\u3057\u305F\u3002",
+        vocab: "ditch ... for ... (\u301C\u3092\u624B\u653E\u3057\u3066\u301C\u306B\u4E57\u308A\u63DB\u3048\u308B) \xB7 zero-dep (\u5916\u90E8\u4F9D\u5B58\u30BC\u30ED) \xB7 cold start (\u30B3\u30FC\u30EB\u30C9\u30B9\u30BF\u30FC\u30C8) \xB7 yield (\u3082\u305F\u3089\u3059)"
       }
     ]
   },
@@ -851,6 +867,14 @@ var LANGUAGE_SPECS = {
         written: "\u8A2D\u8A08\u304C\u904E\u5270\u306B\u8907\u96D1\u5316\u3057\u3066\u3044\u307E\u3059\u3002\u6A19\u6E96\u30E9\u30A4\u30D6\u30E9\u30EA\u306E\u6D3B\u7528\u3092\u63A8\u5968\u3057\u307E\u3059\u3002",
         written_meaning: "Architecture is unnecessarily complex. Recommending the standard library.",
         vocab: "\u4F5C\u308A\u8FBC\u307F\u3059\u304E (over-engineered) \xB7 \u6A19\u6E96\u30E9\u30A4\u30D6\u30E9\u30EA (standard library) \xB7 \u63A8\u5968\u3059\u308B (recommend)"
+      },
+      {
+        input: "Ditched the bloated framework for a zero-dep single file \u2014 cold starts are 10x faster now!",
+        spoken: "\u91CD\u3044\u30D5\u30EC\u30FC\u30E0\u30EF\u30FC\u30AF\u3092\u3084\u3081\u3066\u4F9D\u5B58\u30BC\u30ED\u306E\u5358\u4E00\u30D5\u30A1\u30A4\u30EB\u306B\u3057\u305F\u3089\u3001\u8D77\u52D5\u304C10\u500D\u901F\u304F\u306A\u308A\u307E\u3057\u305F\uFF01",
+        spoken_meaning: "Discarded the heavy framework and switched to a zero-dep single file; boot speed jumped 10x!",
+        written: "\u80A5\u5927\u5316\u3057\u305F\u30D5\u30EC\u30FC\u30E0\u30EF\u30FC\u30AF\u3092\u5EC3\u6B62\u3057\u3066\u4F9D\u5B58\u6027\u30BC\u30ED\u306E\u5358\u4E00\u30D5\u30A1\u30A4\u30EB\u69CB\u9020\u3092\u63A1\u7528\u3057\u3001\u30B3\u30FC\u30EB\u30C9\u30B9\u30BF\u30FC\u30C8\u901F\u5EA6\u309210\u500D\u5411\u4E0A\u3055\u305B\u307E\u3057\u305F\u3002",
+        written_meaning: "Eliminated the bloated framework in favor of a zero-dependency architecture, achieving a 10x speedup in cold-start times.",
+        vocab: "\u4F9D\u5B58\u30BC\u30ED (zero-dependency) \xB7 \u30B3\u30FC\u30EB\u30C9\u30B9\u30BF\u30FC\u30C8 (cold start) \xB7 \u5411\u4E0A\u3055\u305B\u308B (improve / speed up)"
       }
     ]
   },
@@ -951,7 +975,7 @@ var LANGUAGE_SPECS = {
     ]
   }
 };
-function buildSystemPrompt(sourceLang = "zh", targetLang = "en", isLongInput = false) {
+function buildSystemPrompt(sourceLang = "zh", targetLang = "en", isLongInput = false, context, tone = "general") {
   const normSource = (sourceLang || "zh").toLowerCase().split("-")[0];
   const spec = LANGUAGE_SPECS[normSource] || LANGUAGE_SPECS.zh;
   const targetName = targetLang === "ja" ? "Japanese" : targetLang === "zh" ? "Chinese" : "English";
@@ -970,7 +994,31 @@ Output: ${JSON.stringify({
 [LONG INPUT CONDENSATION DIRECTIVE]:
 The user's input text is long (>90 chars). DO NOT translate verbatim line by line with wordy padding.
 First, distill and synthesize the core architectural/technical intent or question into a concise headline ("summary") in native ${spec.name} (strictly under 20 words).
-Then, translate that distilled intent into concise, punchy spoken and written expressions in ${targetName} (strictly under 25 words each) so that the translation fits cleanly on a single terminal HUD card without information bloat.` : "";
+Then, translate that distilled intent into concise, punchy spoken and written expressions in ${targetName} (strictly under 25 words each) so that the translation fits cleanly on a single card without information bloat.` : "";
+  const contextDirective = context && context.trim() ? `
+
+[CONVERSATION & THREAD CONTEXT]:
+The user's message is a reply to or continuation of the following context (e.g. tweet, thread, issue):
+"""
+${context.trim().slice(0, 500)}
+"""
+Ensure the generated spoken and written translations fit naturally as a responsive reply to this specific context, using authentic conversational grounding.` : "";
+  let toneDirective = "";
+  if (tone === "social") {
+    toneDirective = `
+
+[TONE FOCUS - SOCIAL & COMMUNITY]:
+Prioritize X (Twitter), Reddit, and developer community engagement dynamics:
+- "spoken": Craft a high-impact, punchy opening hook with authentic Silicon Valley dev slang, rhetorical appeal, or conversational banter. Avoid robotic AI clich\xE9 words (e.g., NEVER use "delve", "testament", "tapestry", "revolutionize").
+- "written": High-signal, structured technical insight. Concise, clear, and actionable.`;
+  } else if (tone === "tech") {
+    toneDirective = `
+
+[TONE FOCUS - TECHNICAL RIGOR]:
+Prioritize RFC, Pull Request, and architectural documentation precision:
+- "spoken": Direct, respectful engineering alignment (Slack huddles, technical triage).
+- "written": High-precision Plain ${targetName} matching modern IETF RFC and open-source release notes.`;
+  }
   const jsonFormatHint = isLongInput ? `Strict JSON format:
 {
   "summary": "Concise core intent/question in native ${spec.name} (under 20 words)",
@@ -990,15 +1038,15 @@ Then, translate that distilled intent into concise, punchy spoken and written ex
   return `You are an elite bilingual developer language coach and senior software architect.
 Task:
 Translate the user's message from native ${spec.name} (language A) into TWO distinct authentic ${targetName} registers (language B), and provide the exact back-translation/nuance in native ${spec.name} for each register:
-1. "spoken": Natural, fluent spoken ${targetName} (daily standup, Slack, pair programming, agile team collaboration, code reviews). Authentic Silicon Valley flow, contractions, native phrasal verbs, natural idioms.
+1. "spoken": Natural, fluent spoken ${targetName} (daily standup, Slack, X/Twitter developer banter, agile collaboration, code reviews). Authentic Silicon Valley flow, natural contractions, native phrasal verbs, idioms.
 2. "spoken_meaning": The exact colloquial nuance and meaning ${spec.meaningInstruction}.
-3. "written": Clear, precise, modern technical written ${targetName} (PR descriptions, RFCs, issues, architecture docs). High-level Plain ${targetName}: active, concise, professional. STRICTLY AVOID archaic Victorian fluff (e.g. "we may now proceed", "precipitated", "parsimonious").
+3. "written": Clear, precise, modern technical written ${targetName} (PR descriptions, RFCs, issues, architecture docs, high-signal technical posts). High-level Plain ${targetName}: active, concise, professional. STRICTLY AVOID archaic Victorian fluff (e.g. "we may now proceed", "precipitated", "parsimonious") and AI-slop buzzwords (e.g. "delve", "testament").
 4. "written_meaning": The exact formal technical nuance and meaning ${spec.meaningInstruction}.
 5. "vocab": Adaptively extract ALL key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging the user to high-level/native developer fluency. Do NOT artificially cap at 1-2; extract as many as genuinely beneficial, while keeping each definition concise ${spec.vocabInstruction} to ensure the terminal HUD remains vertically compact.
 
 [CODE & SYMBOL SHIELD - STRICT RULE]:
 All inline code (\`foo()\`), file paths (@file, path/to/file), SQL keywords, variable names, and technical identifiers MUST be preserved 100% verbatim in both spoken and written outputs. Never translate, rephrase, or drop code tokens.
-${condensationDirective}
+${condensationDirective}${contextDirective}${toneDirective}
 
 [GOLDEN FEW-SHOT ANCHORS]:
 ${anchorText}
@@ -1169,6 +1217,59 @@ var LingualLruCache = class {
 };
 var globalLingualCache = new LingualLruCache(50);
 
+// src/core/engine.ts
+function tryParseJson(str) {
+  try {
+    return JSON.parse(str);
+  } catch {
+    try {
+      const repaired = str.replace(/,\s*([}\]])/g, "$1").replace(
+        /("(?:spoken|spoken_meaning|written|written_meaning|vocab|casual|academic|slot1|slot2)"\s*:\s*")([\s\S]*?)("(?=\s*,\s*"|\s*\}))/g,
+        (_m, prefix, content, suffix) => prefix + content.replace(/(?<!\\)"/g, '\\"') + suffix
+      );
+      return JSON.parse(repaired);
+    } catch {
+      return null;
+    }
+  }
+}
+function parseLlmResponse(raw) {
+  try {
+    let cleaned = raw.replace(/<(?:think|thought)>[\s\S]*?<\/(?:think|thought)>/gi, "").trim();
+    const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (fenceMatch) {
+      cleaned = fenceMatch[1].trim();
+    }
+    const firstBrace = cleaned.indexOf("{");
+    const lastBrace = cleaned.lastIndexOf("}");
+    if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
+      return null;
+    }
+    const jsonSubstr = cleaned.slice(firstBrace, lastBrace + 1);
+    const parsed = tryParseJson(jsonSubstr);
+    if (!parsed) return null;
+    const spoken = (parsed.spoken || parsed.casual || parsed.slot1 || "").trim();
+    const spokenMeaning = (parsed.spoken_meaning || parsed.spokenMeaning || "").trim();
+    const written = (parsed.written || parsed.academic || parsed.slot2 || "").trim();
+    const writtenMeaning = (parsed.written_meaning || parsed.writtenMeaning || "").trim();
+    const vocab = typeof parsed.vocab === "string" ? parsed.vocab.trim() : "";
+    const summary = typeof (parsed.summary || parsed.core_intent || parsed.coreIntent) === "string" ? (parsed.summary || parsed.core_intent || parsed.coreIntent).trim() : "";
+    if (spoken) {
+      return {
+        spoken,
+        spokenMeaning: spokenMeaning || void 0,
+        written: written || void 0,
+        writtenMeaning: writtenMeaning || void 0,
+        vocab: vocab || void 0,
+        summary: summary || void 0
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 // src/engine.ts
 var cachedUserConfig = null;
 var lastConfigCheckTime = 0;
@@ -1266,57 +1367,6 @@ function shouldTriggerTranslation(text, sourceLang = "zh") {
     return false;
   }
   return /[a-zA-Z]{2,}/.test(trimmed);
-}
-function tryParseJson(str) {
-  try {
-    return JSON.parse(str);
-  } catch {
-    try {
-      const repaired = str.replace(/,\s*([}\]])/g, "$1").replace(
-        /("(?:spoken|spoken_meaning|written|written_meaning|vocab|casual|academic|slot1|slot2)"\s*:\s*")([\s\S]*?)("(?=\s*,\s*"|\s*\}))/g,
-        (_m, prefix, content, suffix) => prefix + content.replace(/(?<!\\)"/g, '\\"') + suffix
-      );
-      return JSON.parse(repaired);
-    } catch {
-      return null;
-    }
-  }
-}
-function parseLlmResponse(raw) {
-  try {
-    let cleaned = raw.replace(/<(?:think|thought)>[\s\S]*?<\/(?:think|thought)>/gi, "").trim();
-    const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-    if (fenceMatch) {
-      cleaned = fenceMatch[1].trim();
-    }
-    const firstBrace = cleaned.indexOf("{");
-    const lastBrace = cleaned.lastIndexOf("}");
-    if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
-      return null;
-    }
-    const jsonSubstr = cleaned.slice(firstBrace, lastBrace + 1);
-    const parsed = tryParseJson(jsonSubstr);
-    if (!parsed) return null;
-    const spoken = (parsed.spoken || parsed.casual || parsed.slot1 || "").trim();
-    const spokenMeaning = (parsed.spoken_meaning || parsed.spokenMeaning || "").trim();
-    const written = (parsed.written || parsed.academic || parsed.slot2 || "").trim();
-    const writtenMeaning = (parsed.written_meaning || parsed.writtenMeaning || "").trim();
-    const vocab = typeof parsed.vocab === "string" ? parsed.vocab.trim() : "";
-    const summary = typeof (parsed.summary || parsed.core_intent || parsed.coreIntent) === "string" ? (parsed.summary || parsed.core_intent || parsed.coreIntent).trim() : "";
-    if (spoken) {
-      return {
-        spoken,
-        spokenMeaning: spokenMeaning || void 0,
-        written: written || void 0,
-        writtenMeaning: writtenMeaning || void 0,
-        vocab: vocab || void 0,
-        summary: summary || void 0
-      };
-    }
-    return null;
-  } catch {
-    return null;
-  }
 }
 function isDynamicLongInput(text, sourceLang = "zh") {
   const trimmed = text.trim();

@@ -202,74 +202,8 @@ export function shouldTriggerTranslation(text: string, sourceLang = "zh"): boole
   return /[a-zA-Z]{2,}/.test(trimmed);
 }
 
-/**
- * 极简微型 JSON 修复器 (Featherweight JSON Repair):
- * 当 LLM 吐出未转义的双引号或尾随逗号时，安全修补，杜绝静默失败
- */
-function tryParseJson(str: string): any {
-  try {
-    return JSON.parse(str);
-  } catch {
-    try {
-      const repaired = str
-        .replace(/,\s*([}\]])/g, "$1")
-        .replace(
-          /("(?:spoken|spoken_meaning|written|written_meaning|vocab|casual|academic|slot1|slot2)"\s*:\s*")([\s\S]*?)("(?=\s*,\s*"|\s*\}))/g,
-          (_m, prefix, content, suffix) => prefix + content.replace(/(?<!\\)"/g, '\\"') + suffix
-        );
-      return JSON.parse(repaired);
-    } catch {
-      return null;
-    }
-  }
-}
-
-/**
- * Clean and parse LLM JSON responses safely
- * Uses robust brace-boundary slicing and thought stripping to be immune to markdown fences, thoughts, or prefix chatter
- */
-export function parseLlmResponse(raw: string): TranslationPayload | null {
-  try {
-    let cleaned = raw.replace(/<(?:think|thought)>[\s\S]*?<\/(?:think|thought)>/gi, "").trim();
-    const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-    if (fenceMatch) {
-      cleaned = fenceMatch[1].trim();
-    }
-
-    const firstBrace = cleaned.indexOf("{");
-    const lastBrace = cleaned.lastIndexOf("}");
-    if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
-      return null;
-    }
-
-    const jsonSubstr = cleaned.slice(firstBrace, lastBrace + 1);
-    const parsed = tryParseJson(jsonSubstr);
-    if (!parsed) return null;
-
-    const spoken = (parsed.spoken || parsed.casual || parsed.slot1 || "").trim();
-    const spokenMeaning = (parsed.spoken_meaning || parsed.spokenMeaning || "").trim();
-    const written = (parsed.written || parsed.academic || parsed.slot2 || "").trim();
-    const writtenMeaning = (parsed.written_meaning || parsed.writtenMeaning || "").trim();
-    const vocab = typeof parsed.vocab === "string" ? parsed.vocab.trim() : "";
-    const summary = typeof (parsed.summary || parsed.core_intent || parsed.coreIntent) === "string"
-      ? (parsed.summary || parsed.core_intent || parsed.coreIntent).trim()
-      : "";
-
-    if (spoken) {
-      return {
-        spoken,
-        spokenMeaning: spokenMeaning || undefined,
-        written: written || undefined,
-        writtenMeaning: writtenMeaning || undefined,
-        vocab: vocab || undefined,
-        summary: summary || undefined,
-      };
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
+import { parseLlmResponse, translateCore } from "./core/engine.js";
+export { parseLlmResponse, translateCore };
 
 /**
  * Strip annotations and recover purely clean text to prevent LLM prompt pollution

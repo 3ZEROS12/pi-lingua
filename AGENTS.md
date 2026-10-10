@@ -1,7 +1,7 @@
 # SYSTEM CONTEXT & OPERATIONAL PROFILE: PI-LINGUAL
 
 ## 1. Domain & Runtime Environment (RFC 2119)
-- **Package / Target**: `pi-lingual` (v0.3.1)
+- **Package / Target**: `pi-lingual` (v0.3.3)
 - **Primary Domain**: Zero-friction developer translator & dual-register language companion (Spoken vs Written) for AI coding agents.
 - **Runtime & Toolchain**: Node.js v20+ / TypeScript Strict / tsup (dual ESM+CJS+DTS) / native Node test runner.
 - **Extension Entry**: `dist/extension.js` (authored in `src/extension.ts`).
@@ -45,6 +45,16 @@
 ### Invariant 7: Multi-Probe Test Isolation Sandbox
 - Configuration loaders (`loadUserLingualConfig`) and writers (`saveUserLingualConfig`) MUST detect test environments via multi-probe inspection (`NODE_TEST_CONTEXT`, `process.execArgv`, npm lifecycle events) and strictly avoid touching user settings files during tests.
 
+### Invariant 8: Sincere, High-Desire Documentation Standard (RFC 2119)
+- **10-Second Desire Funnel**: Screen 1 MUST display a 1-sentence punchy tagline, clean visual asset, and 1-line installation command (`pi install npm:pi-lingual`).
+- **Short, Punchy Sentences**: Sentences in `README.md` and `README_zh.md` MUST be concise and sincere. Compound run-on sentences with convoluted academic clauses are STRICTLY FORBIDDEN.
+- **The 4-Row Action Matrix**: Modes and workflows MUST be summarized in a crisp table:
+  $$\text{Mode / Action} \mid \text{What You Input} \mid \text{What the Engine Does} \mid \text{What You See} \mid \text{When to Use}$$
+- **Friction Breakers**: Preemptively explain why code/stack traces remain untouched (`Hybrid Intent Grafting`), why no extra tokens pollute chat history, and why latency is zero.
+- **Zero Terminology Inflation**: Never brand ordinary 20-line functions as capitalized buzzwords ("Shield", "FSM", "Sovereignty"). Use real, standard engineering terms (Input Event Hook, UAX #11 Box Model, AbortController, LRU Cache).
+- **Zero Volatile Model/Tech Name-Dropping**: Never sprinkle specific, fast-changing external model tags (e.g. Claude 3.5 Sonnet, GPT-4) without up-to-the-minute research. Prefer functional categories ("high-tier reasoning models vs. lightweight models") and generic command placeholders (`<model-id>`). Evergreen docs age gracefully.
+- **Doorway vs. Workshop**: Main README is the clean storefront; deep algorithmic math and personal reflections belong in `docs/architecture.md` and `docs/philosophy.md`.
+
 ---
 
 ## 3. Physical Verification & Build Commands
@@ -67,9 +77,14 @@
   npm run typecheck
   ```
 
+- **Run Documentation Linter**:
+  ```bash
+  node ../.scripts/fleet.mjs docs pi-lingual
+  ```
+
 ---
 
 ## 4. Architectural Boundaries & Quality Gates
 
 - **Kinetic Line Budget Guard**: Card layouts MUST NOT exceed 9 lines under any column width, mathematically guaranteeing zero host widget truncation warnings.
-- **Documentation Linting**: Documentation MUST pass `node .scripts/fleet.mjs docs pi-lingua` with 0 corporate buzzwords, 0 pseudo-contrasts, and 1:1 verified 74/74 test metrics.
+- **Documentation Linting**: Documentation MUST pass `node .scripts/fleet.mjs docs pi-lingual` with 0 corporate buzzwords, 0 pseudo-contrasts, and 1:1 verified 74/74 test metrics.
