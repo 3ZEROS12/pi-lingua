@@ -7,7 +7,7 @@
 [![npm version](https://img.shields.io/npm/v/pi-lingual?color=blue)](https://www.npmjs.com/package/pi-lingual)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Built for Pi](https://img.shields.io/badge/Built%20for-Pi%20Coding%20Agent-orange)](https://github.com/earendil-works/pi-coding-agent)
-[![Tests](https://img.shields.io/badge/Tests-79%2F79%20Pass%20(100%25)-brightgreen)](tests/engine.test.ts)
+[![Tests](https://img.shields.io/badge/Tests-90%2F90%20Pass%20(100%25)-brightgreen)](tests/engine.test.ts)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict%20Zero%20Error-blue)](tsconfig.json)
 
 [English](./README.md) | **简体中文**
@@ -227,6 +227,33 @@ pi install npm:pi-lingual
 ```
 
 > 🔒 **绝对隐私承诺**：`pi-lingual` **零外部依赖**（`dependencies: {}`），零遥测，不上传任何隐私数据。仅与你配置的模型端点通信。
+
+---
+
+## 作者手记 (Author's Note)
+
+翻译模型的 Prompts 目前是我预先定制好的，但大家完全可以通过我们提供的 `/lingual agent` 命令或内置的 `lingual-tuner` 技能，针对各自的具体情况进行深度个性化定制。
+
+不仅局限于此，大家尽可能真的好好考虑自己想要的输出效果到底是什么：
+* **需要多细的颗粒度去分解句子里的重点短语？**
+* **是否需要针对特定的语法或工程语境额外增加用法讲解？**
+* **提取几个核心搭配最适合自己的认知负荷？**
+
+这些都是很重要的，只有用心调整了，才能达到更好的效果。在终端里敲完回车、等待 AI 生成代码的日常间隙中，顺便多看一眼屏幕上方浮现的地道表达。
+
+启发我这个工具灵感的，可能源于我之前使用水杉输入法等项目的切身经历。我切实地用了很长一段时间，但结果并不是很好，感觉并没有真正学到什么：简单的词汇平时本就熟悉，不用重复学习；而真正困难生僻的词汇，脱离了真实语境光看孤立的词条也学不明白，那段时间我的词汇软件都快被翻烂了。真正能让人自然内化并能脱口而出的，永远是完整语境下的地道表达与真实搭配。
+
+希望大家能用心调出最适合自己的提示词，日常多看一眼，坚持下去吧。
+
+---
+
+## 质量验证与构建
+
+```bash
+npm run typecheck   # TypeScript 严格类型检查 (0 错误)
+npm test            # 全套自动化单元测试 (90/90 全绿通过)
+npm run build       # 多入口生产构建 (插件 + 核心语言引擎)
+```
 
 ---
 

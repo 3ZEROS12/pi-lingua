@@ -7,7 +7,7 @@ Code in your native language. See real-time Silicon Valley spoken phrasing and f
 [![npm version](https://img.shields.io/npm/v/pi-lingual?color=blue)](https://www.npmjs.com/package/pi-lingual)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Built for Pi](https://img.shields.io/badge/Built%20for-Pi%20Coding%20Agent-orange)](https://github.com/earendil-works/pi-coding-agent)
-[![Tests](https://img.shields.io/badge/Tests-79%2F79%20Pass%20(100%25)-brightgreen)](tests/engine.test.ts)
+[![Tests](https://img.shields.io/badge/Tests-90%2F90%20Pass%20(100%25)-brightgreen)](tests/engine.test.ts)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict%20Zero%20Error-blue)](tsconfig.json)
 
 **English** | [简体中文](./README_zh.md)
@@ -228,6 +228,33 @@ Local Ollama or custom OpenAI-compatible endpoints can also be configured in `~/
 ```
 
 > 🔒 **Absolute Privacy Guarantee**: `pi-lingual` has **zero external dependencies** (`dependencies: {}`), zero telemetry, and zero tracking. Requests go only to your authenticated model endpoints.
+
+---
+
+## Author's Note
+
+The system prompts for the translation model are currently tailored by me, but you can deeply customize them to fit your own needs at any time using the `/lingual agent` command or the built-in `lingual-tuner` skill.
+
+Beyond just tweaking configurations, I genuinely encourage everyone to think through the output style you actually want:
+* **How granular should the breakdown of key phrases in a sentence be?**
+* **Do you need supplementary explanations on specific grammar nuances or engineering contexts?**
+* **How many core collocations strike the right balance for your cognitive load?**
+
+These questions matter immensely. You will only achieve the best results when you tune the prompts intentionally to match your baseline. In your daily workflow, whenever you press Enter and wait a few seconds for the AI to generate code, take that brief idle window to glance at the natural phrasing right above your prompt.
+
+The inspiration for this project came from my personal experience using tools like the Metasequoia (水杉) input method. I used them faithfully for quite a while, but the outcome was disappointing—I felt like I wasn't really learning anything. Elementary vocabulary was already familiar and didn't need reinforcement, while difficult, obscure words couldn't be grasped just by staring at isolated dictionary entries. During that period, my vocabulary apps were practically worn out from constant lookups. What truly allows you to internalize language and actually use it is authentic phrasing and natural collocations embedded within real context.
+
+I hope everyone takes the time to tune a prompt that works best for them, catches those brief moments during code generation, and keeps going.
+
+---
+
+## Verification & Testing
+
+```bash
+npm run typecheck   # Strict tsc --noEmit check (0 errors)
+npm test            # 90/90 test assertions passing (100% green)
+npm run build       # Multi-entry compilation via tsup (extension + core engine)
+```
 
 ---
 
