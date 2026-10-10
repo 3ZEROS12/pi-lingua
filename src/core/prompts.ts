@@ -4,9 +4,18 @@ export function getDefaultSlots(sourceLang = "zh"): SlotConfig[] {
   const norm = (sourceLang || "zh").toLowerCase().split("-")[0];
   const labels: Record<string, { source: string; spoken: string; written: string; vocab: string }> = {
     zh: { source: "原文", spoken: "口语", written: "写作", vocab: "重点" },
-    ja: { source: "原文", spoken: "口語", written: "文面", vocab: "単語" },
+    tw: { source: "原文", spoken: "口語", written: "書面", vocab: "重點" },
     en: { source: "Original", spoken: "Spoken", written: "Written", vocab: "Vocab" },
+    ja: { source: "原文", spoken: "口語", written: "文面", vocab: "単語" },
+    ko: { source: "원문", spoken: "구어", written: "문어", vocab: "핵심" },
+    ru: { source: "Оригинал", spoken: "Разговорный", written: "Письменный", vocab: "Лексика" },
+    pt: { source: "Original", spoken: "Falado", written: "Escrito", vocab: "Vocab" },
     es: { source: "Original", spoken: "Hablado", written: "Escrito", vocab: "Vocab" },
+    vi: { source: "Nguyên bản", spoken: "Khẩu ngữ", written: "Văn bản", vocab: "Từ vựng" },
+    tr: { source: "Orijinal", spoken: "Konuşma", written: "Yazılı", vocab: "Kelime" },
+    ar: { source: "الأصل", spoken: "محادثة", written: "كتابة", vocab: "مفردات" },
+    my: { source: "Asal", spoken: "Pertuturan", written: "Penulisan", vocab: "Kosa kata" },
+    ms: { source: "Asal", spoken: "Pertuturan", written: "Penulisan", vocab: "Kosa kata" },
     fr: { source: "Original", spoken: "Parlé", written: "Écrit", vocab: "Vocab" },
     de: { source: "Original", spoken: "Gesprochen", written: "Schriftlich", vocab: "Wortschatz" },
   };
