@@ -82,6 +82,32 @@ test("Primary Language Sovereignty - English (en) leaves ZERO Chinese in UI and 
   assert.ok(enZhLabels.notifyCompactOn?.includes("[en ⇄ zh]"));
   assert.ok(!enZhLabels.notifyOriginal?.includes("[en ⇄ ja]"));
   assert.ok(!enZhLabels.notifyCompactOn?.includes("[en ⇄ ja]"));
+
+  // Dynamic slots chrome in English must contain ZERO Chinese characters
+  assert.equal(enLabels.slotsHeader, "Dynamic Slots Architecture");
+  assert.ok(!/[\u4e00-\u9fa5]/.test(enLabels.slotsHeader!));
+  assert.ok(!/[\u4e00-\u9fa5]/.test(enLabels.slotsNlTitle!));
+  assert.ok(!/[\u4e00-\u9fa5]/.test(enLabels.slotsCliTitle!));
+  for (const ex of enLabels.slotsNlExamples || []) {
+    assert.ok(!/[\u4e00-\u9fa5]/.test(ex));
+  }
+  for (const cmd of enLabels.slotsCliHelp || []) {
+    assert.ok(!/[\u4e00-\u9fa5]/.test(cmd));
+  }
+});
+
+test("Primary Language Sovereignty - Chinese (zh) dynamic slots chrome has ZERO English residue in UI headers & commands", () => {
+  const zhLabels = resolveLabelsForLang("zh");
+  assert.equal(zhLabels.slotsHeader, "动态槽位架构");
+  assert.equal(zhLabels.slotsActiveTag, "激活");
+  assert.equal(zhLabels.slotsStatusEnabled, "已启用");
+  assert.equal(zhLabels.slotsStatusDisabled, "已禁用");
+  assert.equal(zhLabels.slotsWithNuance, " +母语微释义");
+  assert.ok(zhLabels.slotsNlTitle?.includes("自然语言定制"));
+  assert.ok(zhLabels.slotsCliTitle?.includes("常用快捷命令"));
+  assert.ok(zhLabels.slotsResetSuccess?.includes("已重置槽位为初始默认状态"));
+  assert.ok(zhLabels.slotsRemovedSuccess?.includes("已移除槽位"));
+  assert.ok(zhLabels.slotsRemovedSourceNote?.includes("已物理隐藏原文行"));
 });
 
 test("System Prompt Sovereignty - Generates authentic Language A anchors and rules", () => {

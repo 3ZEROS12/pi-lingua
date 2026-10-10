@@ -85,6 +85,28 @@ export interface LingualI18nLabels {
   langUsageHint?: string;
   langList?: string[];
 
+  // Localized dynamic slots chrome (Primary Language Sovereignty)
+  slotsHeader?: string;             // e.g. "动态槽位架构" | "Dynamic Slots" | "動的スロット構成"
+  slotsActiveTag?: string;          // e.g. "激活" | "active" | "有効"
+  slotsNone?: string;               // e.g. "未配置任何槽位" | "No slots configured"
+  slotsStatusEnabled?: string;      // e.g. "已启用" | "enabled" | "有効"
+  slotsStatusDisabled?: string;     // e.g. "已禁用" | "disabled" | "無効"
+  slotsWithNuance?: string;         // e.g. " +母语微释义" | " +nuance" | " +ニュアンス"
+  slotsNlTitle?: string;            // e.g. "💬 自然语言定制（直接跟当前 Agent 聊，无需手敲命令）："
+  slotsNlExamples?: string[];       // Array of 3-4 natural language examples
+  slotsCliTitle?: string;           // e.g. "⚡️ 常用快捷命令："
+  slotsCliHelp?: string[];          // Array of quick CLI commands
+  slotsResetSuccess?: string;       // e.g. "已重置槽位为初始默认状态"
+  slotsRemovedSuccess?: string;     // e.g. "已移除槽位 [{id}] (\"{label}\")"
+  slotsRemovedSourceNote?: string;  // e.g. "（已物理隐藏原文行）"
+  slotsToggled?: string;            // e.g. "槽位 [{id}] 当前状态: {status}"
+  slotsAdded?: string;              // e.g. "已添加/更新槽位 [{id}] \"{label}\""
+  slotsNotFound?: string;           // e.g. "未找到槽位 [{id}]，请运行 /slots 查看"
+  slotsUsageAdd?: string;           // e.g. "用法: /slots add <id> <标签> [提示词...]"
+  slotsUsageRm?: string;            // e.g. "用法: /slots rm <槽位ID>"
+  slotsUsageToggle?: string;        // e.g. "用法: /slots toggle <槽位ID>"
+  slotsUnknown?: string;            // e.g. "未知命令或预设 \"{cmd}\"，输入 /slots 查看帮助"
+
   // Aliases for backwards compatibility
   spokenLabel?: string;
   writtenLabel?: string;

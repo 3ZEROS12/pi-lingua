@@ -415,27 +415,29 @@ export default function (pi: ExtensionAPI) {
     const rawArgs = args.trim();
     const parts = rawArgs.split(/\s+/).filter(Boolean);
     const subCmd = (parts[0] || "").toLowerCase();
+    const lbl = state.labels;
 
-    // 1. 无参数或 "list": 查看当前所有槽位状态与管理帮助
+    // 1. 无参数或 "list": 查看当前所有槽位状态与管理帮助 (根据当前语言严格本地化，Primary Language Sovereignty)
     if (!subCmd || subCmd === "list" || subCmd === "ls") {
       const slots = state.slots || [];
       const lines = slots.map((s, idx) => {
-        const status = s.enabled ? "enabled" : "disabled";
-        const meaning = s.showMeaning ? " +nuance" : "";
+        const status = s.enabled
+          ? (lbl.slotsStatusEnabled || "enabled")
+          : (lbl.slotsStatusDisabled || "disabled");
+        const meaning = s.showMeaning ? (lbl.slotsWithNuance || " +nuance") : "";
         const inst = s.instruction ? ` // ${s.instruction.slice(0, 45)}...` : "";
         return `  ${idx + 1}. [${s.id}] "${s.label}" (${s.role}, ${status}${meaning})${inst}`;
       });
 
       const enabledCount = slots.filter((s) => s.enabled).length;
-      const help =
-        `⇄ [${state.labels.hudTitle}] Dynamic Slots (${enabledCount}/${slots.length} active):\n` +
-        (lines.length > 0 ? lines.join("\n") : "  (No slots configured)") +
-        `\n\nSlot Management:\n` +
-        `  • /slots add <id> <label> [instruction...] - Add or customize slot\n` +
-        `  • /slots rm <id>                           - Remove slot (e.g. /slots rm source to hide original text!)\n` +
-        `  • /slots toggle <id>                       - Toggle enable/disable\n` +
-        `  • /slots reset                             - Reset to clean initial defaults\n` +
-        `  • /slots <preset>                          - Quick apply template (e.g. compact2, social, developer)`;
+      const header = `⇄ [${lbl.hudTitle}] ${lbl.slotsHeader || "Dynamic Slots"} (${enabledCount}/${slots.length} ${lbl.slotsActiveTag || "active"}):\n`;
+      const body = lines.length > 0 ? lines.join("\n") : `  (${lbl.slotsNone || "No slots configured"})`;
+      const nlTitle = lbl.slotsNlTitle ? `\n\n${lbl.slotsNlTitle}\n` : "";
+      const nlExamples = (lbl.slotsNlExamples || []).map((ex) => `  ${ex}`).join("\n");
+      const cliTitle = lbl.slotsCliTitle ? `\n\n${lbl.slotsCliTitle}\n` : "";
+      const cliHelp = (lbl.slotsCliHelp || []).map((cmd) => `  ${cmd}`).join("\n");
+
+      const help = `${header}${body}${nlTitle}${nlExamples}${cliTitle}${cliHelp}`;
       ctx.ui.notify(help, "info");
       return;
     }
@@ -446,7 +448,8 @@ export default function (pi: ExtensionAPI) {
       state.slotPreset = "";
       saveUserLingualConfig({ slots: undefined, slotPreset: undefined });
       globalLingualCache.clear();
-      ctx.ui.notify(`⇄ [${state.labels.hudTitle}] Reset slots to clean defaults (source + spoken + written).`, "info");
+      const resetMsg = (lbl.slotsResetSuccess || "⇄ [{pair}] Reset slots to clean defaults").replace("{pair}", lbl.hudTitle);
+      ctx.ui.notify(resetMsg, "info");
       updateFooter(ctx);
       refreshActiveView(ctx);
       return;
@@ -456,12 +459,13 @@ export default function (pi: ExtensionAPI) {
     if (subCmd === "rm" || subCmd === "remove" || subCmd === "del") {
       const targetId = (parts[1] || "").toLowerCase();
       if (!targetId) {
-        ctx.ui.notify(`Usage: /slots rm <slot-id> (e.g. /slots rm source to hide original text, or /slots rm written)`, "warning");
+        ctx.ui.notify(lbl.slotsUsageRm || "Usage: /slots rm <slot-id>", "warning");
         return;
       }
       const existing = (state.slots || []).find((s) => s.id.toLowerCase() === targetId);
       if (!existing) {
-        ctx.ui.notify(`Slot [${targetId}] not found in active slots. Run /slots to inspect.`, "warning");
+        const notFoundMsg = (lbl.slotsNotFound || "Slot [{id}] not found").replace("{pair}", lbl.hudTitle).replace("{id}", targetId);
+        ctx.ui.notify(notFoundMsg, "warning");
         return;
       }
       state.slots = removeSlotFromList(state.slots || [], targetId);
@@ -469,8 +473,13 @@ export default function (pi: ExtensionAPI) {
       saveUserLingualConfig({ slots: state.slots, slotPreset: undefined });
       globalLingualCache.clear();
 
-      const extraHint = targetId === "source" ? " Original source line will no longer appear on cards." : "";
-      ctx.ui.notify(`⇄ [${state.labels.hudTitle}] Removed slot [${targetId}] ("${existing.label}").${extraHint}`, "info");
+      const extraHint = targetId === "source" ? (lbl.slotsRemovedSourceNote || " (Source line will no longer appear on cards)") : "";
+      const removedTpl = lbl.slotsRemovedSuccess || "[{pair}] Removed slot [{id}] (\"{label}\")";
+      const notifyMsg = removedTpl
+        .replace("{pair}", lbl.hudTitle)
+        .replace("{id}", targetId)
+        .replace("{label}", existing.label) + extraHint;
+      ctx.ui.notify(notifyMsg, "info");
       updateFooter(ctx);
       refreshActiveView(ctx);
       return;
@@ -480,12 +489,13 @@ export default function (pi: ExtensionAPI) {
     if (subCmd === "toggle") {
       const targetId = (parts[1] || "").toLowerCase();
       if (!targetId) {
-        ctx.ui.notify(`Usage: /slots toggle <slot-id>`, "warning");
+        ctx.ui.notify(lbl.slotsUsageToggle || "Usage: /slots toggle <slot-id>", "warning");
         return;
       }
       const existing = (state.slots || []).find((s) => s.id.toLowerCase() === targetId);
       if (!existing) {
-        ctx.ui.notify(`Slot [${targetId}] not found in active slots.`, "warning");
+        const notFoundMsg = (lbl.slotsNotFound || "Slot [{id}] not found").replace("{pair}", lbl.hudTitle).replace("{id}", targetId);
+        ctx.ui.notify(notFoundMsg, "warning");
         return;
       }
       state.slots = toggleSlotInList(state.slots || [], targetId);
@@ -493,7 +503,15 @@ export default function (pi: ExtensionAPI) {
       saveUserLingualConfig({ slots: state.slots, slotPreset: undefined });
       globalLingualCache.clear();
       const updated = state.slots.find((s) => s.id.toLowerCase() === targetId);
-      ctx.ui.notify(`⇄ [${state.labels.hudTitle}] Slot [${targetId}] is now ${updated?.enabled ? "enabled" : "disabled"}.`, "info");
+      const statusText = updated?.enabled
+        ? (lbl.slotsStatusEnabled || "enabled")
+        : (lbl.slotsStatusDisabled || "disabled");
+      const toggledTpl = lbl.slotsToggled || "[{pair}] Slot [{id}] is now {status}";
+      const notifyMsg = toggledTpl
+        .replace("{pair}", lbl.hudTitle)
+        .replace("{id}", targetId)
+        .replace("{status}", statusText);
+      ctx.ui.notify(notifyMsg, "info");
       updateFooter(ctx);
       refreshActiveView(ctx);
       return;
@@ -505,7 +523,7 @@ export default function (pi: ExtensionAPI) {
       const label = parts[2];
       const instruction = parts.slice(3).join(" ");
       if (!id || !label) {
-        ctx.ui.notify(`Usage: /slots add <id> <label> [instruction...]\nExample: /slots add twitter 推文 Short punchy tweet under 280 chars`, "warning");
+        ctx.ui.notify(lbl.slotsUsageAdd || "Usage: /slots add <id> <label> [instruction...]", "warning");
         return;
       }
       const newSlot = createCustomSlot({
@@ -517,7 +535,12 @@ export default function (pi: ExtensionAPI) {
       state.slotPreset = "";
       saveUserLingualConfig({ slots: state.slots, slotPreset: undefined });
       globalLingualCache.clear();
-      ctx.ui.notify(`⇄ [${state.labels.hudTitle}] Added/updated slot [${id}] "${label}" (${newSlot.role}).`, "info");
+      const addedTpl = lbl.slotsAdded || "[{pair}] Added/updated slot [{id}] \"{label}\"";
+      const notifyMsg = addedTpl
+        .replace("{pair}", lbl.hudTitle)
+        .replace("{id}", id)
+        .replace("{label}", label);
+      ctx.ui.notify(notifyMsg, "info");
       updateFooter(ctx);
       refreshActiveView(ctx);
       return;
@@ -530,14 +553,20 @@ export default function (pi: ExtensionAPI) {
       state.slots = resolveSlotsForPreset(subCmd, state.sourceLang);
       saveUserLingualConfig({ slotPreset: subCmd === "developer" ? undefined : subCmd, slots: state.slots });
       globalLingualCache.clear();
-      ctx.ui.notify(`⇄ [${state.labels.hudTitle}] Applied preset [${subCmd}]: ${matchedPreset.description}`, "info");
+      const template = lbl.notifySlotSwitched || "[{pair}] Applied preset [{preset}]: {desc}";
+      const notifyMsg = template
+        .replace("{pair}", lbl.hudTitle)
+        .replace("{preset}", subCmd)
+        .replace("{desc}", matchedPreset.description);
+      ctx.ui.notify(notifyMsg, "info");
       updateFooter(ctx);
       refreshActiveView(ctx);
       return;
     }
 
     // 7. 未知指令提示
-    ctx.ui.notify(`Unknown slot command or preset "${subCmd}". Type /slots to view slots and commands.`, "warning");
+    const unknownTpl = lbl.slotsUnknown || "Unknown slot command or preset \"{cmd}\".";
+    ctx.ui.notify(unknownTpl.replace("{pair}", lbl.hudTitle).replace("{cmd}", subCmd), "warning");
   };
 
   const showStatusHandler = async (_args: string, ctx: ExtensionContext) => {
@@ -737,11 +766,23 @@ export default function (pi: ExtensionAPI) {
   pi.registerCommand("lingual-agent", {
     description: state.labels.cmdDescAgent || "View companion customization and language guide: /lingual-agent",
     handler: async (_args, ctx) => {
-      ctx.ui.notify(
-        state.labels.notifyAgentHelp ||
-          "💡 Switch native language with /lang <zh|ja|en|es|fr|de> anytime; for advanced prompt or style customization, simply describe your preferences to your Agent.",
-        "info"
-      );
+      const isZh = state.sourceLang === "zh" || state.sourceLang === "tw";
+      const helpMsg = isZh
+        ? `🤖 lingual-tuner Agent 伴学定制指南:\n\n` +
+          `无需手动记忆复杂的配置或长命令，直接向当前会话的 Agent 表达你的偏好：\n` +
+          `  • 隐去原文: "伴学卡片不要显示中文原文，只要纯译文"\n` +
+          `  • 社媒风格: "帮我配置推特推文和架构洞察两个槽位"\n` +
+          `  • 极简单行: "改成单行纯译文"\n` +
+          `  • 恢复开箱: "恢复默认伴学设置"\n\n` +
+          `Agent 会自动通过 lingual-tuner 技能或写入 ~/.pi/agent/lingual.json 单回合为您完成装配。`
+        : `🤖 lingual-tuner Agent Customization Guide:\n\n` +
+          `No need to memorize complex CLI flags. Just talk to your Agent in natural language:\n` +
+          `  • Suppress original: "Hide original text on companion cards, show translations only"\n` +
+          `  • Social tone: "Configure companion with Twitter Hook and Technical Insight slots"\n` +
+          `  • Minimalist: "Switch to 1-line translation only"\n` +
+          `  • Reset: "Reset companion slots to default"\n\n` +
+          `Your Agent will configure ~/.pi/agent/lingual.json automatically in a single turn.`;
+      ctx.ui.notify(helpMsg, "info");
     },
   });
 

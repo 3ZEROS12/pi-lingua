@@ -21,6 +21,30 @@ export function getDefaultSlots(sourceLang = "en"): SlotConfig[] {
   };
   const l = labels[norm] || labels.en;
 
+  const instructions: Record<string, { spoken: string; written: string; vocab: string }> = {
+    zh: {
+      spoken: "自然地道的美式口语流（每日站会、Slack沟通、结对编程、敏捷协作）。地道硅谷口吻、自然缩读、动词短语与俚语习惯。",
+      written: "严谨现代的架构规范书面语（PR描述、RFC文档、问题单、架构说明）。清晰专业的高级技术散文，杜绝陈旧维多利亚式套话与AI水词。",
+      vocab: "自适应萃取关键地道搭配、动词词组、技术成语或高阶表达，助力掌握地道母语级语感。",
+    },
+    tw: {
+      spoken: "自然道地的美式口語流（每日站會、Slack溝通、結對編程、敏捷協作）。道地矽谷語感、自然縮讀、動詞片語與慣用語。",
+      written: "嚴謹現代的架構規範書面語（PR描述、RFC文檔、問題單、架構說明）。清晰專業的高級技術散文，杜絕陳舊套話與AI浮誇詞彙。",
+      vocab: "自適應萃取關鍵道地搭配、動詞片語、技術成語或高階表達，助力掌握道地母語級語感。",
+    },
+    ja: {
+      spoken: "親しい同僚やチームとの自然な口語表現（朝会、Slackハドル、ペアプログラミング、カジュアルチャット）。自然な短縮形やイディオム。",
+      written: "明確で洗練された現代的技術文書表現（PR概要、RFC、Issue、技術設計書）。能動的で簡潔・論理的なプロフェッショナル文章。",
+      vocab: "重要な連語、句動詞、技術表現を自律的に抽出し、母語話者レベルの語彙運用を支援。",
+    },
+    en: {
+      spoken: "Natural, fluent spoken flow (daily standup, Slack, pair programming, agile collaboration). Authentic Silicon Valley flow, natural contractions, native phrasal verbs, idioms.",
+      written: "Clear, precise, modern technical written prose (PR descriptions, RFCs, issues, architecture docs). High-level Plain prose: active, concise, professional. STRICTLY AVOID archaic Victorian fluff and AI-slop buzzwords.",
+      vocab: "Adaptively extract key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging the user to high-level/native fluency.",
+    },
+  };
+  const inst = instructions[norm] || instructions.en;
+
   return [
     {
       id: "source",
@@ -32,7 +56,7 @@ export function getDefaultSlots(sourceLang = "en"): SlotConfig[] {
       id: "spoken",
       label: l.spoken,
       role: "translation",
-      instruction: "Natural, fluent spoken flow (daily standup, Slack, pair programming, agile collaboration). Authentic Silicon Valley flow, natural contractions, native phrasal verbs, idioms.",
+      instruction: inst.spoken,
       showMeaning: true,
       enabled: true,
     },
@@ -40,7 +64,7 @@ export function getDefaultSlots(sourceLang = "en"): SlotConfig[] {
       id: "written",
       label: l.written,
       role: "translation",
-      instruction: "Clear, precise, modern technical written prose (PR descriptions, RFCs, issues, architecture docs). High-level Plain prose: active, concise, professional. STRICTLY AVOID archaic Victorian fluff and AI-slop buzzwords.",
+      instruction: inst.written,
       showMeaning: true,
       enabled: true,
     },
@@ -48,7 +72,7 @@ export function getDefaultSlots(sourceLang = "en"): SlotConfig[] {
       id: "vocab",
       label: l.vocab,
       role: "vocab",
-      instruction: "Adaptively extract key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging the user to high-level/native fluency.",
+      instruction: inst.vocab,
       enabled: true,
     },
   ];

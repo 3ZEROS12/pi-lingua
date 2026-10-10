@@ -77,6 +77,29 @@ function getDefaultSlots(sourceLang = "en") {
     de: { source: "Original", spoken: "Gesprochen", written: "Schriftlich", vocab: "Wortschatz" }
   };
   const l = labels[norm] || labels.en;
+  const instructions = {
+    zh: {
+      spoken: "\u81EA\u7136\u5730\u9053\u7684\u7F8E\u5F0F\u53E3\u8BED\u6D41\uFF08\u6BCF\u65E5\u7AD9\u4F1A\u3001Slack\u6C9F\u901A\u3001\u7ED3\u5BF9\u7F16\u7A0B\u3001\u654F\u6377\u534F\u4F5C\uFF09\u3002\u5730\u9053\u7845\u8C37\u53E3\u543B\u3001\u81EA\u7136\u7F29\u8BFB\u3001\u52A8\u8BCD\u77ED\u8BED\u4E0E\u4FDA\u8BED\u4E60\u60EF\u3002",
+      written: "\u4E25\u8C28\u73B0\u4EE3\u7684\u67B6\u6784\u89C4\u8303\u4E66\u9762\u8BED\uFF08PR\u63CF\u8FF0\u3001RFC\u6587\u6863\u3001\u95EE\u9898\u5355\u3001\u67B6\u6784\u8BF4\u660E\uFF09\u3002\u6E05\u6670\u4E13\u4E1A\u7684\u9AD8\u7EA7\u6280\u672F\u6563\u6587\uFF0C\u675C\u7EDD\u9648\u65E7\u7EF4\u591A\u5229\u4E9A\u5F0F\u5957\u8BDD\u4E0EAI\u6C34\u8BCD\u3002",
+      vocab: "\u81EA\u9002\u5E94\u8403\u53D6\u5173\u952E\u5730\u9053\u642D\u914D\u3001\u52A8\u8BCD\u8BCD\u7EC4\u3001\u6280\u672F\u6210\u8BED\u6216\u9AD8\u9636\u8868\u8FBE\uFF0C\u52A9\u529B\u638C\u63E1\u5730\u9053\u6BCD\u8BED\u7EA7\u8BED\u611F\u3002"
+    },
+    tw: {
+      spoken: "\u81EA\u7136\u9053\u5730\u7684\u7F8E\u5F0F\u53E3\u8A9E\u6D41\uFF08\u6BCF\u65E5\u7AD9\u6703\u3001Slack\u6E9D\u901A\u3001\u7D50\u5C0D\u7DE8\u7A0B\u3001\u654F\u6377\u5354\u4F5C\uFF09\u3002\u9053\u5730\u77FD\u8C37\u8A9E\u611F\u3001\u81EA\u7136\u7E2E\u8B80\u3001\u52D5\u8A5E\u7247\u8A9E\u8207\u6163\u7528\u8A9E\u3002",
+      written: "\u56B4\u8B39\u73FE\u4EE3\u7684\u67B6\u69CB\u898F\u7BC4\u66F8\u9762\u8A9E\uFF08PR\u63CF\u8FF0\u3001RFC\u6587\u6A94\u3001\u554F\u984C\u55AE\u3001\u67B6\u69CB\u8AAA\u660E\uFF09\u3002\u6E05\u6670\u5C08\u696D\u7684\u9AD8\u7D1A\u6280\u8853\u6563\u6587\uFF0C\u675C\u7D55\u9673\u820A\u5957\u8A71\u8207AI\u6D6E\u8A87\u8A5E\u5F59\u3002",
+      vocab: "\u81EA\u9069\u61C9\u8403\u53D6\u95DC\u9375\u9053\u5730\u642D\u914D\u3001\u52D5\u8A5E\u7247\u8A9E\u3001\u6280\u8853\u6210\u8A9E\u6216\u9AD8\u968E\u8868\u9054\uFF0C\u52A9\u529B\u638C\u63E1\u9053\u5730\u6BCD\u8A9E\u7D1A\u8A9E\u611F\u3002"
+    },
+    ja: {
+      spoken: "\u89AA\u3057\u3044\u540C\u50DA\u3084\u30C1\u30FC\u30E0\u3068\u306E\u81EA\u7136\u306A\u53E3\u8A9E\u8868\u73FE\uFF08\u671D\u4F1A\u3001Slack\u30CF\u30C9\u30EB\u3001\u30DA\u30A2\u30D7\u30ED\u30B0\u30E9\u30DF\u30F3\u30B0\u3001\u30AB\u30B8\u30E5\u30A2\u30EB\u30C1\u30E3\u30C3\u30C8\uFF09\u3002\u81EA\u7136\u306A\u77ED\u7E2E\u5F62\u3084\u30A4\u30C7\u30A3\u30AA\u30E0\u3002",
+      written: "\u660E\u78BA\u3067\u6D17\u7DF4\u3055\u308C\u305F\u73FE\u4EE3\u7684\u6280\u8853\u6587\u66F8\u8868\u73FE\uFF08PR\u6982\u8981\u3001RFC\u3001Issue\u3001\u6280\u8853\u8A2D\u8A08\u66F8\uFF09\u3002\u80FD\u52D5\u7684\u3067\u7C21\u6F54\u30FB\u8AD6\u7406\u7684\u306A\u30D7\u30ED\u30D5\u30A7\u30C3\u30B7\u30E7\u30CA\u30EB\u6587\u7AE0\u3002",
+      vocab: "\u91CD\u8981\u306A\u9023\u8A9E\u3001\u53E5\u52D5\u8A5E\u3001\u6280\u8853\u8868\u73FE\u3092\u81EA\u5F8B\u7684\u306B\u62BD\u51FA\u3057\u3001\u6BCD\u8A9E\u8A71\u8005\u30EC\u30D9\u30EB\u306E\u8A9E\u5F59\u904B\u7528\u3092\u652F\u63F4\u3002"
+    },
+    en: {
+      spoken: "Natural, fluent spoken flow (daily standup, Slack, pair programming, agile collaboration). Authentic Silicon Valley flow, natural contractions, native phrasal verbs, idioms.",
+      written: "Clear, precise, modern technical written prose (PR descriptions, RFCs, issues, architecture docs). High-level Plain prose: active, concise, professional. STRICTLY AVOID archaic Victorian fluff and AI-slop buzzwords.",
+      vocab: "Adaptively extract key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging the user to high-level/native fluency."
+    }
+  };
+  const inst = instructions[norm] || instructions.en;
   return [
     {
       id: "source",
@@ -88,7 +111,7 @@ function getDefaultSlots(sourceLang = "en") {
       id: "spoken",
       label: l.spoken,
       role: "translation",
-      instruction: "Natural, fluent spoken flow (daily standup, Slack, pair programming, agile collaboration). Authentic Silicon Valley flow, natural contractions, native phrasal verbs, idioms.",
+      instruction: inst.spoken,
       showMeaning: true,
       enabled: true
     },
@@ -96,7 +119,7 @@ function getDefaultSlots(sourceLang = "en") {
       id: "written",
       label: l.written,
       role: "translation",
-      instruction: "Clear, precise, modern technical written prose (PR descriptions, RFCs, issues, architecture docs). High-level Plain prose: active, concise, professional. STRICTLY AVOID archaic Victorian fluff and AI-slop buzzwords.",
+      instruction: inst.written,
       showMeaning: true,
       enabled: true
     },
@@ -104,7 +127,7 @@ function getDefaultSlots(sourceLang = "en") {
       id: "vocab",
       label: l.vocab,
       role: "vocab",
-      instruction: "Adaptively extract key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging the user to high-level/native fluency.",
+      instruction: inst.vocab,
       enabled: true
     }
   ];
@@ -1039,7 +1062,37 @@ var LANGUAGE_PRESETS = {
       "\u2022 es (\u897F\u73ED\u7259\u6587 \u2794 \u82F1\u6587)",
       "\u2022 fr (\u6CD5\u6587 \u2794 \u82F1\u6587)",
       "\u2022 de (\u5FB7\u6587 \u2794 \u82F1\u6587)"
-    ]
+    ],
+    // 动态槽位架构本地化文案 (中文)
+    slotsHeader: "\u52A8\u6001\u69FD\u4F4D\u67B6\u6784",
+    slotsActiveTag: "\u6FC0\u6D3B",
+    slotsNone: "\u672A\u914D\u7F6E\u4EFB\u4F55\u69FD\u4F4D",
+    slotsStatusEnabled: "\u5DF2\u542F\u7528",
+    slotsStatusDisabled: "\u5DF2\u7981\u7528",
+    slotsWithNuance: " +\u6BCD\u8BED\u5FAE\u91CA\u4E49",
+    slotsNlTitle: "\u{1F4AC} \u81EA\u7136\u8BED\u8A00\u5B9A\u5236\uFF08\u76F4\u63A5\u5411\u5F53\u524D Agent \u63CF\u8FF0\uFF0C\u65E0\u9700\u624B\u52A8\u8F93\u5165\u547D\u4EE4\uFF09\uFF1A",
+    slotsNlExamples: [
+      '\u2022 "\u5E2E\u6211\u5B9A\u5236\u4F34\u5B66\uFF1A\u53EA\u8981\u63A8\u7279\u63A8\u6587\u548C\u6DF1\u5EA6\u5206\u6790\uFF0C\u4E0D\u8981\u539F\u6587"',
+      '\u2022 "\u628A\u4F34\u5B66\u6539\u6210\u5355\u69FD\u4F4D\u7EAF\u8BD1\u6587"',
+      '\u2022 "\u6062\u590D\u9ED8\u8BA4\u4F34\u5B66\u69FD\u4F4D"'
+    ],
+    slotsCliTitle: "\u26A1\uFE0F \u5E38\u7528\u5FEB\u6377\u547D\u4EE4\uFF1A",
+    slotsCliHelp: [
+      "\u2022 /slots rm source       - \u7269\u7406\u9690\u85CF\u539F\u6587\u884C",
+      "\u2022 /slots compact2        - \u6781\u7B80\u53CC\u69FD\u4F4D",
+      "\u2022 /slots reset           - \u6062\u590D\u521D\u59CB\u9ED8\u8BA4",
+      "\u2022 /slots toggle <id>     - \u4E34\u65F6\u5F00\u5173\u69FD\u4F4D"
+    ],
+    slotsResetSuccess: "[{pair}] \u5DF2\u91CD\u7F6E\u69FD\u4F4D\u4E3A\u521D\u59CB\u9ED8\u8BA4\u72B6\u6001\uFF08\u539F\u6587 + \u53E3\u8BED + \u5199\u4F5C + \u91CD\u70B9\uFF09",
+    slotsRemovedSuccess: '[{pair}] \u5DF2\u79FB\u9664\u69FD\u4F4D [{id}] ("{label}")',
+    slotsRemovedSourceNote: "\uFF08\u5DF2\u7269\u7406\u9690\u85CF\u539F\u6587\u884C\uFF09",
+    slotsToggled: "[{pair}] \u69FD\u4F4D [{id}] \u5F53\u524D\u72B6\u6001: {status}",
+    slotsAdded: '[{pair}] \u5DF2\u6DFB\u52A0/\u66F4\u65B0\u69FD\u4F4D [{id}] "{label}"',
+    slotsNotFound: "[{pair}] \u672A\u627E\u5230\u69FD\u4F4D [{id}]\u3002\u8FD0\u884C /slots \u67E5\u770B\u5F53\u524D\u69FD\u4F4D",
+    slotsUsageAdd: "\u7528\u6CD5: /slots add <id> <\u6807\u7B7E> [\u63D0\u793A\u8BCD...]\n\u793A\u4F8B: /slots add twitter \u63A8\u6587 280\u5B57\u7B26\u4EE5\u5185\u7206\u6B3E\u6280\u672F\u63A8\u6587",
+    slotsUsageRm: "\u7528\u6CD5: /slots rm <\u69FD\u4F4DID> (\u4F8B\u5982 /slots rm source \u9690\u85CF\u539F\u6587)",
+    slotsUsageToggle: "\u7528\u6CD5: /slots toggle <\u69FD\u4F4DID>",
+    slotsUnknown: '[{pair}] \u672A\u77E5\u69FD\u4F4D\u547D\u4EE4\u6216\u9884\u8BBE "{cmd}"\u3002\u8F93\u5165 /slots \u67E5\u770B\u5F53\u524D\u69FD\u4F4D\u4E0E\u5E2E\u52A9'
   },
   ja: {
     slot1Label: "\u53E3\u8A9E",
@@ -1104,7 +1157,37 @@ var LANGUAGE_PRESETS = {
       "\u2022 es (\u30B9\u30DA\u30A4\u30F3\u8A9E \u2794 \u82F1\u8A9E)",
       "\u2022 fr (\u30D5\u30E9\u30F3\u30B9\u8A9E \u2794 \u82F1\u8A9E)",
       "\u2022 de (\u30C9\u30A4\u30C4\u8A9E \u2794 \u82F1\u8A9E)"
-    ]
+    ],
+    // 動的スロット構成ローカライズ文言 (日本語)
+    slotsHeader: "\u52D5\u7684\u30B9\u30ED\u30C3\u30C8\u69CB\u6210",
+    slotsActiveTag: "\u6709\u52B9",
+    slotsNone: "\u30B9\u30ED\u30C3\u30C8\u304C\u8A2D\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093",
+    slotsStatusEnabled: "\u6709\u52B9",
+    slotsStatusDisabled: "\u7121\u52B9",
+    slotsWithNuance: " +\u30CB\u30E5\u30A2\u30F3\u30B9",
+    slotsNlTitle: "\u{1F4AC} \u81EA\u7136\u8A00\u8A9E\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA\uFF08\u73FE\u5728\u306E Agent \u306B\u76F4\u63A5\u4F1D\u3048\u308B\u3060\u3051\uFF09\uFF1A",
+    slotsNlExamples: [
+      "\u2022 \u300C\u4F34\u8D70\u30B9\u30ED\u30C3\u30C8\u3092\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA\u3057\u3066\uFF1A\u30C4\u30A4\u30FC\u30C8\u3068\u6280\u8853\u7684\u6D1E\u5BDF\u306E\u307F\u3001\u539F\u6587\u306F\u4E0D\u8981\u300D",
+      "\u2022 \u300C1\u884C\u306E\u7D14\u7C8B\u306A\u8A33\u6587\u306E\u307F\u306B\u5909\u66F4\u3057\u3066\u300D",
+      "\u2022 \u300C\u30C7\u30D5\u30A9\u30EB\u30C8\u306E\u30B9\u30ED\u30C3\u30C8\u69CB\u6210\u306B\u623B\u3057\u3066\u300D"
+    ],
+    slotsCliTitle: "\u26A1\uFE0F \u30AF\u30A4\u30C3\u30AFCLI\u30B3\u30DE\u30F3\u30C9\uFF1A",
+    slotsCliHelp: [
+      "\u2022 /slots rm source       - \u539F\u6587\u884C\u3092\u5B8C\u5168\u306B\u975E\u8868\u793A",
+      "\u2022 /slots compact2        - \u30DF\u30CB\u30DE\u30EB2\u30B9\u30ED\u30C3\u30C8",
+      "\u2022 /slots reset           - \u30C7\u30D5\u30A9\u30EB\u30C8\u72B6\u614B\u306B\u30EA\u30BB\u30C3\u30C8",
+      "\u2022 /slots toggle <id>     - \u30B9\u30ED\u30C3\u30C8\u306E\u4E00\u6642\u7684\u306A\u30AA\u30F3/\u30AA\u30D5"
+    ],
+    slotsResetSuccess: "[{pair}] \u30B9\u30ED\u30C3\u30C8\u69CB\u6210\u3092\u30C7\u30D5\u30A9\u30EB\u30C8\u306B\u30EA\u30BB\u30C3\u30C8\u3057\u307E\u3057\u305F",
+    slotsRemovedSuccess: '[{pair}] \u30B9\u30ED\u30C3\u30C8 [{id}] ("{label}") \u3092\u524A\u9664\u3057\u307E\u3057\u305F',
+    slotsRemovedSourceNote: "\uFF08\u539F\u6587\u884C\u306F\u975E\u8868\u793A\u306B\u306A\u308A\u307E\u3059\uFF09",
+    slotsToggled: "[{pair}] \u30B9\u30ED\u30C3\u30C8 [{id}] \u306F\u73FE\u5728: {status}",
+    slotsAdded: '[{pair}] \u30B9\u30ED\u30C3\u30C8 [{id}] "{label}" \u3092\u8FFD\u52A0/\u66F4\u65B0\u3057\u307E\u3057\u305F',
+    slotsNotFound: "[{pair}] \u30B9\u30ED\u30C3\u30C8 [{id}] \u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\u3002/slots \u3067\u78BA\u8A8D\u3057\u3066\u304F\u3060\u3055\u3044",
+    slotsUsageAdd: "\u4F7F\u3044\u65B9: /slots add <id> <\u30E9\u30D9\u30EB> [\u30D7\u30ED\u30F3\u30D7\u30C8...]\n\u4F8B: /slots add twitter \u30C4\u30A4\u30FC\u30C8 280\u5B57\u4EE5\u5185\u306E\u6280\u8853\u30C4\u30A4\u30FC\u30C8",
+    slotsUsageRm: "\u4F7F\u3044\u65B9: /slots rm <\u30B9\u30ED\u30C3\u30C8ID> (\u4F8B: /slots rm source)",
+    slotsUsageToggle: "\u4F7F\u3044\u65B9: /slots toggle <\u30B9\u30ED\u30C3\u30C8ID>",
+    slotsUnknown: '[{pair}] \u672A\u77E5\u306E\u30B3\u30DE\u30F3\u30C9\u307E\u305F\u306F\u30D7\u30EA\u30BB\u30C3\u30C8 "{cmd}" \u3067\u3059\u3002/slots \u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044'
   },
   en: {
     slot1Label: "Spoken",
@@ -1169,7 +1252,37 @@ var LANGUAGE_PRESETS = {
       "\u2022 es (Spanish \u2794 English)",
       "\u2022 fr (French \u2794 English)",
       "\u2022 de (German \u2794 English)"
-    ]
+    ],
+    // Dynamic slots chrome (English)
+    slotsHeader: "Dynamic Slots Architecture",
+    slotsActiveTag: "active",
+    slotsNone: "No slots configured",
+    slotsStatusEnabled: "enabled",
+    slotsStatusDisabled: "disabled",
+    slotsWithNuance: " +nuance",
+    slotsNlTitle: "\u{1F4AC} Natural Language Customization (Just ask your Agent directly):",
+    slotsNlExamples: [
+      '\u2022 "Customize companion: only tweet and deep insight, no source text"',
+      '\u2022 "Switch companion to single-slot clean translation"',
+      '\u2022 "Reset companion slots to default"'
+    ],
+    slotsCliTitle: "\u26A1\uFE0F Quick CLI Commands:",
+    slotsCliHelp: [
+      "\u2022 /slots rm source       - Hide original source text row",
+      "\u2022 /slots compact2        - Minimal dual slot",
+      "\u2022 /slots reset           - Reset to clean defaults",
+      "\u2022 /slots toggle <id>     - Toggle slot enable/disable"
+    ],
+    slotsResetSuccess: "[{pair}] Reset slots to clean defaults (Source + Spoken + Written + Vocab)",
+    slotsRemovedSuccess: '[{pair}] Removed slot [{id}] ("{label}")',
+    slotsRemovedSourceNote: " (Source line will no longer appear on cards)",
+    slotsToggled: "[{pair}] Slot [{id}] is now {status}",
+    slotsAdded: '[{pair}] Added/updated slot [{id}] "{label}"',
+    slotsNotFound: "[{pair}] Slot [{id}] not found. Run /slots to inspect",
+    slotsUsageAdd: "Usage: /slots add <id> <label> [instruction...]\nExample: /slots add twitter Tweet Short punchy tweet under 280 chars",
+    slotsUsageRm: "Usage: /slots rm <slot-id> (e.g. /slots rm source)",
+    slotsUsageToggle: "Usage: /slots toggle <slot-id>",
+    slotsUnknown: '[{pair}] Unknown slot command or preset "{cmd}". Type /slots to view help'
   },
   es: {
     slot1Label: "Coloquial",
@@ -1234,7 +1347,37 @@ var LANGUAGE_PRESETS = {
       "\u2022 es (Espa\xF1ol \u2794 Ingl\xE9s)",
       "\u2022 fr (Franc\xE9s \u2794 Ingl\xE9s)",
       "\u2022 de (Alem\xE1n \u2794 Ingl\xE9s)"
-    ]
+    ],
+    // Ranuras dinámicas (Español)
+    slotsHeader: "Arquitectura de ranuras din\xE1micas",
+    slotsActiveTag: "activas",
+    slotsNone: "No hay ranuras configuradas",
+    slotsStatusEnabled: "activada",
+    slotsStatusDisabled: "desactivada",
+    slotsWithNuance: " +matiz",
+    slotsNlTitle: "\u{1F4AC} Personalizaci\xF3n con lenguaje natural (consulte a su Agente directamente):",
+    slotsNlExamples: [
+      '\u2022 "Personaliza el asistente: solo tuit y an\xE1lisis profundo, sin texto original"',
+      '\u2022 "Cambia el asistente a traducci\xF3n limpia de una sola ranura"',
+      '\u2022 "Restablece las ranuras predeterminadas"'
+    ],
+    slotsCliTitle: "\u26A1\uFE0F Comandos CLI r\xE1pidos:",
+    slotsCliHelp: [
+      "\u2022 /slots rm source       - Ocultar la fila de texto original",
+      "\u2022 /slots compact2        - Ranura doble m\xEDnima",
+      "\u2022 /slots reset           - Restablecer valores predeterminados",
+      "\u2022 /slots toggle <id>     - Activar/desactivar ranura"
+    ],
+    slotsResetSuccess: "[{pair}] Ranuras restablecidas a los valores predeterminados",
+    slotsRemovedSuccess: '[{pair}] Ranura [{id}] ("{label}") eliminada',
+    slotsRemovedSourceNote: " (La l\xEDnea de texto original ya no aparecer\xE1)",
+    slotsToggled: "[{pair}] La ranura [{id}] ahora est\xE1: {status}",
+    slotsAdded: '[{pair}] Ranura [{id}] "{label}" agregada/actualizada',
+    slotsNotFound: "[{pair}] No se encontr\xF3 la ranura [{id}]. Ejecute /slots para inspeccionar",
+    slotsUsageAdd: "Uso: /slots add <id> <etiqueta> [instrucci\xF3n...]",
+    slotsUsageRm: "Uso: /slots rm <id_ranura>",
+    slotsUsageToggle: "Uso: /slots toggle <id_ranura>",
+    slotsUnknown: '[{pair}] Comando o ajuste preestablecido desconocido "{cmd}". Escriba /slots para ver la ayuda'
   },
   fr: {
     slot1Label: "Oral",
@@ -1297,7 +1440,37 @@ var LANGUAGE_PRESETS = {
       "\u2022 es (Espagnol \u2794 Anglais)",
       "\u2022 fr (Fran\xE7ais \u2794 Anglais)",
       "\u2022 de (Allemand \u2794 Anglais)"
-    ]
+    ],
+    // Emplacements dynamiques (Français)
+    slotsHeader: "Architecture d'emplacements dynamiques",
+    slotsActiveTag: "actifs",
+    slotsNone: "Aucun emplacement configur\xE9",
+    slotsStatusEnabled: "activ\xE9",
+    slotsStatusDisabled: "d\xE9sactiv\xE9",
+    slotsWithNuance: " +nuance",
+    slotsNlTitle: "\u{1F4AC} Personnalisation en langage naturel (demandez \xE0 votre Agent) :",
+    slotsNlExamples: [
+      '\u2022 "Personnalise le compagnon : uniquement tweet et analyse approfondie, sans texte original"',
+      '\u2022 "Passe le compagnon \xE0 une traduction unique \xE9pur\xE9e"',
+      '\u2022 "R\xE9initialise les emplacements par d\xE9faut"'
+    ],
+    slotsCliTitle: "\u26A1\uFE0F Commandes CLI rapides :",
+    slotsCliHelp: [
+      "\u2022 /slots rm source       - Masquer la ligne de texte source",
+      "\u2022 /slots compact2        - Double emplacement minimal",
+      "\u2022 /slots reset           - R\xE9initialiser par d\xE9faut",
+      "\u2022 /slots toggle <id>     - Activer/d\xE9sactiver l'emplacement"
+    ],
+    slotsResetSuccess: "[{pair}] Emplacements r\xE9initialis\xE9s par d\xE9faut",
+    slotsRemovedSuccess: '[{pair}] Emplacement [{id}] ("{label}") supprim\xE9',
+    slotsRemovedSourceNote: " (La ligne source ne sera plus affich\xE9e)",
+    slotsToggled: "[{pair}] L'emplacement [{id}] est maintenant : {status}",
+    slotsAdded: '[{pair}] Emplacement [{id}] "{label}" ajout\xE9/mis \xE0 jour',
+    slotsNotFound: "[{pair}] Emplacement [{id}] introuvable. Ex\xE9cutez /slots pour v\xE9rifier",
+    slotsUsageAdd: "Utilisation : /slots add <id> <\xE9tiquette> [instruction...]",
+    slotsUsageRm: "Utilisation : /slots rm <id_emplacement>",
+    slotsUsageToggle: "Utilisation : /slots toggle <id_emplacement>",
+    slotsUnknown: `[{pair}] Commande ou pr\xE9r\xE9glage inconnu "{cmd}". Tapez /slots pour afficher l'aide`
   },
   de: {
     slot1Label: "Gesprochen",
@@ -1362,7 +1535,37 @@ var LANGUAGE_PRESETS = {
       "\u2022 es (Spanisch \u2794 Englisch)",
       "\u2022 fr (Franz\xF6sisch \u2794 Englisch)",
       "\u2022 de (Deutsch \u2794 Englisch)"
-    ]
+    ],
+    // Dynamische Slot-Architektur (Deutsch)
+    slotsHeader: "Dynamische Slot-Architektur",
+    slotsActiveTag: "aktiv",
+    slotsNone: "Keine Slots konfiguriert",
+    slotsStatusEnabled: "aktiviert",
+    slotsStatusDisabled: "deaktiviert",
+    slotsWithNuance: " +Nuance",
+    slotsNlTitle: "\u{1F4AC} Anpassung in nat\xFCrlicher Sprache (fragen Sie Ihren Agenten direkt):",
+    slotsNlExamples: [
+      '\u2022 "Passen Sie die Begleitung an: nur Tweet und tiefe Einsicht, kein Originaltext"',
+      '\u2022 "Stellen Sie auf reine einzeilige \xDCbersetzung um"',
+      '\u2022 "Slots auf Standard zur\xFCcksetzen"'
+    ],
+    slotsCliTitle: "\u26A1\uFE0F Schnelle CLI-Befehle:",
+    slotsCliHelp: [
+      "\u2022 /slots rm source       - Originaltextzeile ausblenden",
+      "\u2022 /slots compact2        - Minimaler Doppel-Slot",
+      "\u2022 /slots reset           - Auf Standard zur\xFCcksetzen",
+      "\u2022 /slots toggle <id>     - Slot aktivieren/deaktivieren"
+    ],
+    slotsResetSuccess: "[{pair}] Slots auf Standard zur\xFCckgesetzt",
+    slotsRemovedSuccess: '[{pair}] Slot [{id}] ("{label}") entfernt',
+    slotsRemovedSourceNote: " (Originaltextzeile wird nicht mehr angezeigt)",
+    slotsToggled: "[{pair}] Slot [{id}] ist jetzt: {status}",
+    slotsAdded: '[{pair}] Slot [{id}] "{label}" hinzugef\xFCgt/aktualisiert',
+    slotsNotFound: "[{pair}] Slot [{id}] nicht gefunden. F\xFChren Sie /slots aus",
+    slotsUsageAdd: "Verwendung: /slots add <id> <Label> [Anweisung...]",
+    slotsUsageRm: "Verwendung: /slots rm <Slot-ID>",
+    slotsUsageToggle: "Verwendung: /slots toggle <Slot-ID>",
+    slotsUnknown: '[{pair}] Unbekannter Befehl oder Preset "{cmd}". /slots f\xFCr Hilfe eingeben'
   }
 };
 function resolveLabelsForLang(lang, overrides, targetLang) {

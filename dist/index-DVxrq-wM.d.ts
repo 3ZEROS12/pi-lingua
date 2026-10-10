@@ -55,6 +55,26 @@ interface LingualI18nLabels {
     modelSelectHint?: string;
     langUsageHint?: string;
     langList?: string[];
+    slotsHeader?: string;
+    slotsActiveTag?: string;
+    slotsNone?: string;
+    slotsStatusEnabled?: string;
+    slotsStatusDisabled?: string;
+    slotsWithNuance?: string;
+    slotsNlTitle?: string;
+    slotsNlExamples?: string[];
+    slotsCliTitle?: string;
+    slotsCliHelp?: string[];
+    slotsResetSuccess?: string;
+    slotsRemovedSuccess?: string;
+    slotsRemovedSourceNote?: string;
+    slotsToggled?: string;
+    slotsAdded?: string;
+    slotsNotFound?: string;
+    slotsUsageAdd?: string;
+    slotsUsageRm?: string;
+    slotsUsageToggle?: string;
+    slotsUnknown?: string;
     spokenLabel?: string;
     writtenLabel?: string;
 }
