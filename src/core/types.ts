@@ -3,6 +3,25 @@ import type { LingualI18nLabels } from "../types.js";
 export type LingualMode = "original" | "english" | "off";
 export type LinguaMode = LingualMode;
 
+export type SlotRole = "source" | "translation" | "vocab" | "custom";
+
+export interface SlotConfig {
+  id: string;               // e.g. "source", "spoken", "written", "vocab", "hook", "deep", "keigo"
+  label: string;            // e.g. "原文", "口语", "写作", "重点", "Original", "Spoken", "Hook"
+  role: SlotRole;           // "source" | "translation" | "vocab" | "custom"
+  instruction?: string;     // Specific LLM translation/style prompt
+  showMeaning?: boolean;    // Whether to generate nuance back-translation in language A
+  enabled: boolean;
+}
+
+export interface SlotResult {
+  id: string;
+  label: string;
+  role: SlotRole;
+  content: string;
+  meaning?: string;
+}
+
 export interface SlotDefinition {
   label: string;       // e.g. "Spoken" | "Hook" | "口語" | "Paper"
   name: string;        // e.g. "Silicon Valley Spoken" | "Twitter Hook" | "Business Keigo"
@@ -21,7 +40,7 @@ export interface LingualRequest {
   context?: string;                     // Optional: Context of the tweet being replied to, issue, or Slack thread
   tone?: "general" | "social" | "tech"; // default "general"
   isLongInput?: boolean;
-  slots?: CustomSlotsConfig;            // Dynamic Dual-Slot Customization
+  slots?: SlotConfig[] | CustomSlotsConfig; // Dynamic Multi-Slot Architecture
 }
 
 export interface LingualResponse {
@@ -31,6 +50,7 @@ export interface LingualResponse {
   writtenMeaning?: string;
   vocab?: string;
   summary?: string;
+  slots?: SlotResult[];                 // Full dynamic slots result array
   cached: boolean;
   shieldBypassed: boolean;
 }

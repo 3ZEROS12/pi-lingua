@@ -1029,11 +1029,60 @@ function buildSystemPrompt(sourceLang = "zh", targetLang = "en", isLongInput = f
   const normSource = (sourceLang || "zh").toLowerCase().split("-")[0];
   const spec = LANGUAGE_SPECS[normSource] || LANGUAGE_SPECS.zh;
   const targetName = targetLang === "ja" ? "Japanese" : targetLang === "zh" ? "Chinese" : "English";
+  if (Array.isArray(customSlots)) {
+    const enabledSlots = customSlots.filter((s) => s.enabled && s.role !== "source");
+    let taskLines = [];
+    let jsonProps = [];
+    if (isLongInput) {
+      jsonProps.push(`  "summary": "Concise core intent/question in native ${spec.name} (under 20 words)"`);
+    }
+    enabledSlots.forEach((slot, idx) => {
+      const num = idx + 1;
+      const instruction = slot.instruction || `Express the message in ${slot.label} style in authentic ${targetName}.`;
+      taskLines.push(`${num}. "${slot.id}" (${slot.label}): ${instruction}`);
+      jsonProps.push(`  "${slot.id}": "..."`);
+      if (slot.showMeaning && slot.role !== "vocab") {
+        taskLines.push(`${num}_meaning. "${slot.id}_meaning": The exact nuance and meaning of "${slot.id}" ${spec.meaningInstruction}.`);
+        jsonProps.push(`  "${slot.id}_meaning": "..."`);
+      }
+    });
+    const dynamicTasks = taskLines.join("\n");
+    const dynamicJsonHint = `Strict JSON format:
+{
+${jsonProps.join(",\n")}
+}`;
+    const condensationDirective2 = isLongInput ? `
+
+[LONG INPUT CONDENSATION DIRECTIVE]:
+The user's input text is long (>90 chars). DO NOT translate verbatim line by line with wordy padding.
+First, distill and synthesize the core intent/question into a concise headline ("summary") in native ${spec.name} (strictly under 20 words).
+Then, render the expressions concisely in ${targetName} so the translation fits cleanly without information bloat.` : "";
+    const contextDirective2 = context && context.trim() ? `
+
+[CONVERSATION & THREAD CONTEXT]:
+The user's message is a reply to or continuation of the following context:
+"""
+${context.trim().slice(0, 500)}
+"""
+Ensure the generated translations fit naturally as a responsive reply to this specific context.` : "";
+    return `You are an elite bilingual language coach and cross-register translation architect.
+Task:
+Translate the user's message from native ${spec.name} (language A) into the following requested authentic ${targetName} registers/slots (language B):
+${dynamicTasks}
+
+[CODE & SYMBOL SHIELD - STRICT RULE]:
+All inline code (\`foo()\`), file paths (@file, path/to/file), SQL keywords, variable names, and technical identifiers MUST be preserved 100% verbatim in all outputs. Never translate, rephrase, or drop code tokens.
+${condensationDirective2}${contextDirective2}
+
+${dynamicJsonHint}
+Output valid JSON ONLY. Never output markdown code fences, backticks, quotes, or explanations.`;
+  }
   const defaultSlots = SLOT_PRESETS.developer;
-  const slot1Name = customSlots?.slot1?.name || (tone === "social" ? SLOT_PRESETS.social.slot1.name : defaultSlots.slot1.name);
-  const slot1Instruction = customSlots?.slot1?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot1.instruction : defaultSlots.slot1.instruction);
-  const slot2Name = customSlots?.slot2?.name || (tone === "social" ? SLOT_PRESETS.social.slot2.name : defaultSlots.slot2.name);
-  const slot2Instruction = customSlots?.slot2?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot2.instruction : defaultSlots.slot2.instruction);
+  const legacyConfig = customSlots;
+  const slot1Name = legacyConfig?.slot1?.name || (tone === "social" ? SLOT_PRESETS.social.slot1.name : defaultSlots.slot1.name);
+  const slot1Instruction = legacyConfig?.slot1?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot1.instruction : defaultSlots.slot1.instruction);
+  const slot2Name = legacyConfig?.slot2?.name || (tone === "social" ? SLOT_PRESETS.social.slot2.name : defaultSlots.slot2.name);
+  const slot2Instruction = legacyConfig?.slot2?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot2.instruction : defaultSlots.slot2.instruction);
   const anchorText = spec.anchors.map(
     (a) => `Input: ${JSON.stringify(a.input)}
 Output: ${JSON.stringify({

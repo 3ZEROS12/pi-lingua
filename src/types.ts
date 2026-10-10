@@ -10,6 +10,9 @@ export type {
   TranslationPayload,
   SlotDefinition,
   CustomSlotsConfig,
+  SlotRole,
+  SlotConfig,
+  SlotResult,
 } from "./core/types.js";
 
 export interface LingualI18nLabels {

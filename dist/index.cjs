@@ -50,6 +50,7 @@ __export(index_exports, {
   formatTerminalAnnotation: () => formatTerminalAnnotation,
   formatTreeBranch: () => formatTreeBranch,
   formatVocabItemsAtomic: () => formatVocabItemsAtomic,
+  getDefaultSlots: () => getDefaultSlots,
   getEffectiveMaxCols: () => getEffectiveMaxCols,
   getVisualWidth: () => getVisualWidth,
   globalLinguaCache: () => globalLinguaCache,
@@ -605,6 +606,49 @@ function splitSemanticChunks(text, maxChunkChars = 65) {
 }
 
 // src/core/prompts.ts
+function getDefaultSlots(sourceLang = "zh") {
+  const norm = (sourceLang || "zh").toLowerCase().split("-")[0];
+  const labels = {
+    zh: { source: "\u539F\u6587", spoken: "\u53E3\u8BED", written: "\u5199\u4F5C", vocab: "\u91CD\u70B9" },
+    ja: { source: "\u539F\u6587", spoken: "\u53E3\u8A9E", written: "\u6587\u9762", vocab: "\u5358\u8A9E" },
+    en: { source: "Original", spoken: "Spoken", written: "Written", vocab: "Vocab" },
+    es: { source: "Original", spoken: "Hablado", written: "Escrito", vocab: "Vocab" },
+    fr: { source: "Original", spoken: "Parl\xE9", written: "\xC9crit", vocab: "Vocab" },
+    de: { source: "Original", spoken: "Gesprochen", written: "Schriftlich", vocab: "Wortschatz" }
+  };
+  const l = labels[norm] || labels.zh;
+  return [
+    {
+      id: "source",
+      label: l.source,
+      role: "source",
+      enabled: true
+    },
+    {
+      id: "spoken",
+      label: l.spoken,
+      role: "translation",
+      instruction: "Natural, fluent spoken flow (daily standup, Slack, pair programming, agile collaboration). Authentic Silicon Valley flow, natural contractions, native phrasal verbs, idioms.",
+      showMeaning: true,
+      enabled: true
+    },
+    {
+      id: "written",
+      label: l.written,
+      role: "translation",
+      instruction: "Clear, precise, modern technical written prose (PR descriptions, RFCs, issues, architecture docs). High-level Plain prose: active, concise, professional. STRICTLY AVOID archaic Victorian fluff and AI-slop buzzwords.",
+      showMeaning: true,
+      enabled: true
+    },
+    {
+      id: "vocab",
+      label: l.vocab,
+      role: "vocab",
+      instruction: "Adaptively extract key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging the user to high-level/native fluency.",
+      enabled: true
+    }
+  ];
+}
 var SLOT_PRESETS = {
   developer: {
     slot1: {
@@ -877,11 +921,60 @@ function buildSystemPrompt(sourceLang = "zh", targetLang = "en", isLongInput = f
   const normSource = (sourceLang || "zh").toLowerCase().split("-")[0];
   const spec = LANGUAGE_SPECS[normSource] || LANGUAGE_SPECS.zh;
   const targetName = targetLang === "ja" ? "Japanese" : targetLang === "zh" ? "Chinese" : "English";
+  if (Array.isArray(customSlots)) {
+    const enabledSlots = customSlots.filter((s) => s.enabled && s.role !== "source");
+    let taskLines = [];
+    let jsonProps = [];
+    if (isLongInput) {
+      jsonProps.push(`  "summary": "Concise core intent/question in native ${spec.name} (under 20 words)"`);
+    }
+    enabledSlots.forEach((slot, idx) => {
+      const num = idx + 1;
+      const instruction = slot.instruction || `Express the message in ${slot.label} style in authentic ${targetName}.`;
+      taskLines.push(`${num}. "${slot.id}" (${slot.label}): ${instruction}`);
+      jsonProps.push(`  "${slot.id}": "..."`);
+      if (slot.showMeaning && slot.role !== "vocab") {
+        taskLines.push(`${num}_meaning. "${slot.id}_meaning": The exact nuance and meaning of "${slot.id}" ${spec.meaningInstruction}.`);
+        jsonProps.push(`  "${slot.id}_meaning": "..."`);
+      }
+    });
+    const dynamicTasks = taskLines.join("\n");
+    const dynamicJsonHint = `Strict JSON format:
+{
+${jsonProps.join(",\n")}
+}`;
+    const condensationDirective2 = isLongInput ? `
+
+[LONG INPUT CONDENSATION DIRECTIVE]:
+The user's input text is long (>90 chars). DO NOT translate verbatim line by line with wordy padding.
+First, distill and synthesize the core intent/question into a concise headline ("summary") in native ${spec.name} (strictly under 20 words).
+Then, render the expressions concisely in ${targetName} so the translation fits cleanly without information bloat.` : "";
+    const contextDirective2 = context && context.trim() ? `
+
+[CONVERSATION & THREAD CONTEXT]:
+The user's message is a reply to or continuation of the following context:
+"""
+${context.trim().slice(0, 500)}
+"""
+Ensure the generated translations fit naturally as a responsive reply to this specific context.` : "";
+    return `You are an elite bilingual language coach and cross-register translation architect.
+Task:
+Translate the user's message from native ${spec.name} (language A) into the following requested authentic ${targetName} registers/slots (language B):
+${dynamicTasks}
+
+[CODE & SYMBOL SHIELD - STRICT RULE]:
+All inline code (\`foo()\`), file paths (@file, path/to/file), SQL keywords, variable names, and technical identifiers MUST be preserved 100% verbatim in all outputs. Never translate, rephrase, or drop code tokens.
+${condensationDirective2}${contextDirective2}
+
+${dynamicJsonHint}
+Output valid JSON ONLY. Never output markdown code fences, backticks, quotes, or explanations.`;
+  }
   const defaultSlots = SLOT_PRESETS.developer;
-  const slot1Name = customSlots?.slot1?.name || (tone === "social" ? SLOT_PRESETS.social.slot1.name : defaultSlots.slot1.name);
-  const slot1Instruction = customSlots?.slot1?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot1.instruction : defaultSlots.slot1.instruction);
-  const slot2Name = customSlots?.slot2?.name || (tone === "social" ? SLOT_PRESETS.social.slot2.name : defaultSlots.slot2.name);
-  const slot2Instruction = customSlots?.slot2?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot2.instruction : defaultSlots.slot2.instruction);
+  const legacyConfig = customSlots;
+  const slot1Name = legacyConfig?.slot1?.name || (tone === "social" ? SLOT_PRESETS.social.slot1.name : defaultSlots.slot1.name);
+  const slot1Instruction = legacyConfig?.slot1?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot1.instruction : defaultSlots.slot1.instruction);
+  const slot2Name = legacyConfig?.slot2?.name || (tone === "social" ? SLOT_PRESETS.social.slot2.name : defaultSlots.slot2.name);
+  const slot2Instruction = legacyConfig?.slot2?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot2.instruction : defaultSlots.slot2.instruction);
   const anchorText = spec.anchors.map(
     (a) => `Input: ${JSON.stringify(a.input)}
 Output: ${JSON.stringify({
@@ -1662,6 +1755,29 @@ async function translateCore(req, options) {
   const parsed = parseLlmResponse(raw);
   if (parsed) {
     cache.set(cacheKey, parsed);
+    const configuredSlots = Array.isArray(req.slots) ? req.slots : getDefaultSlots(sourceLang);
+    let rawObj = {};
+    try {
+      const firstBrace = raw.indexOf("{");
+      const lastBrace = raw.lastIndexOf("}");
+      if (firstBrace !== -1 && lastBrace > firstBrace) {
+        rawObj = tryParseJson(raw.slice(firstBrace, lastBrace + 1)) || {};
+      }
+    } catch {
+    }
+    const slotResults = [];
+    for (const slot of configuredSlots) {
+      if (!slot.enabled) continue;
+      if (slot.role === "source") {
+        slotResults.push({ id: slot.id, label: slot.label, role: slot.role, content: text });
+      } else {
+        const content = (rawObj[slot.id] || (slot.id === "spoken" ? parsed.spoken : slot.id === "written" ? parsed.written : slot.id === "vocab" ? parsed.vocab : "") || "").trim();
+        const meaning = (rawObj[slot.id + "_meaning"] || (slot.id === "spoken" ? parsed.spokenMeaning : slot.id === "written" ? parsed.writtenMeaning : void 0) || "").trim() || void 0;
+        if (content) {
+          slotResults.push({ id: slot.id, label: slot.label, role: slot.role, content, meaning });
+        }
+      }
+    }
     return {
       spoken: parsed.spoken,
       spokenMeaning: parsed.spokenMeaning,
@@ -1669,6 +1785,7 @@ async function translateCore(req, options) {
       writtenMeaning: parsed.writtenMeaning,
       vocab: parsed.vocab,
       summary: parsed.summary,
+      slots: slotResults,
       cached: false,
       shieldBypassed: false
     };
@@ -2264,6 +2381,7 @@ var LingualSessionController = class {
   formatTerminalAnnotation,
   formatTreeBranch,
   formatVocabItemsAtomic,
+  getDefaultSlots,
   getEffectiveMaxCols,
   getVisualWidth,
   globalLinguaCache,

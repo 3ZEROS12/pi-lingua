@@ -1,4 +1,49 @@
-import type { SlotDefinition, CustomSlotsConfig } from "./types.js";
+import type { SlotDefinition, CustomSlotsConfig, SlotConfig, SlotRole } from "./types.js";
+
+export function getDefaultSlots(sourceLang = "zh"): SlotConfig[] {
+  const norm = (sourceLang || "zh").toLowerCase().split("-")[0];
+  const labels: Record<string, { source: string; spoken: string; written: string; vocab: string }> = {
+    zh: { source: "原文", spoken: "口语", written: "写作", vocab: "重点" },
+    ja: { source: "原文", spoken: "口語", written: "文面", vocab: "単語" },
+    en: { source: "Original", spoken: "Spoken", written: "Written", vocab: "Vocab" },
+    es: { source: "Original", spoken: "Hablado", written: "Escrito", vocab: "Vocab" },
+    fr: { source: "Original", spoken: "Parlé", written: "Écrit", vocab: "Vocab" },
+    de: { source: "Original", spoken: "Gesprochen", written: "Schriftlich", vocab: "Wortschatz" },
+  };
+  const l = labels[norm] || labels.zh;
+
+  return [
+    {
+      id: "source",
+      label: l.source,
+      role: "source",
+      enabled: true,
+    },
+    {
+      id: "spoken",
+      label: l.spoken,
+      role: "translation",
+      instruction: "Natural, fluent spoken flow (daily standup, Slack, pair programming, agile collaboration). Authentic Silicon Valley flow, natural contractions, native phrasal verbs, idioms.",
+      showMeaning: true,
+      enabled: true,
+    },
+    {
+      id: "written",
+      label: l.written,
+      role: "translation",
+      instruction: "Clear, precise, modern technical written prose (PR descriptions, RFCs, issues, architecture docs). High-level Plain prose: active, concise, professional. STRICTLY AVOID archaic Victorian fluff and AI-slop buzzwords.",
+      showMeaning: true,
+      enabled: true,
+    },
+    {
+      id: "vocab",
+      label: l.vocab,
+      role: "vocab",
+      instruction: "Adaptively extract key idiomatic collocations, phrasal verbs, technical idioms, or advanced expressions bridging the user to high-level/native fluency.",
+      enabled: true,
+    },
+  ];
+}
 
 export const SLOT_PRESETS: Record<string, { slot1: SlotDefinition; slot2: SlotDefinition }> = {
   developer: {
@@ -295,18 +340,76 @@ export function buildSystemPrompt(
   isLongInput = false,
   context?: string,
   tone: "general" | "social" | "tech" = "general",
-  customSlots?: CustomSlotsConfig
+  customSlots?: SlotConfig[] | CustomSlotsConfig
 ): string {
   const normSource = (sourceLang || "zh").toLowerCase().split("-")[0];
   const spec = LANGUAGE_SPECS[normSource] || LANGUAGE_SPECS.zh;
   const targetName = targetLang === "ja" ? "Japanese" : targetLang === "zh" ? "Chinese" : "English";
 
-  const defaultSlots = SLOT_PRESETS.developer;
-  const slot1Name = customSlots?.slot1?.name || (tone === "social" ? SLOT_PRESETS.social.slot1.name : defaultSlots.slot1.name);
-  const slot1Instruction = customSlots?.slot1?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot1.instruction : defaultSlots.slot1.instruction);
+  // Dynamic Multi-Slot Assembly
+  if (Array.isArray(customSlots)) {
+    const enabledSlots = customSlots.filter((s) => s.enabled && s.role !== "source");
+    
+    // 1. Build dynamic numbered task directives
+    let taskLines: string[] = [];
+    let jsonProps: string[] = [];
 
-  const slot2Name = customSlots?.slot2?.name || (tone === "social" ? SLOT_PRESETS.social.slot2.name : defaultSlots.slot2.name);
-  const slot2Instruction = customSlots?.slot2?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot2.instruction : defaultSlots.slot2.instruction);
+    if (isLongInput) {
+      jsonProps.push(`  "summary": "Concise core intent/question in native ${spec.name} (under 20 words)"`);
+    }
+
+    enabledSlots.forEach((slot, idx) => {
+      const num = idx + 1;
+      const instruction = slot.instruction || `Express the message in ${slot.label} style in authentic ${targetName}.`;
+      taskLines.push(`${num}. "${slot.id}" (${slot.label}): ${instruction}`);
+      jsonProps.push(`  "${slot.id}": "..."`);
+
+      if (slot.showMeaning && slot.role !== "vocab") {
+        taskLines.push(`${num}_meaning. "${slot.id}_meaning": The exact nuance and meaning of "${slot.id}" ${spec.meaningInstruction}.`);
+        jsonProps.push(`  "${slot.id}_meaning": "..."`);
+      }
+    });
+
+    const dynamicTasks = taskLines.join("\n");
+    const dynamicJsonHint = `Strict JSON format:\n{\n${jsonProps.join(",\n")}\n}`;
+
+    const condensationDirective = isLongInput
+      ? `\n\n[LONG INPUT CONDENSATION DIRECTIVE]:
+The user's input text is long (>90 chars). DO NOT translate verbatim line by line with wordy padding.
+First, distill and synthesize the core intent/question into a concise headline ("summary") in native ${spec.name} (strictly under 20 words).
+Then, render the expressions concisely in ${targetName} so the translation fits cleanly without information bloat.`
+      : "";
+
+    const contextDirective = context && context.trim()
+      ? `\n\n[CONVERSATION & THREAD CONTEXT]:
+The user's message is a reply to or continuation of the following context:
+"""
+${context.trim().slice(0, 500)}
+"""
+Ensure the generated translations fit naturally as a responsive reply to this specific context.`
+      : "";
+
+    return `You are an elite bilingual language coach and cross-register translation architect.
+Task:
+Translate the user's message from native ${spec.name} (language A) into the following requested authentic ${targetName} registers/slots (language B):
+${dynamicTasks}
+
+[CODE & SYMBOL SHIELD - STRICT RULE]:
+All inline code (\`foo()\`), file paths (@file, path/to/file), SQL keywords, variable names, and technical identifiers MUST be preserved 100% verbatim in all outputs. Never translate, rephrase, or drop code tokens.
+${condensationDirective}${contextDirective}
+
+${dynamicJsonHint}
+Output valid JSON ONLY. Never output markdown code fences, backticks, quotes, or explanations.`;
+  }
+
+  // Legacy CustomSlotsConfig / Pre-configured slots
+  const defaultSlots = SLOT_PRESETS.developer;
+  const legacyConfig = customSlots as CustomSlotsConfig | undefined;
+  const slot1Name = legacyConfig?.slot1?.name || (tone === "social" ? SLOT_PRESETS.social.slot1.name : defaultSlots.slot1.name);
+  const slot1Instruction = legacyConfig?.slot1?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot1.instruction : defaultSlots.slot1.instruction);
+
+  const slot2Name = legacyConfig?.slot2?.name || (tone === "social" ? SLOT_PRESETS.social.slot2.name : defaultSlots.slot2.name);
+  const slot2Instruction = legacyConfig?.slot2?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot2.instruction : defaultSlots.slot2.instruction);
 
   const anchorText = spec.anchors
     .map(

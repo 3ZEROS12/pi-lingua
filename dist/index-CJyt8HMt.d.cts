@@ -60,6 +60,22 @@ type LinguaI18nLabels = LingualI18nLabels;
 
 type LingualMode = "original" | "english" | "off";
 type LinguaMode = LingualMode;
+type SlotRole = "source" | "translation" | "vocab" | "custom";
+interface SlotConfig {
+    id: string;
+    label: string;
+    role: SlotRole;
+    instruction?: string;
+    showMeaning?: boolean;
+    enabled: boolean;
+}
+interface SlotResult {
+    id: string;
+    label: string;
+    role: SlotRole;
+    content: string;
+    meaning?: string;
+}
 interface SlotDefinition {
     label: string;
     name: string;
@@ -76,7 +92,7 @@ interface LingualRequest {
     context?: string;
     tone?: "general" | "social" | "tech";
     isLongInput?: boolean;
-    slots?: CustomSlotsConfig;
+    slots?: SlotConfig[] | CustomSlotsConfig;
 }
 interface LingualResponse {
     spoken: string;
@@ -85,6 +101,7 @@ interface LingualResponse {
     writtenMeaning?: string;
     vocab?: string;
     summary?: string;
+    slots?: SlotResult[];
     cached: boolean;
     shieldBypassed: boolean;
 }
@@ -124,6 +141,7 @@ interface TranslationPayload {
     summary?: string;
 }
 
+declare function getDefaultSlots(sourceLang?: string): SlotConfig[];
 declare const SLOT_PRESETS: Record<string, {
     slot1: SlotDefinition;
     slot2: SlotDefinition;
@@ -132,7 +150,7 @@ declare const SLOT_PRESETS: Record<string, {
  * 动态根据母语 A (sourceLang) 与目标学习语言 B (targetLang) 生成严格遵循【母语最高统治权】的系统提示词
  * 支持长输入总结 (isLongInput)、上下文注入 (context) 和风格侧重 (tone: "general" | "social" | "tech")。
  */
-declare function buildSystemPrompt(sourceLang?: string, targetLang?: string, isLongInput?: boolean, context?: string, tone?: "general" | "social" | "tech", customSlots?: CustomSlotsConfig): string;
+declare function buildSystemPrompt(sourceLang?: string, targetLang?: string, isLongInput?: boolean, context?: string, tone?: "general" | "social" | "tech", customSlots?: SlotConfig[] | CustomSlotsConfig): string;
 
 /**
  * In-Memory LRU Cache for Lingual Translations (会话级 0 依赖极速缓存)
@@ -254,4 +272,4 @@ interface SanitizedPromptResult {
  */
 declare function sanitizePromptForTranslation(raw: string): SanitizedPromptResult;
 
-export { type CacheStats as C, type LingualResult as L, SLOT_PRESETS as S, type TranslationPayload as T, type LingualI18nLabels as a, type LingualConfig as b, type CustomSlotsConfig as c, LANGUAGE_PRESETS as d, type LinguaConfig as e, type LinguaI18nLabels as f, LinguaLruCache as g, type LinguaMode as h, type LinguaResult as i, type LingualCoreOptions as j, LingualLruCache as k, type LingualMode as l, type LingualRequest as m, type LingualResponse as n, type SanitizedPromptResult as o, type SlotDefinition as p, buildSystemPrompt as q, formatModelSelectionMessage as r, formatStatusReport as s, globalLinguaCache as t, globalLingualCache as u, parseLlmResponse as v, resolveLabelsForLang as w, sanitizePromptForTranslation as x, shouldShieldBypass as y, translateCore as z };
+export { resolveLabelsForLang as A, sanitizePromptForTranslation as B, type CacheStats as C, shouldShieldBypass as D, translateCore as E, type LingualResult as L, SLOT_PRESETS as S, type TranslationPayload as T, type LingualI18nLabels as a, type LingualConfig as b, type CustomSlotsConfig as c, LANGUAGE_PRESETS as d, type LinguaConfig as e, type LinguaI18nLabels as f, LinguaLruCache as g, type LinguaMode as h, type LinguaResult as i, type LingualCoreOptions as j, LingualLruCache as k, type LingualMode as l, type LingualRequest as m, type LingualResponse as n, type SanitizedPromptResult as o, type SlotConfig as p, type SlotDefinition as q, type SlotResult as r, type SlotRole as s, buildSystemPrompt as t, formatModelSelectionMessage as u, formatStatusReport as v, getDefaultSlots as w, globalLinguaCache as x, globalLingualCache as y, parseLlmResponse as z };

@@ -1,7 +1,7 @@
-import type { LingualRequest, LingualResponse, TranslationPayload } from "./types.js";
+import type { LingualRequest, LingualResponse, TranslationPayload, SlotConfig, SlotResult } from "./types.js";
 import { shouldShieldBypass } from "../shield.js";
 import { LingualLruCache, globalLingualCache } from "../cache.js";
-import { buildSystemPrompt } from "./prompts.js";
+import { buildSystemPrompt, getDefaultSlots } from "./prompts.js";
 
 /**
  * Featherweight JSON repair for LLM responses with unescaped quotes or trailing commas
@@ -160,6 +160,36 @@ export async function translateCore(
   const parsed = parseLlmResponse(raw);
   if (parsed) {
     cache.set(cacheKey, parsed);
+
+    // Build dynamic multi-slot results array
+    const configuredSlots: SlotConfig[] = Array.isArray(req.slots)
+      ? req.slots
+      : getDefaultSlots(sourceLang);
+
+    // Parse raw JSON object for custom slot keys
+    let rawObj: Record<string, any> = {};
+    try {
+      const firstBrace = raw.indexOf("{");
+      const lastBrace = raw.lastIndexOf("}");
+      if (firstBrace !== -1 && lastBrace > firstBrace) {
+        rawObj = tryParseJson(raw.slice(firstBrace, lastBrace + 1)) || {};
+      }
+    } catch {}
+
+    const slotResults: SlotResult[] = [];
+    for (const slot of configuredSlots) {
+      if (!slot.enabled) continue;
+      if (slot.role === "source") {
+        slotResults.push({ id: slot.id, label: slot.label, role: slot.role, content: text });
+      } else {
+        const content = (rawObj[slot.id] || (slot.id === "spoken" ? parsed.spoken : slot.id === "written" ? parsed.written : slot.id === "vocab" ? parsed.vocab : "") || "").trim();
+        const meaning = (rawObj[slot.id + "_meaning"] || (slot.id === "spoken" ? parsed.spokenMeaning : slot.id === "written" ? parsed.writtenMeaning : undefined) || "").trim() || undefined;
+        if (content) {
+          slotResults.push({ id: slot.id, label: slot.label, role: slot.role, content, meaning });
+        }
+      }
+    }
+
     return {
       spoken: parsed.spoken,
       spokenMeaning: parsed.spokenMeaning,
@@ -167,6 +197,7 @@ export async function translateCore(
       writtenMeaning: parsed.writtenMeaning,
       vocab: parsed.vocab,
       summary: parsed.summary,
+      slots: slotResults,
       cached: false,
       shieldBypassed: false,
     };

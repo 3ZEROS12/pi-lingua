@@ -161,3 +161,50 @@ test("core: buildSystemPrompt supports dynamic custom slot definitions", () => {
   assert.match(prompt, /Slot 2: Deep Architecture Breakdown/);
   assert.match(prompt, /Rigorous RFC-grade architectural explanation/);
 });
+
+test("core: translateCore outputs structured res.slots matching configured slot array", async () => {
+  const customSlots = [
+    { id: "source", label: "原文", role: "source" as const, enabled: true },
+    { id: "spoken", label: "日常口语", role: "translation" as const, showMeaning: true, enabled: true },
+    { id: "written", label: "技术规范", role: "translation" as const, showMeaning: true, enabled: true },
+    { id: "slang", label: "极客俚语", role: "custom" as const, enabled: true },
+    { id: "vocab", label: "核心搭配", role: "vocab" as const, enabled: true },
+  ];
+
+  const mockCompleter = async (_prompt: string, _systemPrompt: string) => {
+    return JSON.stringify({
+      spoken: "This feels way too complex.",
+      spoken_meaning: "感觉太复杂了",
+      written: "The architecture introduces redundant complexity.",
+      written_meaning: "该架构引入了多余复杂度",
+      slang: "Over-bloated nonsense.",
+      vocab: "over-bloated · redundant complexity",
+    });
+  };
+
+  const res = await translateCore(
+    {
+      text: "这个方案太复杂了",
+      sourceLang: "zh",
+      targetLang: "en",
+      slots: customSlots,
+    },
+    { completer: mockCompleter }
+  );
+
+  assert.ok(res.slots, "Expected res.slots to be populated");
+  assert.equal(res.slots.length, 5);
+
+  const sourceSlot = res.slots.find((s) => s.id === "source");
+  assert.ok(sourceSlot);
+  assert.equal(sourceSlot.content, "这个方案太复杂了");
+
+  const slangSlot = res.slots.find((s) => s.id === "slang");
+  assert.ok(slangSlot);
+  assert.equal(slangSlot.content, "Over-bloated nonsense.");
+
+  const spokenSlot = res.slots.find((s) => s.id === "spoken");
+  assert.ok(spokenSlot);
+  assert.equal(spokenSlot.content, "This feels way too complex.");
+  assert.equal(spokenSlot.meaning, "感觉太复杂了");
+});
