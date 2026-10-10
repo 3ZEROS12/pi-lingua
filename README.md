@@ -65,10 +65,10 @@ Traditional closed rectangular boxes (`│ ... │`) fracture when character wid
 
 ## Three Operating Modes
 
-Toggle modes anytime with `/2` or `/lingual`:
+Toggle modes anytime with `/lingual`:
 
 ```text
-  /2 (cycles: original ➔ english ➔ off ➔ original)
+  /lingual (cycles: original ➔ english ➔ off ➔ original)
 ```
 
 | Mode | What You Type | What the AI Receives | What You See | Best For |
@@ -179,15 +179,15 @@ Switch language pairs anytime:
 
 ## Commands & Shortcuts
 
-| Command | Alias | Description |
+| Command | Full / Alias | Description |
 | :--- | :--- | :--- |
-| `/2 [sub]` | `/lingual [sub]` | Master command: cycle modes, or route subcommands |
-| `/slots [cmd]` | `/2-slots` | Dynamic slot pipeline: add custom slots or remove source text row |
-| `/compact` | `/2-compact` | Toggle between Tree HUD and Capsule mode |
-| `/lang <source> [target]` | `/2-lang` | Switch language pair (e.g. `/lang ja en`, `/lang 日语`) |
-| `/last` | `/2-last` | Replay the most recent companion card |
-| `/2-model <id>` | `/lingual-model` | Switch companion model (`auto` to follow session, or specify a model ID) |
-| `/status` | `/2-status` | Display diagnostics, active model, and cache stats |
+| `/lingual [sub]` | `/lingual-mode` | Master command: cycle modes, or route subcommands |
+| `/slots [cmd]` | `/lingual-slots` | Dynamic slot pipeline: add custom slots or remove source text row |
+| `/compact` | `/lingual-compact` | Toggle between Tree HUD and Capsule mode |
+| `/lang <source> [target]` | `/lingual-lang` | Switch language pair (e.g. `/lang ja en`, `/lang 日语`) |
+| `/last` | `/lingual-last` | Replay the most recent companion card |
+| `/lingual-model <id>` | — | Switch companion model (`auto` to follow session, or specify a model ID) |
+| `/status` | `/lingual-status` | Display diagnostics, active model, and cache stats |
 
 *Keyboard shortcuts: `Alt+.` (next page), `Alt+,` (previous page). Standalone CLI: `lingual "prompt"`.*
 
@@ -215,8 +215,8 @@ By default, `pi-lingual` runs securely in-process using your active Pi session m
 
 When pairing with high-tier reasoning models, delegate companion duties to a lightweight model to save quota:
 ```bash
-/2-model <lightweight-model-id>    # Delegate to a lightweight model
-/2-model auto                      # Revert to follow-session mode
+/lingual-model <lightweight-model-id>    # Delegate to a lightweight model
+/lingual-model auto                      # Revert to follow-session mode
 ```
 
 Local Ollama or custom OpenAI-compatible endpoints can also be configured in `~/.pi/agent/lingual.json`:

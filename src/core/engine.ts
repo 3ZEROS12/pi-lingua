@@ -55,14 +55,28 @@ export function parseLlmResponse(raw: string): TranslationPayload | null {
       ? (parsed.summary || parsed.core_intent || parsed.coreIntent).trim()
       : "";
 
-    if (spoken) {
+    // 动态提取所有槽位的输出 (支持任意自定义槽位 ID，如 twitter, email, grammar 等)
+    const slotOutputs: Record<string, { content: string; meaning?: string }> = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      if (typeof v === "string" && v.trim() && !k.endsWith("_meaning") && k !== "summary") {
+        const meaningVal = typeof parsed[k + "_meaning"] === "string" ? parsed[k + "_meaning"].trim() : undefined;
+        slotOutputs[k] = {
+          content: v.trim(),
+          meaning: meaningVal || undefined,
+        };
+      }
+    }
+
+    const effectiveSpoken = spoken || Object.values(slotOutputs)[0]?.content || "";
+    if (effectiveSpoken) {
       return {
-        spoken,
+        spoken: effectiveSpoken,
         spokenMeaning: spokenMeaning || undefined,
         written: written || undefined,
         writtenMeaning: writtenMeaning || undefined,
         vocab: vocab || undefined,
         summary: summary || undefined,
+        slotOutputs: Object.keys(slotOutputs).length > 0 ? slotOutputs : undefined,
       };
     }
     return null;

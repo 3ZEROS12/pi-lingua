@@ -58,11 +58,10 @@ function isTestEnvironment(): boolean {
 }
 
 /**
- * Load user configuration from:
- * 1. ~/.pi/agent/settings.json (under "pi-lingual" block)
- * 2. ~/.pi/agent/lingual.json (flat or nested)
- * Uses high-efficiency 2-second in-memory memoization to prevent synchronous disk I/O thrashing during parallel chunk translations.
- * Never hardcodes private credentials in source code.
+ * Load user configuration from single source of truth: ~/.pi/agent/lingual.json
+ * If lingual.json does not exist, performs a one-time graceful migration from settings.json ("pi-lingual" block).
+ * Uses high-efficiency 2-second in-memory memoization to prevent synchronous disk I/O thrashing.
+ * Never writes back to settings.json, protecting host environment.
  */
 export function loadUserLingualConfig(): Partial<LingualConfig> {
   // 测试沙箱隔离：自动化测试期间不读取宿主机个人配置，防止环境脏数据干扰断言
@@ -75,51 +74,77 @@ export function loadUserLingualConfig(): Partial<LingualConfig> {
     return cachedUserConfig;
   }
 
-  const configPaths = [
-    path.join(os.homedir(), ".pi", "agent", "settings.json"),
-    path.join(os.homedir(), ".pi", "agent", "lingual.json"),
-  ];
+  const agentDir = path.join(os.homedir(), ".pi", "agent");
+  const lingualFile = path.join(agentDir, "lingual.json");
+  const settingsFile = path.join(agentDir, "settings.json");
 
-  for (const p of configPaths) {
+  let target: Record<string, any> | null = null;
+
+  // 1. 优先读取独立单一数据源 lingual.json
+  if (fs.existsSync(lingualFile)) {
     try {
-      if (fs.existsSync(p)) {
-        const raw = fs.readFileSync(p, "utf8");
-        const parsed = JSON.parse(raw);
-        // If settings.json, read the "pi-lingual" block
-        const target = p.endsWith("settings.json") ? (parsed["pi-lingual"] || parsed["lingua"]) : parsed;
-        if (!target) continue;
-
-        const endpoint = target.endpoint || target.antigravity?.endpoint;
-        const apiKey = target.apiKey || target.antigravity?.apiKey;
-        const model = target.model || target.antigravity?.model;
-        const selectedModel = target.selectedModel || target.model;
-        const sourceLang = target.sourceLang;
-        const targetLang = target.targetLang;
-        const compact = target.compact;
-        const slotPreset = target.slotPreset;
-        const slots = Array.isArray(target.slots) ? target.slots : undefined;
-        const labels = resolveLabelsForLang(sourceLang || "zh", target.labels);
-
-        cachedUserConfig = {
-          ...(endpoint ? { endpoint } : {}),
-          ...(apiKey ? { apiKey } : {}),
-          ...(model ? { model } : {}),
-          ...(selectedModel ? { selectedModel } : {}),
-          ...(target.mode ? { mode: target.mode } : {}),
-          ...(compact !== undefined ? { compact: Boolean(compact) } : {}),
-          ...(slotPreset ? { slotPreset } : {}),
-          ...(slots ? { slots } : {}),
-          ...(sourceLang ? { sourceLang } : {}),
-          ...(targetLang ? { targetLang } : {}),
-          labels,
-        };
-        lastConfigCheckTime = now;
-        return cachedUserConfig;
-      }
+      const raw = fs.readFileSync(lingualFile, "utf8");
+      const parsed = JSON.parse(raw);
+      target = parsed["pi-lingual"] || parsed;
     } catch {
-      // Ignore read errors gracefully
+      target = null;
     }
   }
+
+  // 2. 若 lingual.json 不存在，执行向下兼容平滑迁移 (读取 settings.json 并静默迁移写入 lingual.json)
+  if (!target && fs.existsSync(settingsFile)) {
+    try {
+      const raw = fs.readFileSync(settingsFile, "utf8");
+      const parsed = JSON.parse(raw);
+      const legacyBlock = parsed["pi-lingual"] || parsed["lingua"];
+      if (legacyBlock && typeof legacyBlock === "object") {
+        target = legacyBlock;
+        // 一次性静默迁移到 lingual.json，后续彻底绝缘 settings.json
+        try {
+          if (!fs.existsSync(agentDir)) {
+            fs.mkdirSync(agentDir, { recursive: true });
+          }
+          fs.writeFileSync(lingualFile, JSON.stringify(target, null, 2), "utf8");
+        } catch {}
+      }
+    } catch {
+      target = null;
+    }
+  }
+
+  if (target) {
+    const endpoint = target.endpoint || target.antigravity?.endpoint;
+    const apiKey = target.apiKey || target.antigravity?.apiKey;
+    const model = target.model || target.antigravity?.model;
+    const selectedModel = target.selectedModel || target.model;
+    const sourceLang = target.sourceLang;
+    const targetLang = target.targetLang;
+    const compact = target.compact;
+    const slotPreset = target.slotPreset;
+    const slots = Array.isArray(target.slots) ? target.slots : undefined;
+    const reasoning = typeof target.reasoning === "string" ? target.reasoning : undefined;
+    const timeoutMs = typeof target.timeoutMs === "number" ? target.timeoutMs : undefined;
+    const labels = resolveLabelsForLang(sourceLang || "zh", target.labels);
+
+    cachedUserConfig = {
+      ...(endpoint ? { endpoint } : {}),
+      ...(apiKey ? { apiKey } : {}),
+      ...(model ? { model } : {}),
+      ...(selectedModel ? { selectedModel } : {}),
+      ...(target.mode ? { mode: target.mode } : {}),
+      ...(compact !== undefined ? { compact: Boolean(compact) } : {}),
+      ...(slotPreset ? { slotPreset } : {}),
+      ...(slots ? { slots } : {}),
+      ...(sourceLang ? { sourceLang } : {}),
+      ...(targetLang ? { targetLang } : {}),
+      ...(reasoning ? { reasoning } : {}),
+      ...(timeoutMs ? { timeoutMs } : {}),
+      labels,
+    };
+    lastConfigCheckTime = now;
+    return cachedUserConfig;
+  }
+
   cachedUserConfig = {};
   lastConfigCheckTime = now;
   return {};
@@ -405,6 +430,7 @@ export async function translatePrompt(
       vocab: payload.vocab,
       summary: payload.summary,
       sourceText: effectiveSourceText,
+      slotOutputs: payload.slotOutputs,
       annotated: formatTerminalAnnotation(
         effectiveSourceText,
         payload.spoken,

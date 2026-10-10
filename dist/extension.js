@@ -1071,7 +1071,7 @@ var LANGUAGE_PRESETS = {
     statusReportCache: "\u4F1A\u8BDD\u7F13\u5B58",
     statusReportLayout: "HUD\u5E03\u5C40: Trifecta \u5F00\u653E\u5F0F\u5DE6\u5BFC\u8F68\u6811\u72B6\u67B6\u6784 (\xB7 \u250C \u251C \u2514)",
     statusReportAuth: "\u51ED\u636E\u6A21\u5F0F: Pi \u539F\u751F\u8FDB\u7A0B\u5185\u8BA4\u8BC1 (Zero Config \xB7 \u96F6Token\u6CC4\u9732)",
-    statusReportShortcuts: "\u5FEB\u6377\u64CD\u4F5C: /2 (\u5207\u6362\u6A21\u5F0F) \xB7 /lingual-lang (\u5207\u6BCD\u8BED) \xB7 /lingual-model (\u5207\u6A21\u578B) \xB7 /lingual-agent (\u5B9A\u5236\u8BED\u8A00)",
+    statusReportShortcuts: "\u5FEB\u6377\u64CD\u4F5C: /lingual (\u5207\u6362\u6A21\u5F0F) \xB7 /slots (\u7BA1\u7406\u69FD\u4F4D) \xB7 /lang (\u5207\u8BED\u8A00) \xB7 /compact (\u5207\u6362\u5E03\u5C40)",
     modeDescOriginal: "\u539F\u6587\u76F4\u901A \xB7 0ms\u975E\u963B\u585E",
     modeDescEnglish: "\u82F1\u6587\u6A21\u5F0F \xB7 \u6DF1\u5EA6\u4EE3\u7801\u63A8\u7406",
     modeDescOff: "\u5DF2\u5173\u95ED",
@@ -1136,7 +1136,7 @@ var LANGUAGE_PRESETS = {
     statusReportCache: "\u30BB\u30C3\u30B7\u30E7\u30F3\u30AD\u30E3\u30C3\u30B7\u30E5",
     statusReportLayout: "HUD\u30EC\u30A4\u30A2\u30A6\u30C8: Trifecta \u30AA\u30FC\u30D7\u30F3\u5DE6\u30EC\u30FC\u30EB\u30C4\u30EA\u30FC\u69CB\u9020 (\xB7 \u250C \u251C \u2514)",
     statusReportAuth: "\u8A8D\u8A3C\u65B9\u5F0F: Pi \u30CD\u30A4\u30C6\u30A3\u30D6\u30A4\u30F3\u30D7\u30ED\u30BB\u30B9\u8A8D\u8A3C (\u30BC\u30ED\u8A2D\u5B9A\u30FBToken\u5B89\u5168)",
-    statusReportShortcuts: "\u30AF\u30A4\u30C3\u30AF\u64CD\u4F5C: /2 (\u30E2\u30FC\u30C9\u5207\u66FF) \xB7 /lingual-lang (\u6BCD\u8A9E\u5207\u66FF) \xB7 /lingual-model (\u30E2\u30C7\u30EB\u5207\u66FF) \xB7 /lingual-agent (\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA)",
+    statusReportShortcuts: "\u30AF\u30A4\u30C3\u30AF\u64CD\u4F5C: /lingual (\u30E2\u30FC\u30C9\u5207\u66FF) \xB7 /slots (\u30B9\u30ED\u30C3\u30C8\u7BA1\u7406) \xB7 /lang (\u8A00\u8A9E\u5207\u66FF) \xB7 /compact (\u30EC\u30A4\u30A2\u30A6\u30C8\u5207\u66FF)",
     modeDescOriginal: "\u539F\u6587\u30D1\u30B9\u30B9\u30EB\u30FC \xB7 0ms\u975E\u540C\u671F",
     modeDescEnglish: "\u82F1\u8A9E\u30E2\u30FC\u30C9 \xB7 \u9AD8\u5EA6\u30B3\u30FC\u30C9\u63A8\u8AD6",
     modeDescOff: "\u30AA\u30D5",
@@ -1201,7 +1201,7 @@ var LANGUAGE_PRESETS = {
     statusReportCache: "Session Cache",
     statusReportLayout: "HUD Layout: Trifecta Minimalist Left-Rail Tree (\xB7 \u250C \u251C \u2514)",
     statusReportAuth: "Auth: Pi Native In-Process Auth (Zero Config \xB7 Secure)",
-    statusReportShortcuts: "Shortcuts: /2 (mode) \xB7 /lingual-lang (lang) \xB7 /lingual-model (model) \xB7 /lingual-agent (customize)",
+    statusReportShortcuts: "Shortcuts: /lingual (mode) \xB7 /slots (slots) \xB7 /lang (lang) \xB7 /compact (layout)",
     modeDescOriginal: "Pass-through \xB7 0ms non-blocking",
     modeDescEnglish: "English mode \xB7 Deep reasoning",
     modeDescOff: "Disabled",
@@ -1266,7 +1266,7 @@ var LANGUAGE_PRESETS = {
     statusReportCache: "Cach\xE9 de sesi\xF3n",
     statusReportLayout: "Dise\xF1o HUD: Trifecta \xE1rbol de gu\xEDa izquierda (\xB7 \u250C \u251C \u2514)",
     statusReportAuth: "Autenticaci\xF3n: Proceso nativo de Pi (Sin config \xB7 Seguro)",
-    statusReportShortcuts: "Accesos directos: /2 (modo) \xB7 /lingual-lang (idioma) \xB7 /lingual-model (modelo) \xB7 /lingual-agent (personalizar)",
+    statusReportShortcuts: "Accesos directos: /lingual (modo) \xB7 /slots (ranuras) \xB7 /lang (idioma) \xB7 /compact (dise\xF1o)",
     modeDescOriginal: "Directo \xB7 0ms no bloqueante",
     modeDescEnglish: "Modo ingl\xE9s \xB7 Razonamiento profundo",
     modeDescOff: "Apagado",
@@ -1329,7 +1329,7 @@ var LANGUAGE_PRESETS = {
     statusReportCache: "Cache de session",
     statusReportLayout: "Disposition HUD : Arbre guide gauche Trifecta (\xB7 \u250C \u251C \u2514)",
     statusReportAuth: "Authentification : Processus interne Pi natif (Z\xE9ro config \xB7 S\xE9curis\xE9)",
-    statusReportShortcuts: "Raccourcis : /2 (mode) \xB7 /lingual-lang (langue) \xB7 /lingual-model (mod\xE8le) \xB7 /lingual-agent (personnaliser)",
+    statusReportShortcuts: "Raccourcis : /lingual (mode) \xB7 /slots (emplacements) \xB7 /lang (langue) \xB7 /compact (mise en page)",
     modeDescOriginal: "Passerelle directe \xB7 0ms non bloquant",
     modeDescEnglish: "Mode anglais \xB7 Raisonnement approfondi",
     modeDescOff: "D\xE9sactiv\xE9",
@@ -1394,7 +1394,7 @@ var LANGUAGE_PRESETS = {
     statusReportCache: "Sitzungscache",
     statusReportLayout: "HUD-Layout: Trifecta Minimalistische Baumstruktur (\xB7 \u250C \u251C \u2514)",
     statusReportAuth: "Authentifizierung: Pi nativer In-Process Modus (Zero Config \xB7 Sicher)",
-    statusReportShortcuts: "Befehle: /2 (Modus) \xB7 /lingual-lang (Sprache) \xB7 /lingual-model (Modell) \xB7 /lingual-agent (Anpassen)",
+    statusReportShortcuts: "Befehle: /lingual (Modus) \xB7 /slots (Slots) \xB7 /lang (Sprache) \xB7 /compact (Layout)",
     modeDescOriginal: "Direkt \xB7 0ms nicht blockierend",
     modeDescEnglish: "Englisch-Modus \xB7 Tiefgreifende Logik",
     modeDescOff: "Aus",
@@ -1457,7 +1457,7 @@ function formatStatusReport(labels, info) {
   lines.push(
     `\u2022 ${labels.statusReportLayout || "Layout"}: ${layoutDesc}`,
     `\u2022 ${labels.statusReportAuth || "Auth: Pi Native In-Process Auth"}`,
-    `\u2022 ${labels.statusReportShortcuts || "Shortcuts: /2 \xB7 /lingual-lang \xB7 /lingual-compact \xB7 /lingual-model \xB7 /lingual-agent"}`
+    `\u2022 ${labels.statusReportShortcuts || "Shortcuts: /lingual \xB7 /slots \xB7 /lang \xB7 /compact \xB7 /status"}`
   );
   return lines.join("\n");
 }
@@ -1684,14 +1684,26 @@ function parseLlmResponse(raw) {
     const writtenMeaning = (parsed.written_meaning || parsed.writtenMeaning || "").trim();
     const vocab = typeof parsed.vocab === "string" ? parsed.vocab.trim() : "";
     const summary = typeof (parsed.summary || parsed.core_intent || parsed.coreIntent) === "string" ? (parsed.summary || parsed.core_intent || parsed.coreIntent).trim() : "";
-    if (spoken) {
+    const slotOutputs = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      if (typeof v === "string" && v.trim() && !k.endsWith("_meaning") && k !== "summary") {
+        const meaningVal = typeof parsed[k + "_meaning"] === "string" ? parsed[k + "_meaning"].trim() : void 0;
+        slotOutputs[k] = {
+          content: v.trim(),
+          meaning: meaningVal || void 0
+        };
+      }
+    }
+    const effectiveSpoken = spoken || Object.values(slotOutputs)[0]?.content || "";
+    if (effectiveSpoken) {
       return {
-        spoken,
+        spoken: effectiveSpoken,
         spokenMeaning: spokenMeaning || void 0,
         written: written || void 0,
         writtenMeaning: writtenMeaning || void 0,
         vocab: vocab || void 0,
-        summary: summary || void 0
+        summary: summary || void 0,
+        slotOutputs: Object.keys(slotOutputs).length > 0 ? slotOutputs : void 0
       };
     }
     return null;
@@ -1704,6 +1716,10 @@ function parseLlmResponse(raw) {
 var cachedUserConfig = null;
 var lastConfigCheckTime = 0;
 var CONFIG_CACHE_TTL_MS = 2e3;
+function invalidateUserConfigCache() {
+  cachedUserConfig = null;
+  lastConfigCheckTime = 0;
+}
 function isTestEnvironment() {
   return process.env.NODE_ENV === "test" || process.env.NODE_TEST_CONTEXT !== void 0 || process.execArgv.some((a) => a.startsWith("--test") || a === "--test") || process.argv.some((a) => a.includes(".test.") || a.includes("test")) || process.env.npm_lifecycle_event === "test";
 }
@@ -1715,45 +1731,68 @@ function loadUserLingualConfig() {
   if (cachedUserConfig && now - lastConfigCheckTime < CONFIG_CACHE_TTL_MS) {
     return cachedUserConfig;
   }
-  const configPaths = [
-    path.join(os.homedir(), ".pi", "agent", "settings.json"),
-    path.join(os.homedir(), ".pi", "agent", "lingual.json")
-  ];
-  for (const p of configPaths) {
+  const agentDir = path.join(os.homedir(), ".pi", "agent");
+  const lingualFile = path.join(agentDir, "lingual.json");
+  const settingsFile = path.join(agentDir, "settings.json");
+  let target = null;
+  if (fs.existsSync(lingualFile)) {
     try {
-      if (fs.existsSync(p)) {
-        const raw = fs.readFileSync(p, "utf8");
-        const parsed = JSON.parse(raw);
-        const target = p.endsWith("settings.json") ? parsed["pi-lingual"] || parsed["lingua"] : parsed;
-        if (!target) continue;
-        const endpoint = target.endpoint || target.antigravity?.endpoint;
-        const apiKey = target.apiKey || target.antigravity?.apiKey;
-        const model = target.model || target.antigravity?.model;
-        const selectedModel = target.selectedModel || target.model;
-        const sourceLang = target.sourceLang;
-        const targetLang = target.targetLang;
-        const compact = target.compact;
-        const slotPreset = target.slotPreset;
-        const slots = Array.isArray(target.slots) ? target.slots : void 0;
-        const labels = resolveLabelsForLang(sourceLang || "zh", target.labels);
-        cachedUserConfig = {
-          ...endpoint ? { endpoint } : {},
-          ...apiKey ? { apiKey } : {},
-          ...model ? { model } : {},
-          ...selectedModel ? { selectedModel } : {},
-          ...target.mode ? { mode: target.mode } : {},
-          ...compact !== void 0 ? { compact: Boolean(compact) } : {},
-          ...slotPreset ? { slotPreset } : {},
-          ...slots ? { slots } : {},
-          ...sourceLang ? { sourceLang } : {},
-          ...targetLang ? { targetLang } : {},
-          labels
-        };
-        lastConfigCheckTime = now;
-        return cachedUserConfig;
+      const raw = fs.readFileSync(lingualFile, "utf8");
+      const parsed = JSON.parse(raw);
+      target = parsed["pi-lingual"] || parsed;
+    } catch {
+      target = null;
+    }
+  }
+  if (!target && fs.existsSync(settingsFile)) {
+    try {
+      const raw = fs.readFileSync(settingsFile, "utf8");
+      const parsed = JSON.parse(raw);
+      const legacyBlock = parsed["pi-lingual"] || parsed["lingua"];
+      if (legacyBlock && typeof legacyBlock === "object") {
+        target = legacyBlock;
+        try {
+          if (!fs.existsSync(agentDir)) {
+            fs.mkdirSync(agentDir, { recursive: true });
+          }
+          fs.writeFileSync(lingualFile, JSON.stringify(target, null, 2), "utf8");
+        } catch {
+        }
       }
     } catch {
+      target = null;
     }
+  }
+  if (target) {
+    const endpoint = target.endpoint || target.antigravity?.endpoint;
+    const apiKey = target.apiKey || target.antigravity?.apiKey;
+    const model = target.model || target.antigravity?.model;
+    const selectedModel = target.selectedModel || target.model;
+    const sourceLang = target.sourceLang;
+    const targetLang = target.targetLang;
+    const compact = target.compact;
+    const slotPreset = target.slotPreset;
+    const slots = Array.isArray(target.slots) ? target.slots : void 0;
+    const reasoning = typeof target.reasoning === "string" ? target.reasoning : void 0;
+    const timeoutMs = typeof target.timeoutMs === "number" ? target.timeoutMs : void 0;
+    const labels = resolveLabelsForLang(sourceLang || "zh", target.labels);
+    cachedUserConfig = {
+      ...endpoint ? { endpoint } : {},
+      ...apiKey ? { apiKey } : {},
+      ...model ? { model } : {},
+      ...selectedModel ? { selectedModel } : {},
+      ...target.mode ? { mode: target.mode } : {},
+      ...compact !== void 0 ? { compact: Boolean(compact) } : {},
+      ...slotPreset ? { slotPreset } : {},
+      ...slots ? { slots } : {},
+      ...sourceLang ? { sourceLang } : {},
+      ...targetLang ? { targetLang } : {},
+      ...reasoning ? { reasoning } : {},
+      ...timeoutMs ? { timeoutMs } : {},
+      labels
+    };
+    lastConfigCheckTime = now;
+    return cachedUserConfig;
   }
   cachedUserConfig = {};
   lastConfigCheckTime = now;
@@ -1896,6 +1935,7 @@ async function translatePrompt(text, userConfig = {}) {
       vocab: payload.vocab,
       summary: payload.summary,
       sourceText: effectiveSourceText,
+      slotOutputs: payload.slotOutputs,
       annotated: formatTerminalAnnotation(
         effectiveSourceText,
         payload.spoken,
@@ -2067,7 +2107,7 @@ var LingualSessionController = class {
 };
 
 // src/sanitizer.ts
-var TARGETED_CLIPBOARD_PATH_REGEX = /(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png|\/(?:[^\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png|(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?)CURRENT_MISSION_STATE\.md)/gi;
+var TARGETED_CLIPBOARD_PATH_REGEX = /(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png|\/(?:[^\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png)/gi;
 var LEADING_TARGETED_CLIPBOARD_REGEX = /^(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png|\/(?:[^\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png)\s*/i;
 var STACK_LINE_REGEX = /^\s*(?:at\s+(?:[\w$.<>]+|[^\s]+)\s*\(.*:\d+:\d+\)|at\s+.*:\d+:\d+|File\s+".*", line \d+, in\s+.*|goroutine \d+ \[.*\]:|Caused by:.*|^\s*\d+:\s+0x[0-9a-f]+)/;
 var COMPILER_DIAGNOSTIC_REGEX = /^(?:[a-zA-Z]:[\\\/]|\.{0,2}[\\\/]|[a-zA-Z0-9_\-\.]+)[^:\r\n]+:\d+:\d+:\s*(?:error|warning|fatal error|note):/i;
@@ -2117,13 +2157,14 @@ function sanitizePromptForTranslation(raw) {
   const currentListItems = [];
   const collapsedListBlocks = [];
   const flushListItems = () => {
-    if (currentListItems.length >= 2) {
+    const totalLength = currentListItems.reduce((acc, cur) => acc + cur.length, 0);
+    if (currentListItems.length >= 2 && (currentListItems.length > 4 || totalLength > 120)) {
       hasCollapsed = true;
       resultLines.push(`[${currentListItems.length} items ...]`);
       collapsedListBlocks.push(currentListItems.join("\n"));
       currentListItems.length = 0;
-    } else if (currentListItems.length === 1) {
-      resultLines.push(currentListItems[0]);
+    } else {
+      resultLines.push(...currentListItems);
       currentListItems.length = 0;
     }
   };
@@ -2244,29 +2285,7 @@ function saveUserLingualConfig(patch) {
   }
   try {
     const agentDir = path2.join(os2.homedir(), ".pi", "agent");
-    const settingsFile = path2.join(agentDir, "settings.json");
     const configFile = path2.join(agentDir, "lingual.json");
-    if (fs2.existsSync(settingsFile)) {
-      try {
-        const raw = fs2.readFileSync(settingsFile, "utf8");
-        const settings = JSON.parse(raw);
-        const currentBlock = settings["pi-lingual"] || {};
-        for (const [k, v] of Object.entries(patch)) {
-          if (v === void 0 || v === "auto" || v === "original" || k === "compact" && v === false) {
-            delete currentBlock[k];
-          } else {
-            currentBlock[k] = v;
-          }
-        }
-        if (Object.keys(currentBlock).length === 0) {
-          delete settings["pi-lingual"];
-        } else {
-          settings["pi-lingual"] = currentBlock;
-        }
-        fs2.writeFileSync(settingsFile, JSON.stringify(settings, null, 2), "utf8");
-      } catch {
-      }
-    }
     if (!fs2.existsSync(agentDir)) {
       fs2.mkdirSync(agentDir, { recursive: true });
     }
@@ -2284,16 +2303,22 @@ function saveUserLingualConfig(patch) {
         existing[k] = v;
       }
     }
-    if (Object.keys(existing).length === 0) {
-      if (fs2.existsSync(configFile)) {
-        try {
-          fs2.unlinkSync(configFile);
-        } catch {
-        }
+    const content = JSON.stringify(existing, null, 2);
+    const tmpFile = `${configFile}.${Date.now()}.${Math.random().toString(36).slice(2, 6)}.tmp`;
+    try {
+      fs2.writeFileSync(tmpFile, content, "utf8");
+      fs2.renameSync(tmpFile, configFile);
+    } catch {
+      try {
+        fs2.writeFileSync(configFile, content, "utf8");
+      } catch {
       }
-    } else {
-      fs2.writeFileSync(configFile, JSON.stringify(existing, null, 2), "utf8");
+      try {
+        if (fs2.existsSync(tmpFile)) fs2.unlinkSync(tmpFile);
+      } catch {
+      }
     }
+    invalidateUserConfigCache();
   } catch {
   }
 }
@@ -2723,11 +2748,7 @@ Example: /slots add twitter \u63A8\u6587 Short punchy tweet under 280 chars`, "w
     await setModeHandler(trimmed, ctx);
   };
   pi.registerCommand("lingual", {
-    description: state.labels.cmdDescMode || "Switch or manage companion: /lingual [lang|model|compact|status|original|english|off]",
-    handler: masterCommandHandler
-  });
-  pi.registerCommand("2", {
-    description: state.labels.cmdDescMode || "Companion quick bus (alias): /2 [lang|model|compact|status|original|english|off]",
+    description: state.labels.cmdDescMode || "Switch or manage companion: /lingual [lang|slots|compact|model|status|last|original|english|off]",
     handler: masterCommandHandler
   });
   pi.registerCommand("lingual-mode", {
@@ -2742,10 +2763,6 @@ Example: /slots add twitter \u63A8\u6587 Short punchy tweet under 280 chars`, "w
     description: state.labels.cmdDescSlots || "Dynamic slots management (alias): /lingual-slots [add|rm|toggle|reset]",
     handler: switchSlotsHandler
   });
-  pi.registerCommand("2-slots", {
-    description: state.labels.cmdDescSlots || "Dynamic slots management (alias): /2-slots [add|rm|toggle|reset]",
-    handler: switchSlotsHandler
-  });
   pi.registerCommand("lang", {
     description: state.labels.cmdDescLang || "Switch companion language: /lang <zh|ja|en|es|fr|de> [target]",
     handler: switchLangHandler
@@ -2754,32 +2771,24 @@ Example: /slots add twitter \u63A8\u6587 Short punchy tweet under 280 chars`, "w
     description: state.labels.cmdDescLang || "Switch companion language (alias): /lingual-lang <zh|ja|en|es|fr|de>",
     handler: switchLangHandler
   });
-  pi.registerCommand("2-lang", {
-    description: state.labels.cmdDescLang || "Quick switch companion native language (alias): /2-lang <lang>",
-    handler: switchLangHandler
-  });
-  pi.registerCommand("lingual-compact", {
-    description: state.labels.cmdDescCompact || "Toggle single-line capsule mode: /lingual-compact",
+  pi.registerCommand("compact", {
+    description: state.labels.cmdDescCompact || "Toggle single-line capsule mode: /compact",
     handler: toggleCompactHandler
   });
-  pi.registerCommand("2-compact", {
-    description: state.labels.cmdDescCompact || "Toggle single-line capsule mode (alias): /2-compact",
+  pi.registerCommand("lingual-compact", {
+    description: state.labels.cmdDescCompact || "Toggle single-line capsule mode (alias): /lingual-compact",
     handler: toggleCompactHandler
   });
   pi.registerCommand("lingual-model", {
     description: state.labels.cmdDescModel || "Inspect or switch companion model: /lingual-model [model-id|auto]",
     handler: setModelHandler
   });
-  pi.registerCommand("2-model", {
-    description: state.labels.cmdDescModel || "Inspect or switch companion model (alias)",
-    handler: setModelHandler
-  });
-  pi.registerCommand("lingual-status", {
-    description: state.labels.cmdDescStatus || "Display companion status report: /lingual-status",
+  pi.registerCommand("status", {
+    description: state.labels.cmdDescStatus || "Display companion status report: /status",
     handler: showStatusHandler
   });
-  pi.registerCommand("2-status", {
-    description: state.labels.cmdDescStatus || "Display companion status report (alias)",
+  pi.registerCommand("lingual-status", {
+    description: state.labels.cmdDescStatus || "Display companion status report (alias): /lingual-status",
     handler: showStatusHandler
   });
   pi.registerCommand("last", {
@@ -2787,11 +2796,7 @@ Example: /slots add twitter \u63A8\u6587 Short punchy tweet under 280 chars`, "w
     handler: showLastHandler
   });
   pi.registerCommand("lingual-last", {
-    description: state.labels.cmdDescLast || "Replay previous companion card: /lingual-last",
-    handler: showLastHandler
-  });
-  pi.registerCommand("2-last", {
-    description: state.labels.cmdDescLast || "Replay previous companion card (alias)",
+    description: state.labels.cmdDescLast || "Replay previous companion card (alias): /lingual-last",
     handler: showLastHandler
   });
   pi.registerCommand("lingual-agent", {
@@ -2834,6 +2839,13 @@ Example: /slots add twitter \u63A8\u6587 Short punchy tweet under 280 chars`, "w
           if (match) targetModel = match;
         }
         if (!targetModel) return null;
+        const diskConfig = loadUserLingualConfig();
+        const requestOptions = {
+          maxTokens: 1500
+        };
+        if (diskConfig.reasoning) {
+          requestOptions.reasoning = diskConfig.reasoning;
+        }
         const stream = ctx.modelRegistry.streamSimple(
           targetModel,
           {
@@ -2846,13 +2858,11 @@ Example: /slots add twitter \u63A8\u6587 Short punchy tweet under 280 chars`, "w
               }
             ]
           },
-          {
-            reasoning: "low",
-            maxTokens: 600
-          }
+          requestOptions
         );
+        const timeoutMs = diskConfig.timeoutMs || 15e3;
         const timeoutPromise = new Promise(
-          (_, reject) => setTimeout(() => reject(new Error("Lingual translation timed out")), 3e4)
+          (_, reject) => setTimeout(() => reject(new Error("Lingual translation timed out")), timeoutMs)
         );
         const abortPromise = new Promise((_, reject) => {
           if (signal?.aborted) reject(new Error("Lingual translation aborted"));

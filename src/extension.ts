@@ -12,6 +12,7 @@ import {
   translatePrompt,
   shouldTriggerTranslation,
   loadUserLingualConfig,
+  invalidateUserConfigCache,
   formatTreeBranch,
   formatSubRail,
   truncateVisual,
@@ -90,58 +91,42 @@ function saveUserLingualConfig(patch: Record<string, any>) {
 
   try {
     const agentDir = path.join(os.homedir(), ".pi", "agent");
-    const settingsFile = path.join(agentDir, "settings.json");
     const configFile = path.join(agentDir, "lingual.json");
 
-    // 1. 优先尝试持久化到 Pi 全局 settings.json 下的 "pi-lingual" 配置块 (对齐 ADR-0003 与 Trifecta 铁律 1)
-    if (fs.existsSync(settingsFile)) {
-      try {
-        const raw = fs.readFileSync(settingsFile, "utf8");
-        const settings = JSON.parse(raw);
-        const currentBlock = settings["pi-lingual"] || {};
-
-        for (const [k, v] of Object.entries(patch)) {
-          if (v === undefined || v === "auto" || v === "original" || (k === "compact" && v === false)) {
-            delete currentBlock[k]; // 恢复默认值时物理移除键，零残留回滚
-          } else {
-            currentBlock[k] = v;
-          }
-        }
-
-        if (Object.keys(currentBlock).length === 0) {
-          delete settings["pi-lingual"];
-        } else {
-          settings["pi-lingual"] = currentBlock;
-        }
-
-        fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2), "utf8");
-      } catch {}
-    }
-
-    // 2. 同时更新 ~/.pi/agent/lingual.json 作为独立备用配置，同样执行删键清理以防永久覆盖 settings.json
     if (!fs.existsSync(agentDir)) {
       fs.mkdirSync(agentDir, { recursive: true });
     }
+
     let existing: Record<string, any> = {};
     if (fs.existsSync(configFile)) {
       try {
         existing = JSON.parse(fs.readFileSync(configFile, "utf8"));
       } catch {}
     }
+
     for (const [k, v] of Object.entries(patch)) {
       if (v === undefined || v === "auto" || v === "original" || (k === "compact" && v === false)) {
-        delete existing[k];
+        delete existing[k]; // 恢复默认值时物理移除键，零残留回滚 (RFC 2119 Invariant 1)
       } else {
         existing[k] = v;
       }
     }
-    if (Object.keys(existing).length === 0) {
-      if (fs.existsSync(configFile)) {
-        try { fs.unlinkSync(configFile); } catch {}
-      }
-    } else {
-      fs.writeFileSync(configFile, JSON.stringify(existing, null, 2), "utf8");
+
+    // 原子写入：写入临时文件后 rename，附带 Windows 文件锁冲突安全降级
+    const content = JSON.stringify(existing, null, 2);
+    const tmpFile = `${configFile}.${Date.now()}.${Math.random().toString(36).slice(2, 6)}.tmp`;
+
+    try {
+      fs.writeFileSync(tmpFile, content, "utf8");
+      fs.renameSync(tmpFile, configFile);
+    } catch {
+      // Windows 句柄锁或权限波动时降级直接安全落盘
+      try { fs.writeFileSync(configFile, content, "utf8"); } catch {}
+      try { if (fs.existsSync(tmpFile)) fs.unlinkSync(tmpFile); } catch {}
     }
+
+    // 同步刷新内存缓存
+    invalidateUserConfigCache();
   } catch {}
 }
 
@@ -594,7 +579,7 @@ export default function (pi: ExtensionAPI) {
     ctx.ui.notify(state.labels.notifyHistoryRestored || `[${state.labels.hudTitle}] Restored previous companion card`, "info");
   };
 
-  // 核心主命令总线调度器：处理 /lingual 和 /2 下的子命令路由与平滑轮转
+  // 核心主命令总线调度器：处理 /lingual 下的子命令路由与平滑轮转
   const masterCommandHandler = async (args: string, ctx: ExtensionContext) => {
     const trimmed = args?.trim();
     if (!trimmed) {
@@ -608,43 +593,43 @@ export default function (pi: ExtensionAPI) {
     const sub = spaceIndex === -1 ? lower : lower.slice(0, spaceIndex);
     const subArgs = spaceIndex === -1 ? "" : trimmed.slice(spaceIndex + 1).trim();
 
-    // 1. 子命令路由: 语言切换 (/lingual lang [code] 或 /2 lang [code])
+    // 1. 子命令路由: 语言切换 (/lingual lang [code])
     if (sub === "lang" || sub === "language") {
       await switchLangHandler(subArgs, ctx);
       return;
     }
 
-    // 1.1 子命令路由: 槽位架构切换 (/lingual slots [preset] 或 /2 slots [preset])
+    // 1.1 子命令路由: 槽位架构切换 (/lingual slots [args...])
     if (sub === "slots" || sub === "slot" || sub === "preset") {
       await switchSlotsHandler(subArgs, ctx);
       return;
     }
 
-    // 2. 子命令路由: 模型查看与切换 (/lingual model [id] 或 /2 model [id])
+    // 2. 子命令路由: 模型查看与切换 (/lingual model [id])
     if (sub === "model") {
       await setModelHandler(subArgs, ctx);
       return;
     }
 
-    // 3. 子命令路由: 胶囊/树状布局切换 (/lingual compact 或 /2 compact)
+    // 3. 子命令路由: 胶囊/树状布局切换 (/lingual compact)
     if (sub === "compact" || sub === "capsule" || sub === "layout") {
       await toggleCompactHandler(subArgs, ctx);
       return;
     }
 
-    // 4. 子命令路由: 状态报告 (/lingual status 或 /2 status)
+    // 4. 子命令路由: 状态报告 (/lingual status)
     if (sub === "status" || sub === "info" || sub === "report") {
       await showStatusHandler(subArgs, ctx);
       return;
     }
 
-    // 5. 子命令路由: 回看上一条卡片 (/lingual last 或 /2 last)
+    // 5. 子命令路由: 回看上一条卡片 (/lingual last)
     if (sub === "last" || sub === "prev" || sub === "history") {
       await showLastHandler(subArgs, ctx);
       return;
     }
 
-    // 6. 子命令路由: 伴学定制指南 (/lingual agent 或 /2 agent 或 /lingual help)
+    // 6. 子命令路由: 伴学定制指南 (/lingual agent 或 /lingual help)
     if (sub === "agent" || sub === "help" || sub === "?") {
       ctx.ui.notify(
         state.labels.notifyAgentHelp ||
@@ -668,7 +653,7 @@ export default function (pi: ExtensionAPI) {
       return;
     }
 
-    // 8. 直接输入语言代码 (/lingual ja 或 /2 ja 或 /lingual zh ja)
+    // 8. 直接输入语言代码 (/lingual ja 或 /lingual zh ja)
     const possibleLang = normalizeLangCode(sub);
     if (LANGUAGE_PRESETS[possibleLang]) {
       await switchLangHandler(trimmed, ctx);
@@ -680,12 +665,7 @@ export default function (pi: ExtensionAPI) {
 
   // 主命令总线 (支持所有子命令与平滑三态模式轮转)
   pi.registerCommand("lingual", {
-    description: state.labels.cmdDescMode || "Switch or manage companion: /lingual [lang|model|compact|status|original|english|off]",
-    handler: masterCommandHandler,
-  });
-
-  pi.registerCommand("2", {
-    description: state.labels.cmdDescMode || "Companion quick bus (alias): /2 [lang|model|compact|status|original|english|off]",
+    description: state.labels.cmdDescMode || "Switch or manage companion: /lingual [lang|slots|compact|model|status|last|original|english|off]",
     handler: masterCommandHandler,
   });
 
@@ -695,7 +675,7 @@ export default function (pi: ExtensionAPI) {
     handler: setModeHandler,
   });
 
-  // 独立槽位架构配置命令 (/slots, /lingual-slots, /2-slots)
+  // 独立槽位架构配置命令 (/slots, /lingual-slots)
   pi.registerCommand("slots", {
     description: state.labels.cmdDescSlots || "Inspect, add, remove, or customize dynamic slots: /slots [add|rm|toggle|reset]",
     handler: switchSlotsHandler,
@@ -706,12 +686,7 @@ export default function (pi: ExtensionAPI) {
     handler: switchSlotsHandler,
   });
 
-  pi.registerCommand("2-slots", {
-    description: state.labels.cmdDescSlots || "Dynamic slots management (alias): /2-slots [add|rm|toggle|reset]",
-    handler: switchSlotsHandler,
-  });
-
-  // 独立语言切换命令 (首选直觉命令 /lang 及别名)
+  // 独立语言切换命令 (首选直觉命令 /lang 及全称别名)
   pi.registerCommand("lang", {
     description: state.labels.cmdDescLang || "Switch companion language: /lang <zh|ja|en|es|fr|de> [target]",
     handler: switchLangHandler,
@@ -722,19 +697,14 @@ export default function (pi: ExtensionAPI) {
     handler: switchLangHandler,
   });
 
-  pi.registerCommand("2-lang", {
-    description: state.labels.cmdDescLang || "Quick switch companion native language (alias): /2-lang <lang>",
-    handler: switchLangHandler,
-  });
-
-  // 独立胶囊紧凑布局命令 (/lingual-compact 及别名 /2-compact；避免直接占用 Pi 内置 /compact 历史压缩命令)
-  pi.registerCommand("lingual-compact", {
-    description: state.labels.cmdDescCompact || "Toggle single-line capsule mode: /lingual-compact",
+  // 独立胶囊紧凑布局命令 (/compact, /lingual-compact)
+  pi.registerCommand("compact", {
+    description: state.labels.cmdDescCompact || "Toggle single-line capsule mode: /compact",
     handler: toggleCompactHandler,
   });
 
-  pi.registerCommand("2-compact", {
-    description: state.labels.cmdDescCompact || "Toggle single-line capsule mode (alias): /2-compact",
+  pi.registerCommand("lingual-compact", {
+    description: state.labels.cmdDescCompact || "Toggle single-line capsule mode (alias): /lingual-compact",
     handler: toggleCompactHandler,
   });
 
@@ -744,19 +714,14 @@ export default function (pi: ExtensionAPI) {
     handler: setModelHandler,
   });
 
-  pi.registerCommand("2-model", {
-    description: state.labels.cmdDescModel || "Inspect or switch companion model (alias)",
-    handler: setModelHandler,
-  });
-
-  // 独立状态报告命令
-  pi.registerCommand("lingual-status", {
-    description: state.labels.cmdDescStatus || "Display companion status report: /lingual-status",
+  // 独立状态报告命令 (/status, /lingual-status)
+  pi.registerCommand("status", {
+    description: state.labels.cmdDescStatus || "Display companion status report: /status",
     handler: showStatusHandler,
   });
 
-  pi.registerCommand("2-status", {
-    description: state.labels.cmdDescStatus || "Display companion status report (alias)",
+  pi.registerCommand("lingual-status", {
+    description: state.labels.cmdDescStatus || "Display companion status report (alias): /lingual-status",
     handler: showStatusHandler,
   });
 
@@ -767,12 +732,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.registerCommand("lingual-last", {
-    description: state.labels.cmdDescLast || "Replay previous companion card: /lingual-last",
-    handler: showLastHandler,
-  });
-
-  pi.registerCommand("2-last", {
-    description: state.labels.cmdDescLast || "Replay previous companion card (alias)",
+    description: state.labels.cmdDescLast || "Replay previous companion card (alias): /lingual-last",
     handler: showLastHandler,
   });
 
@@ -831,7 +791,15 @@ export default function (pi: ExtensionAPI) {
         if (!targetModel) return null;
 
         // 2. 调用 Pi 原生无缝流式推理 (streamSimple)，不走硬编码外网代理，完全由 Pi 托管凭证与认证
-        // 【关键保护 1】：显式禁用思维链 (reasoning: "off")，防止继承主模型 thinking: max 导致 15s 延迟与 Token 偷跑
+        // 弹性参数配置：扩容 maxTokens 至 1500，杜绝长输入多槽位 JSON 截断；绝不盲目硬编码 reasoning 导致 400 报错
+        const diskConfig = loadUserLingualConfig();
+        const requestOptions: Record<string, any> = {
+          maxTokens: 1500,
+        };
+        if (diskConfig.reasoning) {
+          requestOptions.reasoning = diskConfig.reasoning;
+        }
+
         const stream = ctx.modelRegistry.streamSimple(
           targetModel,
           {
@@ -844,15 +812,13 @@ export default function (pi: ExtensionAPI) {
               },
             ],
           },
-          {
-            reasoning: "low",
-            maxTokens: 600,
-          } as any
+          requestOptions as any
         );
 
-        // 【关键保护 2】：设置 30s 充裕超时保护，防止上游网络死锁或挂起阻塞用户终端输入，同时绑定协同中断信号
+        // 【超时熔断】：默认 15s 充裕超时（支持 lingual.json 配置 timeoutMs），杜绝 30s 终端输入假死，同时无缝协同中断信号
+        const timeoutMs = diskConfig.timeoutMs || 15000;
         const timeoutPromise = new Promise<null>((_, reject) =>
-          setTimeout(() => reject(new Error("Lingual translation timed out")), 30000)
+          setTimeout(() => reject(new Error("Lingual translation timed out")), timeoutMs)
         );
         const abortPromise = new Promise<null>((_, reject) => {
           if (signal?.aborted) reject(new Error("Lingual translation aborted"));

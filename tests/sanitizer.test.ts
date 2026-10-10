@@ -165,14 +165,30 @@ test("sanitizePromptForTranslation - folds multi-line bullet lists into concise 
   const promptWithList = `黄仁勋身上有一种罕见的矛盾共存：
  - 他既有底层蓝领的粗砺与抗打击能力（不怕脏活、不怕被嘲笑、不端架子）；
  - 又有硬核工程师的严密逻辑与技术终局洞察（坚信物理法则与计算范式跃迁）；
- - 同时还具备德州扑克顶级选手的战略决绝（看准趋势敢把全部身家推到牌桌中央）。
+ - 同时还具备德州扑克顶级选手的战略决绝（看准趋势敢把全部身家推到牌桌中央）；
+ - 面对激烈的竞争始终保持敏锐的商业嗅觉与危机感；
+ - 具有极强的人格魅力和感召力（能够吸引全球最顶尖的人才一起长期奋斗）。
 这些是他成功的根本吗？他的学业呢？大学学的什么专业，后来深造了吗？到底什么经历真的对他的事业起到了帮助`;
 
   const res = sanitizePromptForTranslation(promptWithList);
   assert.equal(res.hasNaturalLanguage, true);
   assert.equal(res.hasCollapsedContent, true, "Must mark hasCollapsedContent as true when folding lists");
-  assert.ok(res.distilledText.includes("[3 items ...]"), "Must fold 3 bullet items into [3 items ...]");
+  assert.ok(res.distilledText.includes("[5 items ...]"), "Must fold 5 bullet items into [5 items ...]");
   assert.ok(res.distilledText.includes("黄仁勋身上有一种罕见的矛盾共存"), "Must preserve preamble");
   assert.ok(res.distilledText.includes("这些是他成功的根本吗？"), "Must preserve trailing questions");
   assert.ok(res.rawPayload?.includes("不怕脏活"), "Must capture full list in rawPayload for AI reasoning");
+});
+
+test("sanitizePromptForTranslation - protects short list comparison options from folding", () => {
+  const shortOptions = `帮我分析以下两种方案的优缺点：
+- 方案A：采用单文件架构降低调用开销
+- 方案B：采用微内核架构保持扩展性
+我们应该选择哪种方案？`;
+
+  const res = sanitizePromptForTranslation(shortOptions);
+  assert.equal(res.hasNaturalLanguage, true);
+  assert.equal(res.hasCollapsedContent, false, "Short list (<= 4 items & <= 120 chars) must NOT be collapsed");
+  assert.ok(!res.distilledText.includes("[2 items ...]"), "Must NOT contain [2 items ...] placeholder");
+  assert.ok(res.distilledText.includes("方案A：采用单文件架构"), "Must preserve option A verbatim");
+  assert.ok(res.distilledText.includes("方案B：采用微内核架构"), "Must preserve option B verbatim");
 });

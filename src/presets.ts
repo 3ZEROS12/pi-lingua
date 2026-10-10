@@ -207,7 +207,7 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     statusReportCache: "会话缓存",
     statusReportLayout: "HUD布局: Trifecta 开放式左导轨树状架构 (· ┌ ├ └)",
     statusReportAuth: "凭据模式: Pi 原生进程内认证 (Zero Config · 零Token泄露)",
-    statusReportShortcuts: "快捷操作: /2 (切换模式) · /lingual-lang (切母语) · /lingual-model (切模型) · /lingual-agent (定制语言)",
+    statusReportShortcuts: "快捷操作: /lingual (切换模式) · /slots (管理槽位) · /lang (切语言) · /compact (切换布局)",
     modeDescOriginal: "原文直通 · 0ms非阻塞",
     modeDescEnglish: "英文模式 · 深度代码推理",
     modeDescOff: "已关闭",
@@ -278,7 +278,7 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     statusReportCache: "セッションキャッシュ",
     statusReportLayout: "HUDレイアウト: Trifecta オープン左レールツリー構造 (· ┌ ├ └)",
     statusReportAuth: "認証方式: Pi ネイティブインプロセス認証 (ゼロ設定・Token安全)",
-    statusReportShortcuts: "クイック操作: /2 (モード切替) · /lingual-lang (母語切替) · /lingual-model (モデル切替) · /lingual-agent (カスタマイズ)",
+    statusReportShortcuts: "クイック操作: /lingual (モード切替) · /slots (スロット管理) · /lang (言語切替) · /compact (レイアウト切替)",
     modeDescOriginal: "原文パススルー · 0ms非同期",
     modeDescEnglish: "英語モード · 高度コード推論",
     modeDescOff: "オフ",
@@ -349,7 +349,7 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     statusReportCache: "Session Cache",
     statusReportLayout: "HUD Layout: Trifecta Minimalist Left-Rail Tree (· ┌ ├ └)",
     statusReportAuth: "Auth: Pi Native In-Process Auth (Zero Config · Secure)",
-    statusReportShortcuts: "Shortcuts: /2 (mode) · /lingual-lang (lang) · /lingual-model (model) · /lingual-agent (customize)",
+    statusReportShortcuts: "Shortcuts: /lingual (mode) · /slots (slots) · /lang (lang) · /compact (layout)",
     modeDescOriginal: "Pass-through · 0ms non-blocking",
     modeDescEnglish: "English mode · Deep reasoning",
     modeDescOff: "Disabled",
@@ -420,7 +420,7 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     statusReportCache: "Caché de sesión",
     statusReportLayout: "Diseño HUD: Trifecta árbol de guía izquierda (· ┌ ├ └)",
     statusReportAuth: "Autenticación: Proceso nativo de Pi (Sin config · Seguro)",
-    statusReportShortcuts: "Accesos directos: /2 (modo) · /lingual-lang (idioma) · /lingual-model (modelo) · /lingual-agent (personalizar)",
+    statusReportShortcuts: "Accesos directos: /lingual (modo) · /slots (ranuras) · /lang (idioma) · /compact (diseño)",
     modeDescOriginal: "Directo · 0ms no bloqueante",
     modeDescEnglish: "Modo inglés · Razonamiento profundo",
     modeDescOff: "Apagado",
@@ -489,7 +489,7 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     statusReportCache: "Cache de session",
     statusReportLayout: "Disposition HUD : Arbre guide gauche Trifecta (· ┌ ├ └)",
     statusReportAuth: "Authentification : Processus interne Pi natif (Zéro config · Sécurisé)",
-    statusReportShortcuts: "Raccourcis : /2 (mode) · /lingual-lang (langue) · /lingual-model (modèle) · /lingual-agent (personnaliser)",
+    statusReportShortcuts: "Raccourcis : /lingual (mode) · /slots (emplacements) · /lang (langue) · /compact (mise en page)",
     modeDescOriginal: "Passerelle directe · 0ms non bloquant",
     modeDescEnglish: "Mode anglais · Raisonnement approfondi",
     modeDescOff: "Désactivé",
@@ -560,7 +560,7 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     statusReportCache: "Sitzungscache",
     statusReportLayout: "HUD-Layout: Trifecta Minimalistische Baumstruktur (· ┌ ├ └)",
     statusReportAuth: "Authentifizierung: Pi nativer In-Process Modus (Zero Config · Sicher)",
-    statusReportShortcuts: "Befehle: /2 (Modus) · /lingual-lang (Sprache) · /lingual-model (Modell) · /lingual-agent (Anpassen)",
+    statusReportShortcuts: "Befehle: /lingual (Modus) · /slots (Slots) · /lang (Sprache) · /compact (Layout)",
     modeDescOriginal: "Direkt · 0ms nicht blockierend",
     modeDescEnglish: "Englisch-Modus · Tiefgreifende Logik",
     modeDescOff: "Aus",
@@ -666,7 +666,7 @@ export function formatStatusReport(
   lines.push(
     `• ${labels.statusReportLayout || "Layout"}: ${layoutDesc}`,
     `• ${labels.statusReportAuth || "Auth: Pi Native In-Process Auth"}`,
-    `• ${labels.statusReportShortcuts || "Shortcuts: /2 · /lingual-lang · /lingual-compact · /lingual-model · /lingual-agent"}`
+    `• ${labels.statusReportShortcuts || "Shortcuts: /lingual · /slots · /lang · /compact · /status"}`
   );
   return lines.join("\n");
 }

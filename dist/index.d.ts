@@ -1,5 +1,5 @@
-import { L as LingualResult, a as LingualI18nLabels, S as SlotConfig, b as LingualConfig } from './index-C7JQvkzM.js';
-export { C as CacheStats, c as CustomSlotsConfig, d as LANGUAGE_PRESETS, e as LEGACY_SLOT_PRESETS, f as LinguaConfig, g as LinguaI18nLabels, h as LinguaLruCache, i as LinguaMode, j as LinguaResult, k as LingualCoreOptions, l as LingualLruCache, m as LingualMode, n as LingualRequest, o as LingualResponse, p as SLOT_PRESETS, q as SanitizedPromptResult, r as SlotDefinition, s as SlotPresetDefinition, t as SlotResult, u as SlotRole, T as TranslationPayload, v as addSlotToList, w as buildSystemPrompt, x as createCustomSlot, y as formatModelSelectionMessage, z as formatStatusReport, A as getDefaultSlots, B as globalLinguaCache, D as globalLingualCache, E as moveSlotInList, F as parseLlmResponse, G as removeSlotFromList, H as resolveLabelsForLang, I as resolveSlotsForPreset, J as sanitizePromptForTranslation, K as shouldShieldBypass, M as toggleSlotInList, N as translateCore, O as updateSlotInList } from './index-C7JQvkzM.js';
+import { L as LingualResult, a as LingualI18nLabels, S as SlotConfig, b as LingualConfig } from './index-CCJ3ZbfJ.js';
+export { C as CacheStats, c as CustomSlotsConfig, d as LANGUAGE_PRESETS, e as LEGACY_SLOT_PRESETS, f as LinguaConfig, g as LinguaI18nLabels, h as LinguaLruCache, i as LinguaMode, j as LinguaResult, k as LingualCoreOptions, l as LingualLruCache, m as LingualMode, n as LingualRequest, o as LingualResponse, p as SLOT_PRESETS, q as SanitizedPromptResult, r as SlotDefinition, s as SlotPresetDefinition, t as SlotResult, u as SlotRole, T as TranslationPayload, v as addSlotToList, w as buildSystemPrompt, x as createCustomSlot, y as formatModelSelectionMessage, z as formatStatusReport, A as getDefaultSlots, B as globalLinguaCache, D as globalLingualCache, E as moveSlotInList, F as parseLlmResponse, G as removeSlotFromList, H as resolveLabelsForLang, I as resolveSlotsForPreset, J as sanitizePromptForTranslation, K as shouldShieldBypass, M as toggleSlotInList, N as translateCore, O as updateSlotInList } from './index-CCJ3ZbfJ.js';
 
 /**
  * Splits text into atomic natural sentence chunks when long.
@@ -205,11 +205,10 @@ declare class LingualSessionController {
 
 declare function invalidateUserConfigCache(): void;
 /**
- * Load user configuration from:
- * 1. ~/.pi/agent/settings.json (under "pi-lingual" block)
- * 2. ~/.pi/agent/lingual.json (flat or nested)
- * Uses high-efficiency 2-second in-memory memoization to prevent synchronous disk I/O thrashing during parallel chunk translations.
- * Never hardcodes private credentials in source code.
+ * Load user configuration from single source of truth: ~/.pi/agent/lingual.json
+ * If lingual.json does not exist, performs a one-time graceful migration from settings.json ("pi-lingual" block).
+ * Uses high-efficiency 2-second in-memory memoization to prevent synchronous disk I/O thrashing.
+ * Never writes back to settings.json, protecting host environment.
  */
 declare function loadUserLingualConfig(): Partial<LingualConfig>;
 declare const DEFAULT_CONFIG: LingualConfig;

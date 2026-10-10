@@ -65,10 +65,10 @@ pi install npm:pi-lingual
 
 ## 三大工作模式
 
-终端中输入 `/2` 或 `/lingual` 随时平滑切换：
+终端中输入 `/lingual` 随时平滑切换：
 
 ```text
-  /2 （循环轮转：原文模式 ➔ 英文模式 ➔ 关闭 ➔ 原文模式）
+  /lingual （循环轮转：原文模式 ➔ 英文模式 ➔ 关闭 ➔ 原文模式）
 ```
 
 | 模式 | 你输入什么 | 发给 AI 的内容 | 视窗展示内容 | 适用场景 |
@@ -178,15 +178,15 @@ pi install npm:pi-lingual
 
 ## 常用命令与工效学
 
-| 命令 | 别名 | 功能说明 |
+| 命令 | 全名 / 别名 | 功能说明 |
 | :--- | :--- | :--- |
-| `/2 [sub]` | `/lingual [sub]` | 主命令总线：无参数平滑切模式，或路由子命令 |
-| `/slots [cmd]` | `/2-slots` | 全动态槽位管理（增删自定义槽位、彻底删除原文行） |
-| `/compact` | `/2-compact` | 切换树状视窗与单行胶囊模式 |
-| `/lang <源> [目标]` | `/2-lang` | 切换语言对（如 `/lang ja en`、`/lang 日语`） |
-| `/last` | `/2-last` | 重新浮现上一条伴学卡片 |
-| `/2-model <id>` | `/lingual-model` | 指定轻量伴学模型（`auto` 恢复跟随主会话） |
-| `/status` | `/2-status` | 查看运行状态与缓存命中率 |
+| `/lingual [sub]` | `/lingual-mode` | 主命令总线：无参数平滑切模式，或路由所有子命令 |
+| `/slots [cmd]` | `/lingual-slots` | 全动态槽位管理（自由增删改查槽位、彻底删除原文行） |
+| `/compact` | `/lingual-compact` | 切换树状视窗与单行胶囊模式 |
+| `/lang <源> [目标]` | `/lingual-lang` | 切换语言对（如 `/lang ja en`、`/lang 日语`） |
+| `/last` | `/lingual-last` | 重新浮现上一条伴学卡片 |
+| `/lingual-model <id>` | — | 指定轻量伴学模型（`auto` 恢复跟随主会话） |
+| `/status` | `/lingual-status` | 查看运行状态与缓存命中率 |
 
 *快捷键：`Alt+.`（下一页），`Alt+,`（上一页）。系统独立命令行：`lingual "输入需求"`。*
 
@@ -214,8 +214,8 @@ pi install npm:pi-lingual
 
 如果主任务在使用高配长思考主力模型，可将伴学转写交给环境中的轻量高速模型，保护昂贵的主力推理配额：
 ```bash
-/2-model <轻量模型ID>       # 指定环境中的任意轻量高速模型
-/2-model auto              # 恢复跟随当前会话主模型
+/lingual-model <轻量模型ID>   # 指定环境中的任意轻量高速模型
+/lingual-model auto          # 恢复跟随当前会话主模型
 ```
 
 也支持在 `~/.pi/agent/lingual.json` 中配置本地 Ollama 或私有兼容端点：

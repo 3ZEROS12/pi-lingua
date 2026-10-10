@@ -69,6 +69,7 @@ export interface LingualConfig {
   targetLang?: string;      // e.g. "en" (default) | "ja" | "zh"
   labels?: Partial<LingualI18nLabels>;
   temperature?: number;
+  reasoning?: string;
   timeoutMs?: number;
   complete?: (text: string, systemPrompt: string, signal?: AbortSignal) => Promise<string | null>;
   signal?: AbortSignal;

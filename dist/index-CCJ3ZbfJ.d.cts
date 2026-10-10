@@ -124,6 +124,7 @@ interface LingualConfig {
     targetLang?: string;
     labels?: Partial<LingualI18nLabels>;
     temperature?: number;
+    reasoning?: string;
     timeoutMs?: number;
     complete?: (text: string, systemPrompt: string, signal?: AbortSignal) => Promise<string | null>;
     signal?: AbortSignal;

@@ -12,9 +12,9 @@
 
 import { isNonEnglish } from "./engine.js";
 
-// 常见临时剪贴板图片及临时状态文件正则 (精确匹配 pi-clipboard 截图及系统临时状态文件，绝不误伤普通代码或 docs/README.md 文件)
+// 常见临时剪贴板图片正则 (精确匹配 pi-clipboard 截图，绝不误伤普通代码或 docs/README.md 文件)
 // 支持 Windows 盘符 (正反斜杠)、支持包含空格的用户名路径 (如 Jason Miller)
-const TARGETED_CLIPBOARD_PATH_REGEX = /(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png|\/(?:[^\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png|(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?)CURRENT_MISSION_STATE\.md)/gi;
+const TARGETED_CLIPBOARD_PATH_REGEX = /(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png|\/(?:[^\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png)/gi;
 const LEADING_TARGETED_CLIPBOARD_REGEX = /^(?:[a-zA-Z]:[\\\/](?:[^:\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png|\/(?:[^\r\n\t]+[\\\/])?pi-clipboard-[a-zA-Z0-9\-]+\.png)\s*/i;
 
 // 堆栈跟踪特征正则
@@ -97,13 +97,17 @@ export function sanitizePromptForTranslation(raw: string): SanitizedPromptResult
   const collapsedListBlocks: string[] = [];
 
   const flushListItems = () => {
-    if (currentListItems.length >= 2) {
+    const totalLength = currentListItems.reduce((acc, cur) => acc + cur.length, 0);
+
+    // 保护短列表语义：条目 <= 4 且总字数 <= 120 时，绝不粗暴折叠，完整保留选项上下文！
+    if (currentListItems.length >= 2 && (currentListItems.length > 4 || totalLength > 120)) {
       hasCollapsed = true;
       resultLines.push(`[${currentListItems.length} items ...]`);
       collapsedListBlocks.push(currentListItems.join("\n"));
       currentListItems.length = 0;
-    } else if (currentListItems.length === 1) {
-      resultLines.push(currentListItems[0]);
+    } else {
+      // 短列表逐行完整保留
+      resultLines.push(...currentListItems);
       currentListItems.length = 0;
     }
   };

@@ -34,7 +34,7 @@
 
 ### Invariant 5: Command Bus Ergonomics & Master Dispatcher
 - Natural short commands MUST register as first-class standalone commands: `/lang`, `/compact`, `/last`, `/status`.
-- The master commands (`/lingual` and `/2`) MUST implement secondary routing (`masterCommandHandler`). Subcommands (`lang`, `model`, `compact`, `status`, `last`) MUST NEVER fall through into the default mode-cycling branch.
+- The master command (`/lingual`) MUST implement secondary routing (`masterCommandHandler`). Subcommands (`lang`, `model`, `compact`, `status`, `last`, `slots`) MUST NEVER fall through into the default mode-cycling branch.
 - Language normalization MUST accept natural language aliases (`japanese`/`jp`/`日语` ➔ `ja`, `chinese`/`cn`/`中文` ➔ `zh`) and language pair syntax (`/lang zh ja`).
 
 ### Invariant 6: Deterministic UI Feedback & Concurrency Micro-Staggering

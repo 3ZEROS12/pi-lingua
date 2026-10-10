@@ -29,15 +29,10 @@ test("extension command matrix - registers standardized lingual command suite", 
 
   // Standalone intuitive developer commands
   assert.ok(registeredCommands["lang"], "Must register standalone /lang");
+  assert.ok(registeredCommands["slots"], "Must register standalone /slots");
+  assert.ok(registeredCommands["compact"], "Must register standalone /compact");
+  assert.ok(registeredCommands["status"], "Must register standalone /status");
   assert.ok(registeredCommands["last"], "Must register standalone /last");
-
-  // Compatibility aliases
-  assert.ok(registeredCommands["2"], "Must retain /2 alias");
-  assert.ok(registeredCommands["2-lang"], "Must retain /2-lang alias");
-  assert.ok(registeredCommands["2-compact"], "Must retain /2-compact alias");
-  assert.ok(registeredCommands["2-model"], "Must retain /2-model alias");
-  assert.ok(registeredCommands["2-status"], "Must retain /2-status alias");
-  assert.ok(registeredCommands["2-last"], "Must retain /2-last alias");
 });
 
 test("extension /lingual - supports explicit mode arguments and cycle fallback", async () => {
@@ -115,7 +110,7 @@ test("extension /lingual-compact - toggles capsule and tree layout with notifica
   );
 
   // Toggle off
-  await registeredCommands["2-compact"].handler("", mockCtx);
+  await registeredCommands["lingual-compact"].handler("", mockCtx);
   assert.ok(notifications.length > 1);
   assert.ok(
     notifications[notifications.length - 1].includes("树状") ||
@@ -162,8 +157,8 @@ test("standalone /lang and language normalization - switches languages and handl
   await registeredCommands["lang"].handler("zh ja", mockCtx);
   assert.ok(notifications[notifications.length - 1].includes("zh ⇄ ja"));
 
-  // 5. Standalone /2-compact command
-  await registeredCommands["2-compact"].handler("", mockCtx);
+  // 5. Standalone /compact command
+  await registeredCommands["compact"].handler("", mockCtx);
   assert.ok(
     notifications[notifications.length - 1].includes("胶囊") ||
     notifications[notifications.length - 1].includes("Capsule") ||
@@ -173,10 +168,10 @@ test("standalone /lang and language normalization - switches languages and handl
 
   // Teardown: Restore to zh ➔ en and tree layout
   await registeredCommands["lang"].handler("zh", mockCtx);
-  await registeredCommands["2-compact"].handler("", mockCtx);
+  await registeredCommands["compact"].handler("", mockCtx);
 });
 
-test("master command dispatcher - routes subcommands in /lingual and /2 smoothly", async () => {
+test("master command dispatcher - routes subcommands in /lingual smoothly", async () => {
   const registeredCommands: Record<string, any> = {};
   const mockPi: any = {
     on() {},
@@ -202,8 +197,8 @@ test("master command dispatcher - routes subcommands in /lingual and /2 smoothly
   await registeredCommands["lingual"].handler("lang ja", mockCtx);
   assert.ok(notifications[notifications.length - 1].includes("ja"));
 
-  // 2. Subcommand on alias: /2 lang zh
-  await registeredCommands["2"].handler("lang zh", mockCtx);
+  // 2. Subcommand: /lingual lang zh
+  await registeredCommands["lingual"].handler("lang zh", mockCtx);
   assert.ok(notifications[notifications.length - 1].includes("zh"));
 
   // 3. Direct language code: /lingual ja
@@ -218,8 +213,8 @@ test("master command dispatcher - routes subcommands in /lingual and /2 smoothly
     notifications[notifications.length - 1].includes("カプセル")
   );
 
-  // 5. Subcommand: /2 compact (toggle back)
-  await registeredCommands["2"].handler("compact", mockCtx);
+  // 5. Subcommand: /lingual compact (toggle back)
+  await registeredCommands["lingual"].handler("compact", mockCtx);
   assert.ok(
     notifications[notifications.length - 1].includes("树状") ||
     notifications[notifications.length - 1].includes("tree") ||
