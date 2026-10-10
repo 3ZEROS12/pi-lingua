@@ -62,6 +62,8 @@ export interface LingualConfig {
   selectedModel?: string;   // e.g. "auto" (default) | "gemini-3.8-flash" | "claude-sonnet-5-5"
   mode?: LingualMode;
   compact?: boolean;        // e.g. false (default) | true (1-line capsule)
+  slotPreset?: string;     // e.g. "developer" | "social" | "japanese" | "academic" | "compact2"
+  slots?: SlotConfig[];     // Dynamic multi-slot list
   sourceLang?: string;      // e.g. "zh" (default) | "en" | "ja"
   targetLang?: string;      // e.g. "en" (default) | "ja" | "zh"
   labels?: Partial<LingualI18nLabels>;

@@ -18,6 +18,7 @@ interface LingualI18nLabels {
     notifyModelSwitched?: string;
     notifyLangSwitched?: string;
     notifyLangInvalid?: string;
+    notifySlotSwitched?: string;
     notifyCompactOn?: string;
     notifyCompactOff?: string;
     notifyTimeout?: string;
@@ -26,6 +27,7 @@ interface LingualI18nLabels {
     cmdDescStatus?: string;
     cmdDescModel?: string;
     cmdDescLang?: string;
+    cmdDescSlots?: string;
     cmdDescCompact?: string;
     cmdDescLast?: string;
     cmdDescAgent?: string;
@@ -112,6 +114,8 @@ interface LingualConfig {
     selectedModel?: string;
     mode?: LingualMode;
     compact?: boolean;
+    slotPreset?: string;
+    slots?: SlotConfig[];
     sourceLang?: string;
     targetLang?: string;
     labels?: Partial<LingualI18nLabels>;
@@ -142,7 +146,7 @@ interface TranslationPayload {
 }
 
 declare function getDefaultSlots(sourceLang?: string): SlotConfig[];
-declare const SLOT_PRESETS: Record<string, {
+declare const LEGACY_SLOT_PRESETS: Record<string, {
     slot1: SlotDefinition;
     slot2: SlotDefinition;
 }>;
@@ -213,6 +217,13 @@ declare function translateCore(req: LingualRequest, options?: LingualCoreOptions
  */
 declare function shouldShieldBypass(text: string): boolean;
 
+interface SlotPresetDefinition {
+    name: string;
+    description: string;
+    slots: (sourceLang?: string) => SlotConfig[];
+}
+declare const SLOT_PRESETS: Record<string, SlotPresetDefinition>;
+declare function resolveSlotsForPreset(presetName?: string, sourceLang?: string): SlotConfig[];
 /**
  * 官方预设多语言映射矩阵 (Language Preset Matrix)
  * 当用户或 Agent 设定母语 A 时，所有 UI 标签、图腾与状态文本自动本地化，彻底根除跨语言残留。
@@ -272,4 +283,4 @@ interface SanitizedPromptResult {
  */
 declare function sanitizePromptForTranslation(raw: string): SanitizedPromptResult;
 
-export { resolveLabelsForLang as A, sanitizePromptForTranslation as B, type CacheStats as C, shouldShieldBypass as D, translateCore as E, type LingualResult as L, SLOT_PRESETS as S, type TranslationPayload as T, type LingualI18nLabels as a, type LingualConfig as b, type CustomSlotsConfig as c, LANGUAGE_PRESETS as d, type LinguaConfig as e, type LinguaI18nLabels as f, LinguaLruCache as g, type LinguaMode as h, type LinguaResult as i, type LingualCoreOptions as j, LingualLruCache as k, type LingualMode as l, type LingualRequest as m, type LingualResponse as n, type SanitizedPromptResult as o, type SlotConfig as p, type SlotDefinition as q, type SlotResult as r, type SlotRole as s, buildSystemPrompt as t, formatModelSelectionMessage as u, formatStatusReport as v, getDefaultSlots as w, globalLinguaCache as x, globalLingualCache as y, parseLlmResponse as z };
+export { globalLingualCache as A, parseLlmResponse as B, type CacheStats as C, resolveLabelsForLang as D, resolveSlotsForPreset as E, sanitizePromptForTranslation as F, shouldShieldBypass as G, translateCore as H, type LingualResult as L, type SlotConfig as S, type TranslationPayload as T, type LingualI18nLabels as a, type LingualConfig as b, type CustomSlotsConfig as c, LANGUAGE_PRESETS as d, LEGACY_SLOT_PRESETS as e, type LinguaConfig as f, type LinguaI18nLabels as g, LinguaLruCache as h, type LinguaMode as i, type LinguaResult as j, type LingualCoreOptions as k, LingualLruCache as l, type LingualMode as m, type LingualRequest as n, type LingualResponse as o, SLOT_PRESETS as p, type SanitizedPromptResult as q, type SlotDefinition as r, type SlotPresetDefinition as s, type SlotResult as t, type SlotRole as u, buildSystemPrompt as v, formatModelSelectionMessage as w, formatStatusReport as x, getDefaultSlots as y, globalLinguaCache as z };

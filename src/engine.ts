@@ -33,7 +33,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import type { LingualConfig, LingualResult, TranslationPayload } from "./types.js";
-import { resolveLabelsForLang } from "./presets.js";
+import { resolveLabelsForLang, resolveSlotsForPreset } from "./presets.js";
 import { buildSystemPrompt } from "./prompts.js";
 import { shouldShieldBypass } from "./shield.js";
 import { LingualLruCache, globalLingualCache } from "./cache.js";
@@ -96,6 +96,8 @@ export function loadUserLingualConfig(): Partial<LingualConfig> {
         const sourceLang = target.sourceLang;
         const targetLang = target.targetLang;
         const compact = target.compact;
+        const slotPreset = target.slotPreset;
+        const slots = Array.isArray(target.slots) ? target.slots : undefined;
         const labels = resolveLabelsForLang(sourceLang || "zh", target.labels);
 
         cachedUserConfig = {
@@ -105,6 +107,8 @@ export function loadUserLingualConfig(): Partial<LingualConfig> {
           ...(selectedModel ? { selectedModel } : {}),
           ...(target.mode ? { mode: target.mode } : {}),
           ...(compact !== undefined ? { compact: Boolean(compact) } : {}),
+          ...(slotPreset ? { slotPreset } : {}),
+          ...(slots ? { slots } : {}),
           ...(sourceLang ? { sourceLang } : {}),
           ...(targetLang ? { targetLang } : {}),
           labels,
@@ -336,7 +340,8 @@ export async function translatePrompt(
   try {
     let content: string | null = null;
     const isLongInput = isDynamicLongInput(trimmed, cfg.sourceLang);
-    const sysPrompt = buildSystemPrompt(cfg.sourceLang, cfg.targetLang, isLongInput);
+    const effectiveSlots = cfg.slots || (cfg.slotPreset ? resolveSlotsForPreset(cfg.slotPreset, cfg.sourceLang) : undefined);
+    const sysPrompt = buildSystemPrompt(cfg.sourceLang, cfg.targetLang, isLongInput, undefined, "general", effectiveSlots);
 
     // 1. If custom complete callback is provided (e.g. Pi native ModelRegistry / ctx.model):
     if (typeof cfg.complete === "function") {

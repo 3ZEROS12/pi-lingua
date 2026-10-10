@@ -1,5 +1,5 @@
-import { L as LingualResult, a as LingualI18nLabels, b as LingualConfig } from './index-CJyt8HMt.cjs';
-export { C as CacheStats, c as CustomSlotsConfig, d as LANGUAGE_PRESETS, e as LinguaConfig, f as LinguaI18nLabels, g as LinguaLruCache, h as LinguaMode, i as LinguaResult, j as LingualCoreOptions, k as LingualLruCache, l as LingualMode, m as LingualRequest, n as LingualResponse, S as SLOT_PRESETS, o as SanitizedPromptResult, p as SlotConfig, q as SlotDefinition, r as SlotResult, s as SlotRole, T as TranslationPayload, t as buildSystemPrompt, u as formatModelSelectionMessage, v as formatStatusReport, w as getDefaultSlots, x as globalLinguaCache, y as globalLingualCache, z as parseLlmResponse, A as resolveLabelsForLang, B as sanitizePromptForTranslation, D as shouldShieldBypass, E as translateCore } from './index-CJyt8HMt.cjs';
+import { L as LingualResult, a as LingualI18nLabels, S as SlotConfig, b as LingualConfig } from './index-DD9q3IJP.cjs';
+export { C as CacheStats, c as CustomSlotsConfig, d as LANGUAGE_PRESETS, e as LEGACY_SLOT_PRESETS, f as LinguaConfig, g as LinguaI18nLabels, h as LinguaLruCache, i as LinguaMode, j as LinguaResult, k as LingualCoreOptions, l as LingualLruCache, m as LingualMode, n as LingualRequest, o as LingualResponse, p as SLOT_PRESETS, q as SanitizedPromptResult, r as SlotDefinition, s as SlotPresetDefinition, t as SlotResult, u as SlotRole, T as TranslationPayload, v as buildSystemPrompt, w as formatModelSelectionMessage, x as formatStatusReport, y as getDefaultSlots, z as globalLinguaCache, A as globalLingualCache, B as parseLlmResponse, D as resolveLabelsForLang, E as resolveSlotsForPreset, F as sanitizePromptForTranslation, G as shouldShieldBypass, H as translateCore } from './index-DD9q3IJP.cjs';
 
 /**
  * Splits text into atomic natural sentence chunks when long.
@@ -100,6 +100,7 @@ declare function renderCardLayout(card: LingualResult, labels: LingualI18nLabels
     maxCols?: number;
     maxLines?: number;
     isCompact?: boolean;
+    slots?: SlotConfig[];
     pageTag?: string;
     themeDecorators?: {
         muted: (s: string) => string;
@@ -264,4 +265,4 @@ declare const LINGUA_SYSTEM_PROMPT: string;
 declare const stripLinguaAnnotation: typeof stripLingualAnnotation;
 declare const loadUserConfig: typeof loadUserLingualConfig;
 
-export { CANNOT_START_LINE_CHARS, DEFAULT_CONFIG, LINGUAL_SYSTEM_PROMPT, LINGUA_SYSTEM_PROMPT, LingualConfig, LingualI18nLabels, LingualResult, LingualSessionController, MAX_TRANSLATION_CHARS, MAX_TRANSLATION_LINES, type PaginationSnapshot, type SessionRequestToken, extractVocabPhrases, formatCapsuleLine, formatSubRail, formatTerminalAnnotation, formatTreeBranch, formatVocabItemsAtomic, getEffectiveMaxCols, getVisualWidth, invalidateUserConfigCache, isDynamicLongInput, isNonEnglish, loadUserConfig, loadUserLingualConfig, renderCardLayout, shouldTriggerTranslation, splitSemanticChunks, spotlightPhrases, stripLinguaAnnotation, stripLingualAnnotation, translatePrompt, truncateVisual, wrapVisualText };
+export { CANNOT_START_LINE_CHARS, DEFAULT_CONFIG, LINGUAL_SYSTEM_PROMPT, LINGUA_SYSTEM_PROMPT, LingualConfig, LingualI18nLabels, LingualResult, LingualSessionController, MAX_TRANSLATION_CHARS, MAX_TRANSLATION_LINES, type PaginationSnapshot, type SessionRequestToken, SlotConfig, extractVocabPhrases, formatCapsuleLine, formatSubRail, formatTerminalAnnotation, formatTreeBranch, formatVocabItemsAtomic, getEffectiveMaxCols, getVisualWidth, invalidateUserConfigCache, isDynamicLongInput, isNonEnglish, loadUserConfig, loadUserLingualConfig, renderCardLayout, shouldTriggerTranslation, splitSemanticChunks, spotlightPhrases, stripLinguaAnnotation, stripLingualAnnotation, translatePrompt, truncateVisual, wrapVisualText };

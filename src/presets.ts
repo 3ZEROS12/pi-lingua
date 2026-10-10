@@ -1,4 +1,87 @@
-import type { LingualI18nLabels } from "./types.js";
+import type { LingualI18nLabels, SlotConfig } from "./types.js";
+
+export interface SlotPresetDefinition {
+  name: string;
+  description: string;
+  slots: (sourceLang?: string) => SlotConfig[];
+}
+
+export const SLOT_PRESETS: Record<string, SlotPresetDefinition> = {
+  developer: {
+    name: "Developer",
+    description: "Standard agile collaboration: Spoken + Written + Vocab",
+    slots: (sourceLang = "zh") => {
+      const isZh = sourceLang === "zh" || sourceLang === "tw";
+      const isJa = sourceLang === "ja";
+      return [
+        { id: "source", label: isZh ? "原文" : isJa ? "原文" : "Source", role: "source", enabled: true },
+        { id: "spoken", label: isZh ? "口语" : isJa ? "口語" : "Spoken", role: "translation", instruction: "Natural, fluent spoken flow (daily standup, Slack, agile collaboration, conversational banter).", showMeaning: true, enabled: true },
+        { id: "written", label: isZh ? "写作" : isJa ? "文面" : "Written", role: "translation", instruction: "Clear, precise, modern technical written prose (RFCs, PR descriptions, documentation, deep insight).", showMeaning: true, enabled: true },
+        { id: "vocab", label: isZh ? "重点" : isJa ? "単語" : "Vocab", role: "vocab", instruction: "Extract key idiomatic collocations, phrasal verbs, or technical idioms.", enabled: true },
+      ];
+    },
+  },
+  social: {
+    name: "Social",
+    description: "Overseas Twitter / Community building: Hook + Deep + Vocab",
+    slots: (sourceLang = "zh") => {
+      const isZh = sourceLang === "zh" || sourceLang === "tw";
+      return [
+        { id: "source", label: isZh ? "原文" : "Source", role: "source", enabled: true },
+        { id: "spoken", label: "Hook", role: "translation", instruction: "High-engagement, punchy opening hook optimized for Twitter/X threads and viral developer discussions.", showMeaning: true, enabled: true },
+        { id: "written", label: "Deep", role: "translation", instruction: "Insightful, narrative technical value and nuanced architecture reasoning.", showMeaning: true, enabled: true },
+        { id: "vocab", label: isZh ? "重点" : "Vocab", role: "vocab", instruction: "Key engagement idioms and technical phrases.", enabled: true },
+      ];
+    },
+  },
+  japanese: {
+    name: "Japanese",
+    description: "Dual-register Japanese companion: 口語 + 敬語 + 単語",
+    slots: (sourceLang = "zh") => {
+      const isZh = sourceLang === "zh" || sourceLang === "tw";
+      const isJa = sourceLang === "ja";
+      return [
+        { id: "source", label: isZh ? "原文" : isJa ? "原文" : "Source", role: "source", enabled: true },
+        { id: "spoken", label: "口語", role: "translation", instruction: "Natural, colloquial spoken Japanese (daily casual chat, team talk, direct).", showMeaning: true, enabled: true },
+        { id: "written", label: "敬語", role: "translation", instruction: "Formal, polite business Japanese (Keigo, Sonkeigo/Kenjougo, professional email/PR).", showMeaning: true, enabled: true },
+        { id: "vocab", label: "単語", role: "vocab", instruction: "Key Japanese vocabulary, kanji readings, and idiomatic expressions.", enabled: true },
+      ];
+    },
+  },
+  academic: {
+    name: "Academic",
+    description: "Paper & rigorous discussion: Discussion + Paper",
+    slots: (sourceLang = "zh") => {
+      const isZh = sourceLang === "zh" || sourceLang === "tw";
+      return [
+        { id: "source", label: isZh ? "原文" : "Source", role: "source", enabled: true },
+        { id: "spoken", label: "Discussion", role: "translation", instruction: "Academic colloquium and seminar discussion tone.", showMeaning: true, enabled: true },
+        { id: "written", label: "Paper", role: "translation", instruction: "Formal, objective academic prose suitable for peer-reviewed IEEE/ACM papers and arXiv preprints.", showMeaning: true, enabled: true },
+        { id: "vocab", label: isZh ? "重点" : "Vocab", role: "vocab", enabled: false },
+      ];
+    },
+  },
+  compact2: {
+    name: "Compact 2-Slot",
+    description: "Minimalist dual-slot: Source + Target translation only",
+    slots: (sourceLang = "zh") => {
+      const isZh = sourceLang === "zh" || sourceLang === "tw";
+      const isJa = sourceLang === "ja";
+      return [
+        { id: "source", label: isZh ? "原文" : isJa ? "原文" : "Source", role: "source", enabled: true },
+        { id: "spoken", label: isZh ? "译文" : isJa ? "訳文" : "Translation", role: "translation", instruction: "Natural, idiomatic target language translation.", showMeaning: true, enabled: true },
+        { id: "written", label: isZh ? "写作" : "Written", role: "translation", enabled: false },
+        { id: "vocab", label: isZh ? "重点" : "Vocab", role: "vocab", enabled: false },
+      ];
+    },
+  },
+};
+
+export function resolveSlotsForPreset(presetName = "developer", sourceLang = "zh"): SlotConfig[] {
+  const normPreset = (presetName || "developer").toLowerCase().trim();
+  const preset = SLOT_PRESETS[normPreset] || SLOT_PRESETS.developer;
+  return preset.slots(sourceLang);
+}
 
 /**
  * 官方预设多语言映射矩阵 (Language Preset Matrix)
@@ -97,6 +180,7 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     notifyLangInvalid: "無効な言語コードです。対応言語: zh, ja, en, es, fr, de",
     notifyCompactOn: "[ja ⇄ en] 1行カプセルモードを有効にしました：画面領域を最大限確保",
     notifyCompactOff: "[ja ⇄ en] フルツリー表示に切り替えました：詳細なニュアンスを表示",
+    notifySlotSwitched: "[ja ⇄ en] スロット構成を [{preset}] に切り替えました: {desc}",
     notifyTimeout: "[ja ⇄ en] 英語翻訳リクエストがタイムアウトしました。原文を送信しました",
     notifyError: "[ja ⇄ en] 英語翻訳リクエストでエラーが発生しました。原文を送信しました",
 
@@ -104,6 +188,7 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     cmdDescStatus: "状態レポートとモデル診断を表示: /lingual-status",
     cmdDescModel: "学習モデルの確認・切替: /lingual-model [model-id|auto]",
     cmdDescLang: "伴走の母語を確認・変更: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescSlots: "スロット構成の確認・切替 [ja ⇄ en]: /slots [developer|social|japanese|academic|compact2]",
     cmdDescCompact: "1行カプセル表示とフルツリーの切替: /lingual-compact",
     cmdDescLast: "前回の伴走カードを再表示: /lingual-last",
     cmdDescAgent: "伴走カスタマイズと母語変更の案内を表示: /lingual-agent",
@@ -166,6 +251,7 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     notifyLangInvalid: "Invalid language code. Supported: zh, ja, en, es, fr, de",
     notifyCompactOn: "[en ⇄ ja] Single-line capsule mode enabled for compact split panes",
     notifyCompactOff: "[en ⇄ ja] Full tree layout restored",
+    notifySlotSwitched: "[en ⇄ ja] Switched slot architecture to [{preset}]: {desc}",
     notifyTimeout: "[en ⇄ ja] English translation timed out or not ready; original prompt passed",
     notifyError: "[en ⇄ ja] English translation request error; original prompt passed",
 
@@ -173,6 +259,7 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     cmdDescStatus: "Display companion status report and model diagnosis: /lingual-status",
     cmdDescModel: "Inspect or switch companion model: /lingual-model [model-id|auto]",
     cmdDescLang: "View or switch companion native language: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescSlots: "Inspect or switch slot architecture: /slots [developer|social|japanese|academic|compact2]",
     cmdDescCompact: "Toggle single-line capsule mode: /lingual-compact",
     cmdDescLast: "Replay previous companion card: /lingual-last",
     cmdDescAgent: "Display companion customization & language guide: /lingual-agent",
@@ -235,6 +322,7 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     notifyLangInvalid: "Código de idioma no válido. Admitidos: zh, ja, en, es, fr, de",
     notifyCompactOn: "[es ⇄ en] Modo cápsula de una línea activado",
     notifyCompactOff: "[es ⇄ en] Modo árbol completo restaurado",
+    notifySlotSwitched: "[es ⇄ en] Arquitectura de ranuras cambiada a [{preset}]: {desc}",
     notifyTimeout: "[es ⇄ en] La traducción al inglés agotó el tiempo; se envió el texto original",
     notifyError: "[es ⇄ en] Error en la traducción al inglés; se envió el texto original",
 
@@ -242,6 +330,7 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     cmdDescStatus: "Mostrar diagnóstico y estado del modelo: /lingual-status",
     cmdDescModel: "Consultar o cambiar modelo: /lingual-model [model-id|auto]",
     cmdDescLang: "Ver o cambiar idioma nativo: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescSlots: "Inspeccionar o cambiar ranuras: /slots [developer|social|japanese|academic|compact2]",
     cmdDescCompact: "Alternar modo cápsula de una línea: /lingual-compact",
     cmdDescLast: "Reaparecer tarjeta anterior: /lingual-last",
     cmdDescAgent: "Ver guía de personalización y cambio de idioma: /lingual-agent",
@@ -373,6 +462,7 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     notifyLangInvalid: "Ungültiger Sprachcode. Unterstützt: zh, ja, en, es, fr, de",
     notifyCompactOn: "[de ⇄ en] Einzeiliger Kapselmodus aktiviert",
     notifyCompactOff: "[de ⇄ en] Vollständige Baumansicht wiederhergestellt",
+    notifySlotSwitched: "[de ⇄ en] Slot-Architektur auf [{preset}] umgestellt: {desc}",
     notifyTimeout: "[de ⇄ en] Englische Übersetzung hat das Zeitlimit überschritten; Originaltext wurde übergeben",
     notifyError: "[de ⇄ en] Fehler bei der englischen Übersetzung; Originaltext wurde übergeben",
 
@@ -380,6 +470,7 @@ export const LANGUAGE_PRESETS: Record<string, LingualI18nLabels> = {
     cmdDescStatus: "Statusbericht und Modell-Diagnose anzeigen: /lingual-status",
     cmdDescModel: "Modell prüfen oder wechseln: /lingual-model [model-id|auto]",
     cmdDescLang: "Muttersprache anzeigen oder wechseln: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescSlots: "Slot-Architektur anzeigen/umstellen: /slots [developer|social|japanese|academic|compact2]",
     cmdDescCompact: "Einzeiligen Kapselmodus umschalten: /lingual-compact",
     cmdDescLast: "Vorherige Karte erneut anzeigen: /lingual-last",
     cmdDescAgent: "Anleitung zur Anpassung und Sprachumstellung anzeigen: /lingual-agent",

@@ -37,6 +37,7 @@ export interface LingualI18nLabels {
   notifyModelSwitched?: string; // template containing {model} or format string
   notifyLangSwitched?: string;  // template containing {lang}
   notifyLangInvalid?: string;
+  notifySlotSwitched?: string;  // template containing {preset}
   notifyCompactOn?: string;
   notifyCompactOff?: string;
   notifyTimeout?: string;
@@ -47,6 +48,7 @@ export interface LingualI18nLabels {
   cmdDescStatus?: string;
   cmdDescModel?: string;
   cmdDescLang?: string;
+  cmdDescSlots?: string;
   cmdDescCompact?: string;
   cmdDescLast?: string;
   cmdDescAgent?: string;

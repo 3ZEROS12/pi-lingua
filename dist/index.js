@@ -1,4 +1,79 @@
 // src/presets.ts
+var SLOT_PRESETS = {
+  developer: {
+    name: "Developer",
+    description: "Standard agile collaboration: Spoken + Written + Vocab",
+    slots: (sourceLang = "zh") => {
+      const isZh = sourceLang === "zh" || sourceLang === "tw";
+      const isJa = sourceLang === "ja";
+      return [
+        { id: "source", label: isZh ? "\u539F\u6587" : isJa ? "\u539F\u6587" : "Source", role: "source", enabled: true },
+        { id: "spoken", label: isZh ? "\u53E3\u8BED" : isJa ? "\u53E3\u8A9E" : "Spoken", role: "translation", instruction: "Natural, fluent spoken flow (daily standup, Slack, agile collaboration, conversational banter).", showMeaning: true, enabled: true },
+        { id: "written", label: isZh ? "\u5199\u4F5C" : isJa ? "\u6587\u9762" : "Written", role: "translation", instruction: "Clear, precise, modern technical written prose (RFCs, PR descriptions, documentation, deep insight).", showMeaning: true, enabled: true },
+        { id: "vocab", label: isZh ? "\u91CD\u70B9" : isJa ? "\u5358\u8A9E" : "Vocab", role: "vocab", instruction: "Extract key idiomatic collocations, phrasal verbs, or technical idioms.", enabled: true }
+      ];
+    }
+  },
+  social: {
+    name: "Social",
+    description: "Overseas Twitter / Community building: Hook + Deep + Vocab",
+    slots: (sourceLang = "zh") => {
+      const isZh = sourceLang === "zh" || sourceLang === "tw";
+      return [
+        { id: "source", label: isZh ? "\u539F\u6587" : "Source", role: "source", enabled: true },
+        { id: "spoken", label: "Hook", role: "translation", instruction: "High-engagement, punchy opening hook optimized for Twitter/X threads and viral developer discussions.", showMeaning: true, enabled: true },
+        { id: "written", label: "Deep", role: "translation", instruction: "Insightful, narrative technical value and nuanced architecture reasoning.", showMeaning: true, enabled: true },
+        { id: "vocab", label: isZh ? "\u91CD\u70B9" : "Vocab", role: "vocab", instruction: "Key engagement idioms and technical phrases.", enabled: true }
+      ];
+    }
+  },
+  japanese: {
+    name: "Japanese",
+    description: "Dual-register Japanese companion: \u53E3\u8A9E + \u656C\u8A9E + \u5358\u8A9E",
+    slots: (sourceLang = "zh") => {
+      const isZh = sourceLang === "zh" || sourceLang === "tw";
+      const isJa = sourceLang === "ja";
+      return [
+        { id: "source", label: isZh ? "\u539F\u6587" : isJa ? "\u539F\u6587" : "Source", role: "source", enabled: true },
+        { id: "spoken", label: "\u53E3\u8A9E", role: "translation", instruction: "Natural, colloquial spoken Japanese (daily casual chat, team talk, direct).", showMeaning: true, enabled: true },
+        { id: "written", label: "\u656C\u8A9E", role: "translation", instruction: "Formal, polite business Japanese (Keigo, Sonkeigo/Kenjougo, professional email/PR).", showMeaning: true, enabled: true },
+        { id: "vocab", label: "\u5358\u8A9E", role: "vocab", instruction: "Key Japanese vocabulary, kanji readings, and idiomatic expressions.", enabled: true }
+      ];
+    }
+  },
+  academic: {
+    name: "Academic",
+    description: "Paper & rigorous discussion: Discussion + Paper",
+    slots: (sourceLang = "zh") => {
+      const isZh = sourceLang === "zh" || sourceLang === "tw";
+      return [
+        { id: "source", label: isZh ? "\u539F\u6587" : "Source", role: "source", enabled: true },
+        { id: "spoken", label: "Discussion", role: "translation", instruction: "Academic colloquium and seminar discussion tone.", showMeaning: true, enabled: true },
+        { id: "written", label: "Paper", role: "translation", instruction: "Formal, objective academic prose suitable for peer-reviewed IEEE/ACM papers and arXiv preprints.", showMeaning: true, enabled: true },
+        { id: "vocab", label: isZh ? "\u91CD\u70B9" : "Vocab", role: "vocab", enabled: false }
+      ];
+    }
+  },
+  compact2: {
+    name: "Compact 2-Slot",
+    description: "Minimalist dual-slot: Source + Target translation only",
+    slots: (sourceLang = "zh") => {
+      const isZh = sourceLang === "zh" || sourceLang === "tw";
+      const isJa = sourceLang === "ja";
+      return [
+        { id: "source", label: isZh ? "\u539F\u6587" : isJa ? "\u539F\u6587" : "Source", role: "source", enabled: true },
+        { id: "spoken", label: isZh ? "\u8BD1\u6587" : isJa ? "\u8A33\u6587" : "Translation", role: "translation", instruction: "Natural, idiomatic target language translation.", showMeaning: true, enabled: true },
+        { id: "written", label: isZh ? "\u5199\u4F5C" : "Written", role: "translation", enabled: false },
+        { id: "vocab", label: isZh ? "\u91CD\u70B9" : "Vocab", role: "vocab", enabled: false }
+      ];
+    }
+  }
+};
+function resolveSlotsForPreset(presetName = "developer", sourceLang = "zh") {
+  const normPreset = (presetName || "developer").toLowerCase().trim();
+  const preset = SLOT_PRESETS[normPreset] || SLOT_PRESETS.developer;
+  return preset.slots(sourceLang);
+}
 var LANGUAGE_PRESETS = {
   zh: {
     slot1Label: "\u53E3\u8BED",
@@ -85,12 +160,14 @@ var LANGUAGE_PRESETS = {
     notifyLangInvalid: "\u7121\u52B9\u306A\u8A00\u8A9E\u30B3\u30FC\u30C9\u3067\u3059\u3002\u5BFE\u5FDC\u8A00\u8A9E: zh, ja, en, es, fr, de",
     notifyCompactOn: "[ja \u21C4 en] 1\u884C\u30AB\u30D7\u30BB\u30EB\u30E2\u30FC\u30C9\u3092\u6709\u52B9\u306B\u3057\u307E\u3057\u305F\uFF1A\u753B\u9762\u9818\u57DF\u3092\u6700\u5927\u9650\u78BA\u4FDD",
     notifyCompactOff: "[ja \u21C4 en] \u30D5\u30EB\u30C4\u30EA\u30FC\u8868\u793A\u306B\u5207\u308A\u66FF\u3048\u307E\u3057\u305F\uFF1A\u8A73\u7D30\u306A\u30CB\u30E5\u30A2\u30F3\u30B9\u3092\u8868\u793A",
+    notifySlotSwitched: "[ja \u21C4 en] \u30B9\u30ED\u30C3\u30C8\u69CB\u6210\u3092 [{preset}] \u306B\u5207\u308A\u66FF\u3048\u307E\u3057\u305F: {desc}",
     notifyTimeout: "[ja \u21C4 en] \u82F1\u8A9E\u7FFB\u8A33\u30EA\u30AF\u30A8\u30B9\u30C8\u304C\u30BF\u30A4\u30E0\u30A2\u30A6\u30C8\u3057\u307E\u3057\u305F\u3002\u539F\u6587\u3092\u9001\u4FE1\u3057\u307E\u3057\u305F",
     notifyError: "[ja \u21C4 en] \u82F1\u8A9E\u7FFB\u8A33\u30EA\u30AF\u30A8\u30B9\u30C8\u3067\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F\u3002\u539F\u6587\u3092\u9001\u4FE1\u3057\u307E\u3057\u305F",
     cmdDescMode: "\u30E2\u30FC\u30C9\u5207\u66FF [ja \u21C4 en]: [\u539F\u6587] \u2794 [\u82F1\u8A9E] \u2794 [\u30AA\u30D5]",
     cmdDescStatus: "\u72B6\u614B\u30EC\u30DD\u30FC\u30C8\u3068\u30E2\u30C7\u30EB\u8A3A\u65AD\u3092\u8868\u793A: /lingual-status",
     cmdDescModel: "\u5B66\u7FD2\u30E2\u30C7\u30EB\u306E\u78BA\u8A8D\u30FB\u5207\u66FF: /lingual-model [model-id|auto]",
     cmdDescLang: "\u4F34\u8D70\u306E\u6BCD\u8A9E\u3092\u78BA\u8A8D\u30FB\u5909\u66F4: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescSlots: "\u30B9\u30ED\u30C3\u30C8\u69CB\u6210\u306E\u78BA\u8A8D\u30FB\u5207\u66FF [ja \u21C4 en]: /slots [developer|social|japanese|academic|compact2]",
     cmdDescCompact: "1\u884C\u30AB\u30D7\u30BB\u30EB\u8868\u793A\u3068\u30D5\u30EB\u30C4\u30EA\u30FC\u306E\u5207\u66FF: /lingual-compact",
     cmdDescLast: "\u524D\u56DE\u306E\u4F34\u8D70\u30AB\u30FC\u30C9\u3092\u518D\u8868\u793A: /lingual-last",
     cmdDescAgent: "\u4F34\u8D70\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA\u3068\u6BCD\u8A9E\u5909\u66F4\u306E\u6848\u5185\u3092\u8868\u793A: /lingual-agent",
@@ -148,12 +225,14 @@ var LANGUAGE_PRESETS = {
     notifyLangInvalid: "Invalid language code. Supported: zh, ja, en, es, fr, de",
     notifyCompactOn: "[en \u21C4 ja] Single-line capsule mode enabled for compact split panes",
     notifyCompactOff: "[en \u21C4 ja] Full tree layout restored",
+    notifySlotSwitched: "[en \u21C4 ja] Switched slot architecture to [{preset}]: {desc}",
     notifyTimeout: "[en \u21C4 ja] English translation timed out or not ready; original prompt passed",
     notifyError: "[en \u21C4 ja] English translation request error; original prompt passed",
     cmdDescMode: "Cycle companion mode [en \u21C4 ja]: [Original] \u2794 [English] \u2794 [Off]",
     cmdDescStatus: "Display companion status report and model diagnosis: /lingual-status",
     cmdDescModel: "Inspect or switch companion model: /lingual-model [model-id|auto]",
     cmdDescLang: "View or switch companion native language: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescSlots: "Inspect or switch slot architecture: /slots [developer|social|japanese|academic|compact2]",
     cmdDescCompact: "Toggle single-line capsule mode: /lingual-compact",
     cmdDescLast: "Replay previous companion card: /lingual-last",
     cmdDescAgent: "Display companion customization & language guide: /lingual-agent",
@@ -211,12 +290,14 @@ var LANGUAGE_PRESETS = {
     notifyLangInvalid: "C\xF3digo de idioma no v\xE1lido. Admitidos: zh, ja, en, es, fr, de",
     notifyCompactOn: "[es \u21C4 en] Modo c\xE1psula de una l\xEDnea activado",
     notifyCompactOff: "[es \u21C4 en] Modo \xE1rbol completo restaurado",
+    notifySlotSwitched: "[es \u21C4 en] Arquitectura de ranuras cambiada a [{preset}]: {desc}",
     notifyTimeout: "[es \u21C4 en] La traducci\xF3n al ingl\xE9s agot\xF3 el tiempo; se envi\xF3 el texto original",
     notifyError: "[es \u21C4 en] Error en la traducci\xF3n al ingl\xE9s; se envi\xF3 el texto original",
     cmdDescMode: "Cambiar modo [es \u21C4 en]: [Original] \u2794 [Ingl\xE9s] \u2794 [Apagado]",
     cmdDescStatus: "Mostrar diagn\xF3stico y estado del modelo: /lingual-status",
     cmdDescModel: "Consultar o cambiar modelo: /lingual-model [model-id|auto]",
     cmdDescLang: "Ver o cambiar idioma nativo: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescSlots: "Inspeccionar o cambiar ranuras: /slots [developer|social|japanese|academic|compact2]",
     cmdDescCompact: "Alternar modo c\xE1psula de una l\xEDnea: /lingual-compact",
     cmdDescLast: "Reaparecer tarjeta anterior: /lingual-last",
     cmdDescAgent: "Ver gu\xEDa de personalizaci\xF3n y cambio de idioma: /lingual-agent",
@@ -337,12 +418,14 @@ var LANGUAGE_PRESETS = {
     notifyLangInvalid: "Ung\xFCltiger Sprachcode. Unterst\xFCtzt: zh, ja, en, es, fr, de",
     notifyCompactOn: "[de \u21C4 en] Einzeiliger Kapselmodus aktiviert",
     notifyCompactOff: "[de \u21C4 en] Vollst\xE4ndige Baumansicht wiederhergestellt",
+    notifySlotSwitched: "[de \u21C4 en] Slot-Architektur auf [{preset}] umgestellt: {desc}",
     notifyTimeout: "[de \u21C4 en] Englische \xDCbersetzung hat das Zeitlimit \xFCberschritten; Originaltext wurde \xFCbergeben",
     notifyError: "[de \u21C4 en] Fehler bei der englischen \xDCbersetzung; Originaltext wurde \xFCbergeben",
     cmdDescMode: "Modus umschalten [de \u21C4 en]: [Original] \u2794 [Englisch] \u2794 [Aus]",
     cmdDescStatus: "Statusbericht und Modell-Diagnose anzeigen: /lingual-status",
     cmdDescModel: "Modell pr\xFCfen oder wechseln: /lingual-model [model-id|auto]",
     cmdDescLang: "Muttersprache anzeigen oder wechseln: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescSlots: "Slot-Architektur anzeigen/umstellen: /slots [developer|social|japanese|academic|compact2]",
     cmdDescCompact: "Einzeiligen Kapselmodus umschalten: /lingual-compact",
     cmdDescLast: "Vorherige Karte erneut anzeigen: /lingual-last",
     cmdDescAgent: "Anleitung zur Anpassung und Sprachumstellung anzeigen: /lingual-agent",
@@ -531,9 +614,18 @@ function getDefaultSlots(sourceLang = "zh") {
   const norm = (sourceLang || "zh").toLowerCase().split("-")[0];
   const labels = {
     zh: { source: "\u539F\u6587", spoken: "\u53E3\u8BED", written: "\u5199\u4F5C", vocab: "\u91CD\u70B9" },
-    ja: { source: "\u539F\u6587", spoken: "\u53E3\u8A9E", written: "\u6587\u9762", vocab: "\u5358\u8A9E" },
+    tw: { source: "\u539F\u6587", spoken: "\u53E3\u8A9E", written: "\u66F8\u9762", vocab: "\u91CD\u9EDE" },
     en: { source: "Original", spoken: "Spoken", written: "Written", vocab: "Vocab" },
+    ja: { source: "\u539F\u6587", spoken: "\u53E3\u8A9E", written: "\u6587\u9762", vocab: "\u5358\u8A9E" },
+    ko: { source: "\uC6D0\uBB38", spoken: "\uAD6C\uC5B4", written: "\uBB38\uC5B4", vocab: "\uD575\uC2EC" },
+    ru: { source: "\u041E\u0440\u0438\u0433\u0438\u043D\u0430\u043B", spoken: "\u0420\u0430\u0437\u0433\u043E\u0432\u043E\u0440\u043D\u044B\u0439", written: "\u041F\u0438\u0441\u044C\u043C\u0435\u043D\u043D\u044B\u0439", vocab: "\u041B\u0435\u043A\u0441\u0438\u043A\u0430" },
+    pt: { source: "Original", spoken: "Falado", written: "Escrito", vocab: "Vocab" },
     es: { source: "Original", spoken: "Hablado", written: "Escrito", vocab: "Vocab" },
+    vi: { source: "Nguy\xEAn b\u1EA3n", spoken: "Kh\u1EA9u ng\u1EEF", written: "V\u0103n b\u1EA3n", vocab: "T\u1EEB v\u1EF1ng" },
+    tr: { source: "Orijinal", spoken: "Konu\u015Fma", written: "Yaz\u0131l\u0131", vocab: "Kelime" },
+    ar: { source: "\u0627\u0644\u0623\u0635\u0644", spoken: "\u0645\u062D\u0627\u062F\u062B\u0629", written: "\u0643\u062A\u0627\u0628\u0629", vocab: "\u0645\u0641\u0631\u062F\u0627\u062A" },
+    my: { source: "Asal", spoken: "Pertuturan", written: "Penulisan", vocab: "Kosa kata" },
+    ms: { source: "Asal", spoken: "Pertuturan", written: "Penulisan", vocab: "Kosa kata" },
     fr: { source: "Original", spoken: "Parl\xE9", written: "\xC9crit", vocab: "Vocab" },
     de: { source: "Original", spoken: "Gesprochen", written: "Schriftlich", vocab: "Wortschatz" }
   };
@@ -570,7 +662,7 @@ function getDefaultSlots(sourceLang = "zh") {
     }
   ];
 }
-var SLOT_PRESETS = {
+var LEGACY_SLOT_PRESETS = {
   developer: {
     slot1: {
       label: "Spoken",
@@ -890,12 +982,12 @@ ${condensationDirective2}${contextDirective2}
 ${dynamicJsonHint}
 Output valid JSON ONLY. Never output markdown code fences, backticks, quotes, or explanations.`;
   }
-  const defaultSlots = SLOT_PRESETS.developer;
+  const defaultSlots = LEGACY_SLOT_PRESETS.developer;
   const legacyConfig = customSlots;
-  const slot1Name = legacyConfig?.slot1?.name || (tone === "social" ? SLOT_PRESETS.social.slot1.name : defaultSlots.slot1.name);
-  const slot1Instruction = legacyConfig?.slot1?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot1.instruction : defaultSlots.slot1.instruction);
-  const slot2Name = legacyConfig?.slot2?.name || (tone === "social" ? SLOT_PRESETS.social.slot2.name : defaultSlots.slot2.name);
-  const slot2Instruction = legacyConfig?.slot2?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot2.instruction : defaultSlots.slot2.instruction);
+  const slot1Name = legacyConfig?.slot1?.name || (tone === "social" ? LEGACY_SLOT_PRESETS.social.slot1.name : defaultSlots.slot1.name);
+  const slot1Instruction = legacyConfig?.slot1?.instruction || (tone === "social" ? LEGACY_SLOT_PRESETS.social.slot1.instruction : defaultSlots.slot1.instruction);
+  const slot2Name = legacyConfig?.slot2?.name || (tone === "social" ? LEGACY_SLOT_PRESETS.social.slot2.name : defaultSlots.slot2.name);
+  const slot2Instruction = legacyConfig?.slot2?.instruction || (tone === "social" ? LEGACY_SLOT_PRESETS.social.slot2.instruction : defaultSlots.slot2.instruction);
   const anchorText = spec.anchors.map(
     (a) => `Input: ${JSON.stringify(a.input)}
 Output: ${JSON.stringify({
@@ -1429,20 +1521,34 @@ function renderCardLayout(card, labels, options = {}) {
   const maxLines = options.maxLines || 9;
   const isCompact = Boolean(options.isCompact);
   const pageTag = options.pageTag || "";
+  const allSlots = options.slots;
+  const sourceSlot = allSlots?.find((s) => s.role === "source");
+  const sourceLabel = sourceSlot?.label || labels.sourceLabel || "\u539F\u6587";
+  const slot1Conf = allSlots?.find((s) => s.id === "spoken" || s.role === "translation");
+  const slot2Conf = allSlots?.find((s) => s.id === "written" || s.role === "translation" && s !== slot1Conf);
+  const vocabConf = allSlots?.find((s) => s.id === "vocab" || s.role === "vocab");
+  const slot1Label = slot1Conf?.label || labels.slot1Label || "Spoken";
+  const slot2Label = slot2Conf?.label || labels.slot2Label || "Written";
+  const vocabLabel = vocabConf?.label || labels.vocabLabel || "Vocab";
+  const hasWritten = slot2Conf ? slot2Conf.enabled && Boolean(card.written && card.written.trim()) : allSlots ? false : Boolean(card.written && card.written.trim());
+  const hasVocab = vocabConf ? vocabConf.enabled && Boolean(card.vocab && card.vocab.trim()) : allSlots ? false : Boolean(card.vocab && card.vocab.trim());
   if (isCompact || maxCols < 35) {
-    const capsuleText = formatCapsuleLine(labels.hudTitle, card.spoken, card.written, {
-      slot1Short: labels.capsuleSlot1Prefix || labels.slot1Label || "Spk",
-      slot2Short: labels.capsuleSlot2Prefix || labels.slot2Label || "Wrt",
-      maxCols
-    });
+    const capsuleText = formatCapsuleLine(
+      labels.hudTitle,
+      card.spoken,
+      hasWritten ? card.written : void 0,
+      {
+        slot1Short: slot1Conf?.label ? slot1Conf.label.slice(0, 4) : labels.capsuleSlot1Prefix || labels.slot1Label || "Spk",
+        slot2Short: slot2Conf?.label ? slot2Conf.label.slice(0, 4) : labels.capsuleSlot2Prefix || labels.slot2Label || "Wrt",
+        maxCols
+      }
+    );
     return [capsuleText + pageTag];
   }
   const decMuted = options.themeDecorators?.muted || ((s) => s);
   const decAccent = options.themeDecorators?.accent || ((s) => s);
   const decDim = options.themeDecorators?.dim || ((s) => s);
-  const hasWritten = Boolean(card.written && card.written.trim());
-  const hasVocab = Boolean(card.vocab && card.vocab.trim());
-  const prefixRaw = `  \xB7 [${labels.sourceLabel}] `;
+  const prefixRaw = `  \xB7 [${sourceLabel}] `;
   const prefixW = getVisualWidth(prefixRaw);
   const pageTagW = pageTag ? getVisualWidth(pageTag) : 0;
   const availLine1W = Math.max(20, maxCols - prefixW - pageTagW);
@@ -1450,7 +1556,7 @@ function renderCardLayout(card, labels, options = {}) {
   let sourceLines = [];
   if (getVisualWidth(cleanSource) <= availLine1W) {
     sourceLines = [
-      decMuted("  \xB7 ") + decMuted("[") + decDim(labels.sourceLabel) + decMuted("] ") + cleanSource + pageTag
+      decMuted("  \xB7 ") + decMuted("[") + decDim(sourceLabel) + decMuted("] ") + cleanSource + pageTag
     ];
   } else {
     const wrapped = wrapVisualText(cleanSource, Math.max(20, maxCols - prefixW));
@@ -1458,7 +1564,7 @@ function renderCardLayout(card, labels, options = {}) {
       const isLast = idx === wrapped.length - 1;
       const tagSuffix = isLast ? pageTag : "";
       if (idx === 0) {
-        return decMuted("  \xB7 ") + decMuted("[") + decDim(labels.sourceLabel) + decMuted("] ") + wLine + tagSuffix;
+        return decMuted("  \xB7 ") + decMuted("[") + decDim(sourceLabel) + decMuted("] ") + wLine + tagSuffix;
       }
       return " ".repeat(prefixW) + decDim(wLine) + tagSuffix;
     });
@@ -1466,20 +1572,20 @@ function renderCardLayout(card, labels, options = {}) {
   let lines = [...sourceLines];
   const branch1Char = hasWritten || hasVocab ? "\u250C" : "\u2514";
   const cont1Char = hasWritten || hasVocab ? "\u2502" : " ";
-  lines.push(...formatTreeBranch(branch1Char, cont1Char, labels.slot1Label, card.spoken, decMuted, decAccent, decMuted, (s) => s, maxCols));
+  lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1Label, card.spoken, decMuted, decAccent, decMuted, (s) => s, maxCols));
   if (card.spokenMeaning) {
     lines.push(...formatSubRail(cont1Char, card.spokenMeaning, "\u21B3", decMuted, decDim, maxCols));
   }
   if (hasWritten) {
     const branchChar = hasVocab ? "\u251C" : "\u2514";
     const contChar = hasVocab ? "\u2502" : " ";
-    lines.push(...formatTreeBranch(branchChar, contChar, labels.slot2Label, card.written, decMuted, decAccent, decMuted, (s) => s, maxCols));
+    lines.push(...formatTreeBranch(branchChar, contChar, slot2Label, card.written, decMuted, decAccent, decMuted, (s) => s, maxCols));
     if (card.writtenMeaning) {
       lines.push(...formatSubRail(contChar, card.writtenMeaning, "\u21B3", decMuted, decDim, maxCols));
     }
   }
   if (hasVocab) {
-    lines.push(...formatTreeBranch("\u2514", " ", labels.vocabLabel, card.vocab, decMuted, decMuted, decMuted, decDim, maxCols));
+    lines.push(...formatTreeBranch("\u2514", " ", vocabLabel, card.vocab, decMuted, decMuted, decMuted, decDim, maxCols));
   }
   if (lines.length > maxLines) {
     let clampedSourceLines = sourceLines;
@@ -1490,17 +1596,17 @@ function renderCardLayout(card, labels, options = {}) {
       ];
     }
     const spInline = card.spokenMeaning ? `${card.spoken} (${card.spokenMeaning})` : card.spoken;
-    const rawSpLines = formatTreeBranch(branch1Char, cont1Char, labels.slot1Label, spInline, decMuted, decAccent, decMuted, (s) => s, maxCols);
+    const rawSpLines = formatTreeBranch(branch1Char, cont1Char, slot1Label, spInline, decMuted, decAccent, decMuted, (s) => s, maxCols);
     let rawWrLines = [];
     if (hasWritten) {
       const branchChar = hasVocab ? "\u251C" : "\u2514";
       const contChar = hasVocab ? "\u2502" : " ";
       const wrInline = card.writtenMeaning ? `${card.written} (${card.writtenMeaning})` : card.written || "";
-      rawWrLines = formatTreeBranch(branchChar, contChar, labels.slot2Label, wrInline, decMuted, decAccent, decMuted, (s) => s, maxCols);
+      rawWrLines = formatTreeBranch(branchChar, contChar, slot2Label, wrInline, decMuted, decAccent, decMuted, (s) => s, maxCols);
     }
     let rawVocabLines = [];
     if (hasVocab) {
-      rawVocabLines = formatTreeBranch("\u2514", " ", labels.vocabLabel, card.vocab, decMuted, decMuted, decMuted, decDim, maxCols);
+      rawVocabLines = formatTreeBranch("\u2514", " ", vocabLabel, card.vocab, decMuted, decMuted, decMuted, decDim, maxCols);
     }
     const totalInline = clampedSourceLines.length + rawSpLines.length + rawWrLines.length + rawVocabLines.length;
     if (totalInline <= maxLines) {
@@ -1508,9 +1614,9 @@ function renderCardLayout(card, labels, options = {}) {
     } else {
       const branchChar = hasVocab ? "\u251C" : "\u2514";
       const contChar = hasVocab ? "\u2502" : " ";
-      const pureSpLines = formatTreeBranch(branch1Char, cont1Char, labels.slot1Label, card.spoken, decMuted, decAccent, decMuted, (s) => s, maxCols);
-      const pureWrLines = hasWritten ? formatTreeBranch(branchChar, contChar, labels.slot2Label, card.written, decMuted, decAccent, decMuted, (s) => s, maxCols) : [];
-      const pureVocabLines = hasVocab ? formatTreeBranch("\u2514", " ", labels.vocabLabel, card.vocab, decMuted, decMuted, decMuted, decDim, maxCols) : [];
+      const pureSpLines = formatTreeBranch(branch1Char, cont1Char, slot1Label, card.spoken, decMuted, decAccent, decMuted, (s) => s, maxCols);
+      const pureWrLines = hasWritten ? formatTreeBranch(branchChar, contChar, slot2Label, card.written, decMuted, decAccent, decMuted, (s) => s, maxCols) : [];
+      const pureVocabLines = hasVocab ? formatTreeBranch("\u2514", " ", vocabLabel, card.vocab, decMuted, decMuted, decMuted, decDim, maxCols) : [];
       const totalPure = clampedSourceLines.length + pureSpLines.length + pureWrLines.length + pureVocabLines.length;
       if (totalPure <= maxLines) {
         if (clampedSourceLines.length + rawSpLines.length + pureWrLines.length + pureVocabLines.length <= maxLines) {
@@ -1756,6 +1862,8 @@ function loadUserLingualConfig() {
         const sourceLang = target.sourceLang;
         const targetLang = target.targetLang;
         const compact = target.compact;
+        const slotPreset = target.slotPreset;
+        const slots = Array.isArray(target.slots) ? target.slots : void 0;
         const labels = resolveLabelsForLang(sourceLang || "zh", target.labels);
         cachedUserConfig = {
           ...endpoint ? { endpoint } : {},
@@ -1764,6 +1872,8 @@ function loadUserLingualConfig() {
           ...selectedModel ? { selectedModel } : {},
           ...target.mode ? { mode: target.mode } : {},
           ...compact !== void 0 ? { compact: Boolean(compact) } : {},
+          ...slotPreset ? { slotPreset } : {},
+          ...slots ? { slots } : {},
           ...sourceLang ? { sourceLang } : {},
           ...targetLang ? { targetLang } : {},
           labels
@@ -1906,7 +2016,8 @@ async function translatePrompt(text, userConfig = {}) {
   try {
     let content = null;
     const isLongInput = isDynamicLongInput(trimmed, cfg.sourceLang);
-    const sysPrompt = buildSystemPrompt(cfg.sourceLang, cfg.targetLang, isLongInput);
+    const effectiveSlots = cfg.slots || (cfg.slotPreset ? resolveSlotsForPreset(cfg.slotPreset, cfg.sourceLang) : void 0);
+    const sysPrompt = buildSystemPrompt(cfg.sourceLang, cfg.targetLang, isLongInput, void 0, "general", effectiveSlots);
     if (typeof cfg.complete === "function") {
       content = await cfg.complete(trimmed, sysPrompt, controller.signal);
     } else if (cfg.endpoint) {
@@ -2284,6 +2395,7 @@ export {
   CANNOT_START_LINE_CHARS,
   DEFAULT_CONFIG,
   LANGUAGE_PRESETS,
+  LEGACY_SLOT_PRESETS,
   LINGUAL_SYSTEM_PROMPT,
   LINGUA_SYSTEM_PROMPT,
   LinguaLruCache,
@@ -2314,6 +2426,7 @@ export {
   parseLlmResponse,
   renderCardLayout,
   resolveLabelsForLang,
+  resolveSlotsForPreset,
   sanitizePromptForTranslation,
   shouldShieldBypass,
   shouldTriggerTranslation,

@@ -7,7 +7,7 @@ import type {
   InputEvent,
   InputEventResult,
 } from "@earendil-works/pi-coding-agent";
-import type { LingualMode, LingualI18nLabels, LingualResult } from "./types.js";
+import type { LingualMode, LingualI18nLabels, LingualResult, SlotConfig } from "./types.js";
 import {
   translatePrompt,
   shouldTriggerTranslation,
@@ -21,11 +21,14 @@ import {
   getVisualWidth,
   wrapVisualText,
   formatVocabItemsAtomic,
+  renderCardLayout,
 } from "./engine.js";
 import {
   resolveLabelsForLang,
   formatStatusReport,
   formatModelSelectionMessage,
+  resolveSlotsForPreset,
+  SLOT_PRESETS,
   LANGUAGE_PRESETS,
 } from "./presets.js";
 import { splitSemanticChunks } from "./chunker.js";
@@ -39,6 +42,8 @@ interface ExtensionState {
   sourceLang: string;
   targetLang: string;
   selectedModel: string;
+  slotPreset: string;
+  slots: SlotConfig[];
   labels: LingualI18nLabels;
 }
 
@@ -55,6 +60,8 @@ function isTestEnvironment(): boolean {
 const initialDiskConfig = isTestEnvironment() ? {} : loadUserLingualConfig();
 const initialSourceLang = initialDiskConfig.sourceLang || "zh";
 const initialTargetLang = initialDiskConfig.targetLang || (initialSourceLang === "en" ? "ja" : "en");
+const initialSlotPreset = initialDiskConfig.slotPreset || "developer";
+const initialSlots = initialDiskConfig.slots || resolveSlotsForPreset(initialSlotPreset, initialSourceLang);
 const initialLabels = resolveLabelsForLang(initialSourceLang, initialDiskConfig.labels, initialTargetLang);
 
 const state: ExtensionState = {
@@ -63,6 +70,8 @@ const state: ExtensionState = {
   sourceLang: initialSourceLang,
   targetLang: initialTargetLang,
   selectedModel: initialDiskConfig.selectedModel || "auto",
+  slotPreset: initialSlotPreset,
+  slots: initialSlots,
   labels: initialLabels,
 };
 
@@ -135,8 +144,11 @@ let lastContext: ExtensionContext | null = null;
 
 function updateFooter(ctx: ExtensionContext) {
   if (!ctx.hasUI) return;
-  // 标准化底栏标签为纯净极简的 A ⇄ B (例如 zh ⇄ en)，彻底剔除多余的第二元素模式词
-  const pair = `${state.sourceLang} ⇄ ${state.targetLang}`;
+  // 标准化底栏标签为纯净极简的 A ⇄ B (例如 zh ⇄ en)
+  let pair = `${state.sourceLang} ⇄ ${state.targetLang}`;
+  if (state.slotPreset && state.slotPreset !== "developer") {
+    pair += ` · ${state.slotPreset}`;
+  }
   switch (state.mode) {
     case "original":
     case "english":
@@ -150,7 +162,7 @@ function updateFooter(ctx: ExtensionContext) {
 
 /**
  * 渲染极简开放式左导轨树状视窗（Trifecta Minimalist Left-Rail Tree Branch）
- * 包含：原文锚点、双模译文及针对母语 A 的精确语感释义、核心短语点睛
+ * 包含：原文锚点、动态多语域槽位译文及针对母语 A 的精确语感释义、核心短语点睛
  * 0 封闭框线，0 截断假线，100% 免疫 CJK 字符对齐鬼影。
  */
 function renderHudWidget(
@@ -165,214 +177,36 @@ function renderHudWidget(
 ) {
   if (!ctx.hasUI) return;
 
-  const hasWritten = Boolean(written && written.trim());
-  const hasVocab = Boolean(vocab && vocab.trim());
-
-  const slot1 = state.labels.slot1Label || state.labels.spokenLabel || "Spoken";
-  const slot2 = state.labels.slot2Label || state.labels.writtenLabel || "Written";
-  const vocabTag = state.labels.vocabLabel || "Vocab";
-  const sourceTag = state.labels.sourceLabel || "Source";
-
-  // 极简美学原则：平时绝不显示任何繁杂的翻页长文，唯有触发长句切分多页时，才在角标微弱提示 [1/2 ⌥.]
+  const isCompact = state.compact || (process.stdout?.rows ? process.stdout.rows < 22 : false);
+  const maxCols = Math.max(30, (process.stdout?.columns || 80) - 8);
   const pageTag = pagination && pagination.totalPages > 1
     ? ctx.ui.theme.fg("muted", ` [${pagination.pageIndex + 1}/${pagination.totalPages} ⌥.]`)
     : "";
 
-  // 方向四：极端分屏单行胶囊模式 (Compact Capsule Mode)
-  // 当显式开启 compact 或终端高度不足 (process.stdout.rows < 22) 时，渲染严格为 1 行的高密度胶囊流
-  const pairTitle = `${state.sourceLang} ⇄ ${state.targetLang}`;
-  const isCompact = state.compact || (process.stdout?.rows ? process.stdout.rows < 22 : false);
-  if (isCompact) {
-    const capsuleText = formatCapsuleLine(
-      pairTitle,
+  const lines = renderCardLayout(
+    {
       spoken,
-      written,
-      {
-        slot1Short: state.labels.capsuleSlot1Prefix || "Spk",
-        slot2Short: state.labels.capsuleSlot2Prefix || "Wrt",
-        maxCols: process.stdout?.columns || 80,
-      }
-    );
-    ctx.ui.setWidget("lingual_hud", [capsuleText + pageTag], { placement: "aboveEditor" });
-    return;
-  }
-
-  // 方向三：重点短语反光瞄准镜 (Spotlight Highlighting)
-  const spotlightPhrasesList = hasVocab ? extractVocabPhrases(vocab) : [];
-  const displaySpoken = spotlightPhrasesList.length > 0 ? spotlightPhrases(spoken, spotlightPhrasesList) : spoken;
-  const displayWritten = (written && spotlightPhrasesList.length > 0) ? spotlightPhrases(written, spotlightPhrasesList) : written;
-
-  // 预留 8 列安全边距，彻底杜绝单字溢出终端物理边界（解决末尾孤单汉字被强制折到第 0 列的缺陷）
-  const maxCols = Math.max(30, (process.stdout.columns || 80) - 8);
-
-  // 原文标签与树枝标签严格保持一致形制 [原文]，起始位置严格对齐第 11 视觉列
-  const prefixRaw = `  · [${sourceTag}] `;
-  const prefixW = getVisualWidth(prefixRaw);
-  const pageTagW = pageTag ? getVisualWidth(pageTag) : 0;
-  const availLine1W = Math.max(20, maxCols - prefixW - pageTagW);
-
-  // 原文锚点渲染：100% 完整原句呈现，绝不以省略号截断开发者输入
-  const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
-  let sourceLines: string[] = [];
-
-  if (getVisualWidth(cleanSource) <= availLine1W) {
-    sourceLines = [
-      ctx.ui.theme.fg("muted", "  · ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", sourceTag) + ctx.ui.theme.fg("muted", "] ") + cleanSource + pageTag,
-    ];
-  } else {
-    // 超过可用宽度时采用悬挂缩进自然折行；翻页角标挂在最后一行末尾，防止第一行被挤压腰斩！
-    const wrapped = wrapVisualText(cleanSource, Math.max(20, maxCols - prefixW));
-    sourceLines = wrapped.map((wLine, idx) => {
-      const isLast = idx === wrapped.length - 1;
-      const tagSuffix = isLast ? pageTag : "";
-      if (idx === 0) {
-        return (
-          ctx.ui.theme.fg("muted", "  · ") +
-          ctx.ui.theme.fg("muted", "[") +
-          ctx.ui.theme.fg("dim", sourceTag) +
-          ctx.ui.theme.fg("muted", "] ") +
-          wLine +
-          tagSuffix
-        );
-      }
-      return " ".repeat(prefixW) + ctx.ui.theme.fg("dim", wLine) + tagSuffix;
-    });
-  }
-
-  let lines: string[] = [...sourceLines];
-
-  const pMuted = (s: string) => ctx.ui.theme.fg("muted", s);
-  const pAccent = (s: string) => ctx.ui.theme.fg("accent", s);
-  const pDim = (s: string) => ctx.ui.theme.fg("dim", s);
-
-  // 1. 口语主分支 (目标语言 B)：若无后续分支则作为 └ 闭合
-  const branch1Char = (hasWritten || hasVocab) ? "┌" : "└";
-  const cont1Char = (hasWritten || hasVocab) ? "│" : " ";
-  lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, displaySpoken, pMuted, pAccent, pMuted, s => s, maxCols));
-  // 1.1 口语子导轨 (母语 A 细微语感)：换行挂载在标签正下方，保持左侧顺序线 │ 不中断
-  if (spokenMeaning) {
-    lines.push(...formatSubRail(cont1Char, spokenMeaning, "↳", pMuted, pDim, maxCols));
-  }
-
-  // 2. 写作分支 (目标语言 B)
-  if (hasWritten) {
-    const branchChar = hasVocab ? "├" : "└";
-    const contChar = hasVocab ? "│" : " ";
-    lines.push(...formatTreeBranch(branchChar, contChar, slot2, displayWritten!, pMuted, pAccent, pMuted, s => s, maxCols));
-    // 2.1 写作子导轨 (母语 A 严谨书面语感)
-    if (writtenMeaning) {
-      lines.push(...formatSubRail(contChar, writtenMeaning, "↳", pMuted, pDim, maxCols));
+      written: written || "",
+      vocab,
+      spokenMeaning,
+      writtenMeaning,
+      sourceText,
+      annotated: "",
+    },
+    state.labels,
+    {
+      maxCols,
+      maxLines: 9,
+      isCompact,
+      slots: state.slots,
+      pageTag,
+      themeDecorators: {
+        muted: (s) => ctx.ui.theme.fg("muted", s),
+        accent: (s) => ctx.ui.theme.fg("accent", s),
+        dim: (s) => ctx.ui.theme.fg("dim", s),
+      },
     }
-  }
-
-  // 3. 重点词汇分支：对每行独立应用 pDim 装饰器
-  if (hasVocab) {
-    lines.push(...formatTreeBranch("└", " ", vocabTag, vocab!, pMuted, pMuted, pMuted, pDim, maxCols));
-  }
-
-  // 4. 动态行数守卫 (遵循伴学核心灵魂：绝不剥离母语语感，绝不删除重点词汇，绝不粗暴降级为单行胶囊)
-  // Pi host widget 的物理截断上限为 10 行。
-  // 若全展开超过 9 行，优雅将原文限制为最多 2 行，并将语感内联进双模括号；绝不粗暴降级为带省略号的单行胶囊！
-  const HARD_MAX_LINES = 9;
-
-  if (lines.length > HARD_MAX_LINES) {
-    // 约束 Tier 1: 原文最多展示 2 行，防止长原文占用过多预算；超过 2 行时末行严格附带合规省略号
-    let clampedSourceLines = sourceLines;
-    if (sourceLines.length > 2) {
-      clampedSourceLines = [
-        sourceLines[0],
-        truncateVisual(sourceLines[1] + "...", maxCols),
-      ];
-    }
-
-    // 约束 Tier 2: 将母语语感内联入括号，收缩纵向子导轨高度
-    const spInline = spokenMeaning ? `${spoken} (${spokenMeaning})` : spoken;
-    const rawSpLines = formatTreeBranch(branch1Char, cont1Char, slot1, spInline, pMuted, pAccent, pMuted, s => s, maxCols);
-
-    let rawWrLines: string[] = [];
-    if (hasWritten) {
-      const branchChar = hasVocab ? "├" : "└";
-      const contChar = hasVocab ? "│" : " ";
-      const wrInline = writtenMeaning ? `${written} (${writtenMeaning})` : (written || "");
-      rawWrLines = formatTreeBranch(branchChar, contChar, slot2, wrInline, pMuted, pAccent, pMuted, s => s, maxCols);
-    }
-
-    let rawVocabLines: string[] = [];
-    if (hasVocab) {
-      rawVocabLines = formatTreeBranch("└", " ", vocabTag, vocab!, pMuted, pMuted, pMuted, pDim, maxCols);
-    }
-
-    const totalInline = clampedSourceLines.length + rawSpLines.length + rawWrLines.length + rawVocabLines.length;
-    if (totalInline <= HARD_MAX_LINES) {
-      lines = [...clampedSourceLines, ...rawSpLines, ...rawWrLines, ...rawVocabLines];
-    } else {
-      // 约束 Tier 3: 目标语完整性铁律 (Target Language Integrity Invariant)
-      // 当全内联依然超出行预算时，绝对禁止对带长语感的折行数组执行盲目 slice，
-      // 彻底根除英文主句被截断 (如 "which came as quite a") 或留下未闭合孤立括号 (如 "(嗨，今天想跟你聊聊林纳斯·托瓦兹。我以") 的缺陷！
-      // 优先保障纯正目标语英文与重点词汇的完整性：
-      const branchChar = hasVocab ? "├" : "└";
-      const contChar = hasVocab ? "│" : " ";
-      const pureSpLines = formatTreeBranch(branch1Char, cont1Char, slot1, displaySpoken, pMuted, pAccent, pMuted, s => s, maxCols);
-      const pureWrLines = hasWritten
-        ? formatTreeBranch(branchChar, contChar, slot2, displayWritten!, pMuted, pAccent, pMuted, s => s, maxCols)
-        : [];
-      const pureVocabLines = hasVocab
-        ? formatTreeBranch("└", " ", vocabTag, vocab!, pMuted, pMuted, pMuted, pDim, maxCols)
-        : [];
-
-      const totalPure = clampedSourceLines.length + pureSpLines.length + pureWrLines.length + pureVocabLines.length;
-      if (totalPure <= HARD_MAX_LINES) {
-        // 若预算有空余，尝试保留其中某一个语感 (优先保留口语语感)
-        if (clampedSourceLines.length + rawSpLines.length + pureWrLines.length + pureVocabLines.length <= HARD_MAX_LINES) {
-          lines = [...clampedSourceLines, ...rawSpLines, ...pureWrLines, ...pureVocabLines];
-        } else if (clampedSourceLines.length + pureSpLines.length + rawWrLines.length + pureVocabLines.length <= HARD_MAX_LINES) {
-          lines = [...clampedSourceLines, ...pureSpLines, ...rawWrLines, ...pureVocabLines];
-        } else {
-          lines = [...clampedSourceLines, ...pureSpLines, ...pureWrLines, ...pureVocabLines];
-        }
-      } else {
-        // 约束 Tier 4: 超长文/中间状态多句安全有界分配
-        // 优先保障四分支齐全，绝不压缩掉重点词汇或砍断词汇项：
-        // 保证口语 (max 2) + 写作 (max 2) + 原文 (max 2) = 6 行，为重点词汇稳固留出 2~3 行充足空间！
-        const remForText = Math.max(4, HARD_MAX_LINES - clampedSourceLines.length - Math.min(2, pureVocabLines.length));
-        const spBudget = Math.max(1, Math.min(pureSpLines.length, Math.floor(remForText / 2)));
-        const wrBudget = Math.max(1, Math.min(pureWrLines.length, remForText - spBudget));
-
-        const clampLines = (arr: string[], budget: number): string[] => {
-          if (arr.length <= budget) return arr;
-          const res = arr.slice(0, budget);
-          const last = res.length - 1;
-          res[last] = truncateVisual(res[last] + "...", maxCols);
-          return res;
-        };
-
-        const spSafe = clampLines(pureSpLines, spBudget);
-        const wrSafe = clampLines(pureWrLines, wrBudget);
-
-        // 计算留给重点词汇的剩余可用行数
-        const remForVocab = Math.max(1, HARD_MAX_LINES - clampedSourceLines.length - spSafe.length - wrSafe.length);
-        let vLines = pureVocabLines;
-        if (vLines.length > remForVocab) {
-          if (remForVocab === 1) {
-            const vPrefix = `  └ [${vocabTag}] `;
-            vLines = [formatVocabItemsAtomic(vocab || "", vPrefix, maxCols)];
-          } else {
-            vLines = vLines.slice(0, remForVocab);
-          }
-        }
-
-        lines = [...clampedSourceLines, ...spSafe, ...wrSafe, ...vLines];
-        if (lines.length > HARD_MAX_LINES) {
-          lines = lines.slice(0, HARD_MAX_LINES);
-        }
-      }
-    }
-  }
-
-  // 终极绝对安全切片保护
-  if (lines.length > 9) {
-    lines = lines.slice(0, 9);
-  }
+  );
 
   ctx.ui.setWidget("lingual_hud", lines, { placement: "aboveEditor" });
 }
@@ -556,6 +390,57 @@ export default function (pi: ExtensionAPI) {
     }
   };
 
+  const switchSlotsHandler = async (args: string, ctx: ExtensionContext) => {
+    const trimmed = args.trim().toLowerCase();
+    if (!trimmed) {
+      const activePreset = state.slotPreset || "developer";
+      const enabled = (state.slots || []).filter((s) => s.enabled);
+      const slotList = enabled.map((s, idx) => `  • #${idx} [${s.label}] (${s.role})`).join("\n");
+      const presetKeys = Object.keys(SLOT_PRESETS).join(", ");
+      const msg = `⇄ [${state.labels.hudTitle}] Active Slot Preset: [${activePreset}]\n${slotList}\n\nAvailable presets: ${presetKeys}\nUsage: /slots <preset> (e.g. /slots compact2, /slots social, /slots developer)`;
+      ctx.ui.notify(msg, "info");
+      return;
+    }
+
+    if (!SLOT_PRESETS[trimmed]) {
+      const presetKeys = Object.keys(SLOT_PRESETS).join(", ");
+      ctx.ui.notify(`[${state.labels.hudTitle}] Unknown preset "${trimmed}". Available: ${presetKeys}`, "warning");
+      return;
+    }
+
+    state.slotPreset = trimmed;
+    state.slots = resolveSlotsForPreset(trimmed, state.sourceLang);
+    saveUserLingualConfig({ slotPreset: trimmed === "developer" ? undefined : trimmed, slots: undefined });
+
+    // 重置缓存，使新槽位的输出立即生效
+    globalLingualCache.clear();
+
+    const desc = SLOT_PRESETS[trimmed].description;
+    const template = state.labels.notifySlotSwitched || "[{pair}] Switched slot architecture to [{preset}]: {desc}";
+    const notifyMsg = template
+      .replace("{pair}", state.labels.hudTitle)
+      .replace("{preset}", trimmed)
+      .replace("{desc}", desc);
+    ctx.ui.notify(notifyMsg, "info");
+    updateFooter(ctx);
+
+    // 若当前有活动卡片，立即就地刷新重绘
+    if (session.getReadyPages().length > 0) {
+      renderActiveCard(ctx);
+    } else if (session.getLastResult()) {
+      const last = session.getLastResult()!;
+      renderHudWidget(
+        ctx,
+        last.sourceText,
+        last.spoken,
+        last.written,
+        last.vocab,
+        last.spokenMeaning,
+        last.writtenMeaning
+      );
+    }
+  };
+
   const showStatusHandler = async (_args: string, ctx: ExtensionContext) => {
     const followDesc = state.labels.modelFollowSession || "follow session";
     const activeModel = state.selectedModel === "auto"
@@ -569,7 +454,7 @@ export default function (pi: ExtensionAPI) {
       activeModel,
       layout: state.compact ? "capsule" : "tree",
       cacheStats: globalLingualCache.getStats(),
-    });
+    }) + `\n• Slots Preset: [${state.slotPreset || "developer"}] (${(state.slots || []).filter(s => s.enabled).map(s => s.label).join(", ")})`;
 
     ctx.ui.notify(statusMsg, "info");
   };
@@ -614,6 +499,12 @@ export default function (pi: ExtensionAPI) {
     // 1. 子命令路由: 语言切换 (/lingual lang [code] 或 /2 lang [code])
     if (sub === "lang" || sub === "language") {
       await switchLangHandler(subArgs, ctx);
+      return;
+    }
+
+    // 1.1 子命令路由: 槽位架构切换 (/lingual slots [preset] 或 /2 slots [preset])
+    if (sub === "slots" || sub === "slot" || sub === "preset") {
+      await switchSlotsHandler(subArgs, ctx);
       return;
     }
 
@@ -690,6 +581,22 @@ export default function (pi: ExtensionAPI) {
   pi.registerCommand("lingual-mode", {
     description: state.labels.cmdDescMode || "Set companion mode: /lingual-mode <original|english|off>",
     handler: setModeHandler,
+  });
+
+  // 独立槽位架构配置命令 (/slots, /lingual-slots, /2-slots)
+  pi.registerCommand("slots", {
+    description: state.labels.cmdDescSlots || "Inspect or switch slot architecture: /slots [developer|social|japanese|academic|compact2]",
+    handler: switchSlotsHandler,
+  });
+
+  pi.registerCommand("lingual-slots", {
+    description: state.labels.cmdDescSlots || "Inspect or switch slot architecture (alias): /lingual-slots [preset]",
+    handler: switchSlotsHandler,
+  });
+
+  pi.registerCommand("2-slots", {
+    description: state.labels.cmdDescSlots || "Quick switch slot architecture (alias): /2-slots [preset]",
+    handler: switchSlotsHandler,
   });
 
   // 独立语言切换命令 (首选直觉命令 /lang 及别名)
@@ -909,6 +816,8 @@ export default function (pi: ExtensionAPI) {
           sourceLang: state.sourceLang,
           targetLang: state.targetLang,
           labels: state.labels,
+          slots: state.slots,
+          slotPreset: state.slotPreset,
           complete: completer,
           signal,
         })
@@ -956,6 +865,8 @@ export default function (pi: ExtensionAPI) {
         sourceLang: state.sourceLang,
         targetLang: state.targetLang,
         labels: state.labels,
+        slots: state.slots,
+        slotPreset: state.slotPreset,
         complete: completer,
         signal,
       });

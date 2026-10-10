@@ -61,6 +61,11 @@ var CANNOT_START_LINE_CHARS = /* @__PURE__ */ new Set([
   "\u2019",
   "\xBB"
 ]);
+function getEffectiveMaxCols(requested) {
+  const terminalCols = process.stdout?.columns;
+  const raw = typeof requested === "number" ? requested : typeof terminalCols === "number" && terminalCols > 0 ? terminalCols - 8 : 80;
+  return Math.max(25, raw);
+}
 function getVisualWidth(str) {
   let width = 0;
   const clean = str.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "");
@@ -309,6 +314,151 @@ function formatCapsuleLine(hudTitle, spoken, written, options = {}) {
   }
   return fullLine;
 }
+function renderCardLayout(card, labels, options = {}) {
+  const maxCols = getEffectiveMaxCols(options.maxCols);
+  const maxLines = options.maxLines || 9;
+  const isCompact = Boolean(options.isCompact);
+  const pageTag = options.pageTag || "";
+  const allSlots = options.slots;
+  const sourceSlot = allSlots?.find((s) => s.role === "source");
+  const sourceLabel = sourceSlot?.label || labels.sourceLabel || "\u539F\u6587";
+  const slot1Conf = allSlots?.find((s) => s.id === "spoken" || s.role === "translation");
+  const slot2Conf = allSlots?.find((s) => s.id === "written" || s.role === "translation" && s !== slot1Conf);
+  const vocabConf = allSlots?.find((s) => s.id === "vocab" || s.role === "vocab");
+  const slot1Label = slot1Conf?.label || labels.slot1Label || "Spoken";
+  const slot2Label = slot2Conf?.label || labels.slot2Label || "Written";
+  const vocabLabel = vocabConf?.label || labels.vocabLabel || "Vocab";
+  const hasWritten = slot2Conf ? slot2Conf.enabled && Boolean(card.written && card.written.trim()) : allSlots ? false : Boolean(card.written && card.written.trim());
+  const hasVocab = vocabConf ? vocabConf.enabled && Boolean(card.vocab && card.vocab.trim()) : allSlots ? false : Boolean(card.vocab && card.vocab.trim());
+  if (isCompact || maxCols < 35) {
+    const capsuleText = formatCapsuleLine(
+      labels.hudTitle,
+      card.spoken,
+      hasWritten ? card.written : void 0,
+      {
+        slot1Short: slot1Conf?.label ? slot1Conf.label.slice(0, 4) : labels.capsuleSlot1Prefix || labels.slot1Label || "Spk",
+        slot2Short: slot2Conf?.label ? slot2Conf.label.slice(0, 4) : labels.capsuleSlot2Prefix || labels.slot2Label || "Wrt",
+        maxCols
+      }
+    );
+    return [capsuleText + pageTag];
+  }
+  const decMuted = options.themeDecorators?.muted || ((s) => s);
+  const decAccent = options.themeDecorators?.accent || ((s) => s);
+  const decDim = options.themeDecorators?.dim || ((s) => s);
+  const prefixRaw = `  \xB7 [${sourceLabel}] `;
+  const prefixW = getVisualWidth(prefixRaw);
+  const pageTagW = pageTag ? getVisualWidth(pageTag) : 0;
+  const availLine1W = Math.max(20, maxCols - prefixW - pageTagW);
+  const cleanSource = card.sourceText.replace(/\r?\n+/g, " ").trim();
+  let sourceLines = [];
+  if (getVisualWidth(cleanSource) <= availLine1W) {
+    sourceLines = [
+      decMuted("  \xB7 ") + decMuted("[") + decDim(sourceLabel) + decMuted("] ") + cleanSource + pageTag
+    ];
+  } else {
+    const wrapped = wrapVisualText(cleanSource, Math.max(20, maxCols - prefixW));
+    sourceLines = wrapped.map((wLine, idx) => {
+      const isLast = idx === wrapped.length - 1;
+      const tagSuffix = isLast ? pageTag : "";
+      if (idx === 0) {
+        return decMuted("  \xB7 ") + decMuted("[") + decDim(sourceLabel) + decMuted("] ") + wLine + tagSuffix;
+      }
+      return " ".repeat(prefixW) + decDim(wLine) + tagSuffix;
+    });
+  }
+  let lines = [...sourceLines];
+  const branch1Char = hasWritten || hasVocab ? "\u250C" : "\u2514";
+  const cont1Char = hasWritten || hasVocab ? "\u2502" : " ";
+  lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1Label, card.spoken, decMuted, decAccent, decMuted, (s) => s, maxCols));
+  if (card.spokenMeaning) {
+    lines.push(...formatSubRail(cont1Char, card.spokenMeaning, "\u21B3", decMuted, decDim, maxCols));
+  }
+  if (hasWritten) {
+    const branchChar = hasVocab ? "\u251C" : "\u2514";
+    const contChar = hasVocab ? "\u2502" : " ";
+    lines.push(...formatTreeBranch(branchChar, contChar, slot2Label, card.written, decMuted, decAccent, decMuted, (s) => s, maxCols));
+    if (card.writtenMeaning) {
+      lines.push(...formatSubRail(contChar, card.writtenMeaning, "\u21B3", decMuted, decDim, maxCols));
+    }
+  }
+  if (hasVocab) {
+    lines.push(...formatTreeBranch("\u2514", " ", vocabLabel, card.vocab, decMuted, decMuted, decMuted, decDim, maxCols));
+  }
+  if (lines.length > maxLines) {
+    let clampedSourceLines = sourceLines;
+    if (sourceLines.length > 2) {
+      clampedSourceLines = [
+        sourceLines[0],
+        truncateVisual(sourceLines[1] + "...", maxCols)
+      ];
+    }
+    const spInline = card.spokenMeaning ? `${card.spoken} (${card.spokenMeaning})` : card.spoken;
+    const rawSpLines = formatTreeBranch(branch1Char, cont1Char, slot1Label, spInline, decMuted, decAccent, decMuted, (s) => s, maxCols);
+    let rawWrLines = [];
+    if (hasWritten) {
+      const branchChar = hasVocab ? "\u251C" : "\u2514";
+      const contChar = hasVocab ? "\u2502" : " ";
+      const wrInline = card.writtenMeaning ? `${card.written} (${card.writtenMeaning})` : card.written || "";
+      rawWrLines = formatTreeBranch(branchChar, contChar, slot2Label, wrInline, decMuted, decAccent, decMuted, (s) => s, maxCols);
+    }
+    let rawVocabLines = [];
+    if (hasVocab) {
+      rawVocabLines = formatTreeBranch("\u2514", " ", vocabLabel, card.vocab, decMuted, decMuted, decMuted, decDim, maxCols);
+    }
+    const totalInline = clampedSourceLines.length + rawSpLines.length + rawWrLines.length + rawVocabLines.length;
+    if (totalInline <= maxLines) {
+      lines = [...clampedSourceLines, ...rawSpLines, ...rawWrLines, ...rawVocabLines];
+    } else {
+      const branchChar = hasVocab ? "\u251C" : "\u2514";
+      const contChar = hasVocab ? "\u2502" : " ";
+      const pureSpLines = formatTreeBranch(branch1Char, cont1Char, slot1Label, card.spoken, decMuted, decAccent, decMuted, (s) => s, maxCols);
+      const pureWrLines = hasWritten ? formatTreeBranch(branchChar, contChar, slot2Label, card.written, decMuted, decAccent, decMuted, (s) => s, maxCols) : [];
+      const pureVocabLines = hasVocab ? formatTreeBranch("\u2514", " ", vocabLabel, card.vocab, decMuted, decMuted, decMuted, decDim, maxCols) : [];
+      const totalPure = clampedSourceLines.length + pureSpLines.length + pureWrLines.length + pureVocabLines.length;
+      if (totalPure <= maxLines) {
+        if (clampedSourceLines.length + rawSpLines.length + pureWrLines.length + pureVocabLines.length <= maxLines) {
+          lines = [...clampedSourceLines, ...rawSpLines, ...pureWrLines, ...pureVocabLines];
+        } else if (clampedSourceLines.length + pureSpLines.length + rawWrLines.length + pureVocabLines.length <= maxLines) {
+          lines = [...clampedSourceLines, ...pureSpLines, ...rawWrLines, ...pureVocabLines];
+        } else {
+          lines = [...clampedSourceLines, ...pureSpLines, ...pureWrLines, ...pureVocabLines];
+        }
+      } else {
+        const remForText = Math.max(4, maxLines - clampedSourceLines.length - Math.min(2, pureVocabLines.length));
+        const spBudget = Math.max(1, Math.min(pureSpLines.length, Math.floor(remForText / 2)));
+        const wrBudget = Math.max(1, Math.min(pureWrLines.length, remForText - spBudget));
+        const clampLines = (arr, budget) => {
+          if (arr.length <= budget) return arr;
+          const res = arr.slice(0, budget);
+          const last = res.length - 1;
+          res[last] = truncateVisual(res[last] + "...", maxCols);
+          return res;
+        };
+        const spSafe = clampLines(pureSpLines, spBudget);
+        const wrSafe = clampLines(pureWrLines, wrBudget);
+        const remForVocab = Math.max(1, maxLines - clampedSourceLines.length - spSafe.length - wrSafe.length);
+        let vLines = pureVocabLines;
+        if (vLines.length > remForVocab) {
+          if (remForVocab === 1) {
+            const vPrefix = `  \u2514 [${labels.vocabLabel}] `;
+            vLines = [formatVocabItemsAtomic(card.vocab || "", vPrefix, maxCols)];
+          } else {
+            vLines = vLines.slice(0, remForVocab);
+          }
+        }
+        lines = [...clampedSourceLines, ...spSafe, ...wrSafe, ...vLines];
+        if (lines.length > maxLines) {
+          lines = lines.slice(0, maxLines);
+        }
+      }
+    }
+  }
+  if (lines.length > maxLines) {
+    lines = lines.slice(0, maxLines);
+  }
+  return lines;
+}
 
 // src/engine.ts
 var import_node_fs = __toESM(require("fs"), 1);
@@ -316,6 +466,81 @@ var import_node_path = __toESM(require("path"), 1);
 var import_node_os = __toESM(require("os"), 1);
 
 // src/presets.ts
+var SLOT_PRESETS = {
+  developer: {
+    name: "Developer",
+    description: "Standard agile collaboration: Spoken + Written + Vocab",
+    slots: (sourceLang = "zh") => {
+      const isZh = sourceLang === "zh" || sourceLang === "tw";
+      const isJa = sourceLang === "ja";
+      return [
+        { id: "source", label: isZh ? "\u539F\u6587" : isJa ? "\u539F\u6587" : "Source", role: "source", enabled: true },
+        { id: "spoken", label: isZh ? "\u53E3\u8BED" : isJa ? "\u53E3\u8A9E" : "Spoken", role: "translation", instruction: "Natural, fluent spoken flow (daily standup, Slack, agile collaboration, conversational banter).", showMeaning: true, enabled: true },
+        { id: "written", label: isZh ? "\u5199\u4F5C" : isJa ? "\u6587\u9762" : "Written", role: "translation", instruction: "Clear, precise, modern technical written prose (RFCs, PR descriptions, documentation, deep insight).", showMeaning: true, enabled: true },
+        { id: "vocab", label: isZh ? "\u91CD\u70B9" : isJa ? "\u5358\u8A9E" : "Vocab", role: "vocab", instruction: "Extract key idiomatic collocations, phrasal verbs, or technical idioms.", enabled: true }
+      ];
+    }
+  },
+  social: {
+    name: "Social",
+    description: "Overseas Twitter / Community building: Hook + Deep + Vocab",
+    slots: (sourceLang = "zh") => {
+      const isZh = sourceLang === "zh" || sourceLang === "tw";
+      return [
+        { id: "source", label: isZh ? "\u539F\u6587" : "Source", role: "source", enabled: true },
+        { id: "spoken", label: "Hook", role: "translation", instruction: "High-engagement, punchy opening hook optimized for Twitter/X threads and viral developer discussions.", showMeaning: true, enabled: true },
+        { id: "written", label: "Deep", role: "translation", instruction: "Insightful, narrative technical value and nuanced architecture reasoning.", showMeaning: true, enabled: true },
+        { id: "vocab", label: isZh ? "\u91CD\u70B9" : "Vocab", role: "vocab", instruction: "Key engagement idioms and technical phrases.", enabled: true }
+      ];
+    }
+  },
+  japanese: {
+    name: "Japanese",
+    description: "Dual-register Japanese companion: \u53E3\u8A9E + \u656C\u8A9E + \u5358\u8A9E",
+    slots: (sourceLang = "zh") => {
+      const isZh = sourceLang === "zh" || sourceLang === "tw";
+      const isJa = sourceLang === "ja";
+      return [
+        { id: "source", label: isZh ? "\u539F\u6587" : isJa ? "\u539F\u6587" : "Source", role: "source", enabled: true },
+        { id: "spoken", label: "\u53E3\u8A9E", role: "translation", instruction: "Natural, colloquial spoken Japanese (daily casual chat, team talk, direct).", showMeaning: true, enabled: true },
+        { id: "written", label: "\u656C\u8A9E", role: "translation", instruction: "Formal, polite business Japanese (Keigo, Sonkeigo/Kenjougo, professional email/PR).", showMeaning: true, enabled: true },
+        { id: "vocab", label: "\u5358\u8A9E", role: "vocab", instruction: "Key Japanese vocabulary, kanji readings, and idiomatic expressions.", enabled: true }
+      ];
+    }
+  },
+  academic: {
+    name: "Academic",
+    description: "Paper & rigorous discussion: Discussion + Paper",
+    slots: (sourceLang = "zh") => {
+      const isZh = sourceLang === "zh" || sourceLang === "tw";
+      return [
+        { id: "source", label: isZh ? "\u539F\u6587" : "Source", role: "source", enabled: true },
+        { id: "spoken", label: "Discussion", role: "translation", instruction: "Academic colloquium and seminar discussion tone.", showMeaning: true, enabled: true },
+        { id: "written", label: "Paper", role: "translation", instruction: "Formal, objective academic prose suitable for peer-reviewed IEEE/ACM papers and arXiv preprints.", showMeaning: true, enabled: true },
+        { id: "vocab", label: isZh ? "\u91CD\u70B9" : "Vocab", role: "vocab", enabled: false }
+      ];
+    }
+  },
+  compact2: {
+    name: "Compact 2-Slot",
+    description: "Minimalist dual-slot: Source + Target translation only",
+    slots: (sourceLang = "zh") => {
+      const isZh = sourceLang === "zh" || sourceLang === "tw";
+      const isJa = sourceLang === "ja";
+      return [
+        { id: "source", label: isZh ? "\u539F\u6587" : isJa ? "\u539F\u6587" : "Source", role: "source", enabled: true },
+        { id: "spoken", label: isZh ? "\u8BD1\u6587" : isJa ? "\u8A33\u6587" : "Translation", role: "translation", instruction: "Natural, idiomatic target language translation.", showMeaning: true, enabled: true },
+        { id: "written", label: isZh ? "\u5199\u4F5C" : "Written", role: "translation", enabled: false },
+        { id: "vocab", label: isZh ? "\u91CD\u70B9" : "Vocab", role: "vocab", enabled: false }
+      ];
+    }
+  }
+};
+function resolveSlotsForPreset(presetName = "developer", sourceLang = "zh") {
+  const normPreset = (presetName || "developer").toLowerCase().trim();
+  const preset = SLOT_PRESETS[normPreset] || SLOT_PRESETS.developer;
+  return preset.slots(sourceLang);
+}
 var LANGUAGE_PRESETS = {
   zh: {
     slot1Label: "\u53E3\u8BED",
@@ -402,12 +627,14 @@ var LANGUAGE_PRESETS = {
     notifyLangInvalid: "\u7121\u52B9\u306A\u8A00\u8A9E\u30B3\u30FC\u30C9\u3067\u3059\u3002\u5BFE\u5FDC\u8A00\u8A9E: zh, ja, en, es, fr, de",
     notifyCompactOn: "[ja \u21C4 en] 1\u884C\u30AB\u30D7\u30BB\u30EB\u30E2\u30FC\u30C9\u3092\u6709\u52B9\u306B\u3057\u307E\u3057\u305F\uFF1A\u753B\u9762\u9818\u57DF\u3092\u6700\u5927\u9650\u78BA\u4FDD",
     notifyCompactOff: "[ja \u21C4 en] \u30D5\u30EB\u30C4\u30EA\u30FC\u8868\u793A\u306B\u5207\u308A\u66FF\u3048\u307E\u3057\u305F\uFF1A\u8A73\u7D30\u306A\u30CB\u30E5\u30A2\u30F3\u30B9\u3092\u8868\u793A",
+    notifySlotSwitched: "[ja \u21C4 en] \u30B9\u30ED\u30C3\u30C8\u69CB\u6210\u3092 [{preset}] \u306B\u5207\u308A\u66FF\u3048\u307E\u3057\u305F: {desc}",
     notifyTimeout: "[ja \u21C4 en] \u82F1\u8A9E\u7FFB\u8A33\u30EA\u30AF\u30A8\u30B9\u30C8\u304C\u30BF\u30A4\u30E0\u30A2\u30A6\u30C8\u3057\u307E\u3057\u305F\u3002\u539F\u6587\u3092\u9001\u4FE1\u3057\u307E\u3057\u305F",
     notifyError: "[ja \u21C4 en] \u82F1\u8A9E\u7FFB\u8A33\u30EA\u30AF\u30A8\u30B9\u30C8\u3067\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F\u3002\u539F\u6587\u3092\u9001\u4FE1\u3057\u307E\u3057\u305F",
     cmdDescMode: "\u30E2\u30FC\u30C9\u5207\u66FF [ja \u21C4 en]: [\u539F\u6587] \u2794 [\u82F1\u8A9E] \u2794 [\u30AA\u30D5]",
     cmdDescStatus: "\u72B6\u614B\u30EC\u30DD\u30FC\u30C8\u3068\u30E2\u30C7\u30EB\u8A3A\u65AD\u3092\u8868\u793A: /lingual-status",
     cmdDescModel: "\u5B66\u7FD2\u30E2\u30C7\u30EB\u306E\u78BA\u8A8D\u30FB\u5207\u66FF: /lingual-model [model-id|auto]",
     cmdDescLang: "\u4F34\u8D70\u306E\u6BCD\u8A9E\u3092\u78BA\u8A8D\u30FB\u5909\u66F4: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescSlots: "\u30B9\u30ED\u30C3\u30C8\u69CB\u6210\u306E\u78BA\u8A8D\u30FB\u5207\u66FF [ja \u21C4 en]: /slots [developer|social|japanese|academic|compact2]",
     cmdDescCompact: "1\u884C\u30AB\u30D7\u30BB\u30EB\u8868\u793A\u3068\u30D5\u30EB\u30C4\u30EA\u30FC\u306E\u5207\u66FF: /lingual-compact",
     cmdDescLast: "\u524D\u56DE\u306E\u4F34\u8D70\u30AB\u30FC\u30C9\u3092\u518D\u8868\u793A: /lingual-last",
     cmdDescAgent: "\u4F34\u8D70\u30AB\u30B9\u30BF\u30DE\u30A4\u30BA\u3068\u6BCD\u8A9E\u5909\u66F4\u306E\u6848\u5185\u3092\u8868\u793A: /lingual-agent",
@@ -465,12 +692,14 @@ var LANGUAGE_PRESETS = {
     notifyLangInvalid: "Invalid language code. Supported: zh, ja, en, es, fr, de",
     notifyCompactOn: "[en \u21C4 ja] Single-line capsule mode enabled for compact split panes",
     notifyCompactOff: "[en \u21C4 ja] Full tree layout restored",
+    notifySlotSwitched: "[en \u21C4 ja] Switched slot architecture to [{preset}]: {desc}",
     notifyTimeout: "[en \u21C4 ja] English translation timed out or not ready; original prompt passed",
     notifyError: "[en \u21C4 ja] English translation request error; original prompt passed",
     cmdDescMode: "Cycle companion mode [en \u21C4 ja]: [Original] \u2794 [English] \u2794 [Off]",
     cmdDescStatus: "Display companion status report and model diagnosis: /lingual-status",
     cmdDescModel: "Inspect or switch companion model: /lingual-model [model-id|auto]",
     cmdDescLang: "View or switch companion native language: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescSlots: "Inspect or switch slot architecture: /slots [developer|social|japanese|academic|compact2]",
     cmdDescCompact: "Toggle single-line capsule mode: /lingual-compact",
     cmdDescLast: "Replay previous companion card: /lingual-last",
     cmdDescAgent: "Display companion customization & language guide: /lingual-agent",
@@ -528,12 +757,14 @@ var LANGUAGE_PRESETS = {
     notifyLangInvalid: "C\xF3digo de idioma no v\xE1lido. Admitidos: zh, ja, en, es, fr, de",
     notifyCompactOn: "[es \u21C4 en] Modo c\xE1psula de una l\xEDnea activado",
     notifyCompactOff: "[es \u21C4 en] Modo \xE1rbol completo restaurado",
+    notifySlotSwitched: "[es \u21C4 en] Arquitectura de ranuras cambiada a [{preset}]: {desc}",
     notifyTimeout: "[es \u21C4 en] La traducci\xF3n al ingl\xE9s agot\xF3 el tiempo; se envi\xF3 el texto original",
     notifyError: "[es \u21C4 en] Error en la traducci\xF3n al ingl\xE9s; se envi\xF3 el texto original",
     cmdDescMode: "Cambiar modo [es \u21C4 en]: [Original] \u2794 [Ingl\xE9s] \u2794 [Apagado]",
     cmdDescStatus: "Mostrar diagn\xF3stico y estado del modelo: /lingual-status",
     cmdDescModel: "Consultar o cambiar modelo: /lingual-model [model-id|auto]",
     cmdDescLang: "Ver o cambiar idioma nativo: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescSlots: "Inspeccionar o cambiar ranuras: /slots [developer|social|japanese|academic|compact2]",
     cmdDescCompact: "Alternar modo c\xE1psula de una l\xEDnea: /lingual-compact",
     cmdDescLast: "Reaparecer tarjeta anterior: /lingual-last",
     cmdDescAgent: "Ver gu\xEDa de personalizaci\xF3n y cambio de idioma: /lingual-agent",
@@ -654,12 +885,14 @@ var LANGUAGE_PRESETS = {
     notifyLangInvalid: "Ung\xFCltiger Sprachcode. Unterst\xFCtzt: zh, ja, en, es, fr, de",
     notifyCompactOn: "[de \u21C4 en] Einzeiliger Kapselmodus aktiviert",
     notifyCompactOff: "[de \u21C4 en] Vollst\xE4ndige Baumansicht wiederhergestellt",
+    notifySlotSwitched: "[de \u21C4 en] Slot-Architektur auf [{preset}] umgestellt: {desc}",
     notifyTimeout: "[de \u21C4 en] Englische \xDCbersetzung hat das Zeitlimit \xFCberschritten; Originaltext wurde \xFCbergeben",
     notifyError: "[de \u21C4 en] Fehler bei der englischen \xDCbersetzung; Originaltext wurde \xFCbergeben",
     cmdDescMode: "Modus umschalten [de \u21C4 en]: [Original] \u2794 [Englisch] \u2794 [Aus]",
     cmdDescStatus: "Statusbericht und Modell-Diagnose anzeigen: /lingual-status",
     cmdDescModel: "Modell pr\xFCfen oder wechseln: /lingual-model [model-id|auto]",
     cmdDescLang: "Muttersprache anzeigen oder wechseln: /lingual-lang [zh|ja|en|es|fr|de]",
+    cmdDescSlots: "Slot-Architektur anzeigen/umstellen: /slots [developer|social|japanese|academic|compact2]",
     cmdDescCompact: "Einzeiligen Kapselmodus umschalten: /lingual-compact",
     cmdDescLast: "Vorherige Karte erneut anzeigen: /lingual-last",
     cmdDescAgent: "Anleitung zur Anpassung und Sprachumstellung anzeigen: /lingual-agent",
@@ -757,7 +990,7 @@ ${availableList}
 }
 
 // src/core/prompts.ts
-var SLOT_PRESETS = {
+var LEGACY_SLOT_PRESETS = {
   developer: {
     slot1: {
       label: "Spoken",
@@ -1077,12 +1310,12 @@ ${condensationDirective2}${contextDirective2}
 ${dynamicJsonHint}
 Output valid JSON ONLY. Never output markdown code fences, backticks, quotes, or explanations.`;
   }
-  const defaultSlots = SLOT_PRESETS.developer;
+  const defaultSlots = LEGACY_SLOT_PRESETS.developer;
   const legacyConfig = customSlots;
-  const slot1Name = legacyConfig?.slot1?.name || (tone === "social" ? SLOT_PRESETS.social.slot1.name : defaultSlots.slot1.name);
-  const slot1Instruction = legacyConfig?.slot1?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot1.instruction : defaultSlots.slot1.instruction);
-  const slot2Name = legacyConfig?.slot2?.name || (tone === "social" ? SLOT_PRESETS.social.slot2.name : defaultSlots.slot2.name);
-  const slot2Instruction = legacyConfig?.slot2?.instruction || (tone === "social" ? SLOT_PRESETS.social.slot2.instruction : defaultSlots.slot2.instruction);
+  const slot1Name = legacyConfig?.slot1?.name || (tone === "social" ? LEGACY_SLOT_PRESETS.social.slot1.name : defaultSlots.slot1.name);
+  const slot1Instruction = legacyConfig?.slot1?.instruction || (tone === "social" ? LEGACY_SLOT_PRESETS.social.slot1.instruction : defaultSlots.slot1.instruction);
+  const slot2Name = legacyConfig?.slot2?.name || (tone === "social" ? LEGACY_SLOT_PRESETS.social.slot2.name : defaultSlots.slot2.name);
+  const slot2Instruction = legacyConfig?.slot2?.instruction || (tone === "social" ? LEGACY_SLOT_PRESETS.social.slot2.instruction : defaultSlots.slot2.instruction);
   const anchorText = spec.anchors.map(
     (a) => `Input: ${JSON.stringify(a.input)}
 Output: ${JSON.stringify({
@@ -1418,6 +1651,8 @@ function loadUserLingualConfig() {
         const sourceLang = target.sourceLang;
         const targetLang = target.targetLang;
         const compact = target.compact;
+        const slotPreset = target.slotPreset;
+        const slots = Array.isArray(target.slots) ? target.slots : void 0;
         const labels = resolveLabelsForLang(sourceLang || "zh", target.labels);
         cachedUserConfig = {
           ...endpoint ? { endpoint } : {},
@@ -1426,6 +1661,8 @@ function loadUserLingualConfig() {
           ...selectedModel ? { selectedModel } : {},
           ...target.mode ? { mode: target.mode } : {},
           ...compact !== void 0 ? { compact: Boolean(compact) } : {},
+          ...slotPreset ? { slotPreset } : {},
+          ...slots ? { slots } : {},
           ...sourceLang ? { sourceLang } : {},
           ...targetLang ? { targetLang } : {},
           labels
@@ -1526,7 +1763,8 @@ async function translatePrompt(text, userConfig = {}) {
   try {
     let content = null;
     const isLongInput = isDynamicLongInput(trimmed, cfg.sourceLang);
-    const sysPrompt = buildSystemPrompt(cfg.sourceLang, cfg.targetLang, isLongInput);
+    const effectiveSlots = cfg.slots || (cfg.slotPreset ? resolveSlotsForPreset(cfg.slotPreset, cfg.sourceLang) : void 0);
+    const sysPrompt = buildSystemPrompt(cfg.sourceLang, cfg.targetLang, isLongInput, void 0, "general", effectiveSlots);
     if (typeof cfg.complete === "function") {
       content = await cfg.complete(trimmed, sysPrompt, controller.signal);
     } else if (cfg.endpoint) {
@@ -1905,6 +2143,8 @@ function isTestEnvironment2() {
 var initialDiskConfig = isTestEnvironment2() ? {} : loadUserLingualConfig();
 var initialSourceLang = initialDiskConfig.sourceLang || "zh";
 var initialTargetLang = initialDiskConfig.targetLang || (initialSourceLang === "en" ? "ja" : "en");
+var initialSlotPreset = initialDiskConfig.slotPreset || "developer";
+var initialSlots = initialDiskConfig.slots || resolveSlotsForPreset(initialSlotPreset, initialSourceLang);
 var initialLabels = resolveLabelsForLang(initialSourceLang, initialDiskConfig.labels, initialTargetLang);
 var state = {
   mode: initialDiskConfig.mode || "original",
@@ -1912,6 +2152,8 @@ var state = {
   sourceLang: initialSourceLang,
   targetLang: initialTargetLang,
   selectedModel: initialDiskConfig.selectedModel || "auto",
+  slotPreset: initialSlotPreset,
+  slots: initialSlots,
   labels: initialLabels
 };
 function saveUserLingualConfig(patch) {
@@ -1977,7 +2219,10 @@ var session = new LingualSessionController();
 var lastContext = null;
 function updateFooter(ctx) {
   if (!ctx.hasUI) return;
-  const pair = `${state.sourceLang} \u21C4 ${state.targetLang}`;
+  let pair = `${state.sourceLang} \u21C4 ${state.targetLang}`;
+  if (state.slotPreset && state.slotPreset !== "developer") {
+    pair += ` \xB7 ${state.slotPreset}`;
+  }
   switch (state.mode) {
     case "original":
     case "english":
@@ -1990,148 +2235,33 @@ function updateFooter(ctx) {
 }
 function renderHudWidget(ctx, sourceText, spoken, written, vocab, spokenMeaning, writtenMeaning, pagination) {
   if (!ctx.hasUI) return;
-  const hasWritten = Boolean(written && written.trim());
-  const hasVocab = Boolean(vocab && vocab.trim());
-  const slot1 = state.labels.slot1Label || state.labels.spokenLabel || "Spoken";
-  const slot2 = state.labels.slot2Label || state.labels.writtenLabel || "Written";
-  const vocabTag = state.labels.vocabLabel || "Vocab";
-  const sourceTag = state.labels.sourceLabel || "Source";
-  const pageTag = pagination && pagination.totalPages > 1 ? ctx.ui.theme.fg("muted", ` [${pagination.pageIndex + 1}/${pagination.totalPages} \u2325.]`) : "";
-  const pairTitle = `${state.sourceLang} \u21C4 ${state.targetLang}`;
   const isCompact = state.compact || (process.stdout?.rows ? process.stdout.rows < 22 : false);
-  if (isCompact) {
-    const capsuleText = formatCapsuleLine(
-      pairTitle,
+  const maxCols = Math.max(30, (process.stdout?.columns || 80) - 8);
+  const pageTag = pagination && pagination.totalPages > 1 ? ctx.ui.theme.fg("muted", ` [${pagination.pageIndex + 1}/${pagination.totalPages} \u2325.]`) : "";
+  const lines = renderCardLayout(
+    {
       spoken,
-      written,
-      {
-        slot1Short: state.labels.capsuleSlot1Prefix || "Spk",
-        slot2Short: state.labels.capsuleSlot2Prefix || "Wrt",
-        maxCols: process.stdout?.columns || 80
-      }
-    );
-    ctx.ui.setWidget("lingual_hud", [capsuleText + pageTag], { placement: "aboveEditor" });
-    return;
-  }
-  const spotlightPhrasesList = hasVocab ? extractVocabPhrases(vocab) : [];
-  const displaySpoken = spotlightPhrasesList.length > 0 ? spotlightPhrases(spoken, spotlightPhrasesList) : spoken;
-  const displayWritten = written && spotlightPhrasesList.length > 0 ? spotlightPhrases(written, spotlightPhrasesList) : written;
-  const maxCols = Math.max(30, (process.stdout.columns || 80) - 8);
-  const prefixRaw = `  \xB7 [${sourceTag}] `;
-  const prefixW = getVisualWidth(prefixRaw);
-  const pageTagW = pageTag ? getVisualWidth(pageTag) : 0;
-  const availLine1W = Math.max(20, maxCols - prefixW - pageTagW);
-  const cleanSource = sourceText.replace(/\r?\n+/g, " ").trim();
-  let sourceLines = [];
-  if (getVisualWidth(cleanSource) <= availLine1W) {
-    sourceLines = [
-      ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", sourceTag) + ctx.ui.theme.fg("muted", "] ") + cleanSource + pageTag
-    ];
-  } else {
-    const wrapped = wrapVisualText(cleanSource, Math.max(20, maxCols - prefixW));
-    sourceLines = wrapped.map((wLine, idx) => {
-      const isLast = idx === wrapped.length - 1;
-      const tagSuffix = isLast ? pageTag : "";
-      if (idx === 0) {
-        return ctx.ui.theme.fg("muted", "  \xB7 ") + ctx.ui.theme.fg("muted", "[") + ctx.ui.theme.fg("dim", sourceTag) + ctx.ui.theme.fg("muted", "] ") + wLine + tagSuffix;
-      }
-      return " ".repeat(prefixW) + ctx.ui.theme.fg("dim", wLine) + tagSuffix;
-    });
-  }
-  let lines = [...sourceLines];
-  const pMuted = (s) => ctx.ui.theme.fg("muted", s);
-  const pAccent = (s) => ctx.ui.theme.fg("accent", s);
-  const pDim = (s) => ctx.ui.theme.fg("dim", s);
-  const branch1Char = hasWritten || hasVocab ? "\u250C" : "\u2514";
-  const cont1Char = hasWritten || hasVocab ? "\u2502" : " ";
-  lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1, displaySpoken, pMuted, pAccent, pMuted, (s) => s, maxCols));
-  if (spokenMeaning) {
-    lines.push(...formatSubRail(cont1Char, spokenMeaning, "\u21B3", pMuted, pDim, maxCols));
-  }
-  if (hasWritten) {
-    const branchChar = hasVocab ? "\u251C" : "\u2514";
-    const contChar = hasVocab ? "\u2502" : " ";
-    lines.push(...formatTreeBranch(branchChar, contChar, slot2, displayWritten, pMuted, pAccent, pMuted, (s) => s, maxCols));
-    if (writtenMeaning) {
-      lines.push(...formatSubRail(contChar, writtenMeaning, "\u21B3", pMuted, pDim, maxCols));
-    }
-  }
-  if (hasVocab) {
-    lines.push(...formatTreeBranch("\u2514", " ", vocabTag, vocab, pMuted, pMuted, pMuted, pDim, maxCols));
-  }
-  const HARD_MAX_LINES = 9;
-  if (lines.length > HARD_MAX_LINES) {
-    let clampedSourceLines = sourceLines;
-    if (sourceLines.length > 2) {
-      clampedSourceLines = [
-        sourceLines[0],
-        truncateVisual(sourceLines[1] + "...", maxCols)
-      ];
-    }
-    const spInline = spokenMeaning ? `${spoken} (${spokenMeaning})` : spoken;
-    const rawSpLines = formatTreeBranch(branch1Char, cont1Char, slot1, spInline, pMuted, pAccent, pMuted, (s) => s, maxCols);
-    let rawWrLines = [];
-    if (hasWritten) {
-      const branchChar = hasVocab ? "\u251C" : "\u2514";
-      const contChar = hasVocab ? "\u2502" : " ";
-      const wrInline = writtenMeaning ? `${written} (${writtenMeaning})` : written || "";
-      rawWrLines = formatTreeBranch(branchChar, contChar, slot2, wrInline, pMuted, pAccent, pMuted, (s) => s, maxCols);
-    }
-    let rawVocabLines = [];
-    if (hasVocab) {
-      rawVocabLines = formatTreeBranch("\u2514", " ", vocabTag, vocab, pMuted, pMuted, pMuted, pDim, maxCols);
-    }
-    const totalInline = clampedSourceLines.length + rawSpLines.length + rawWrLines.length + rawVocabLines.length;
-    if (totalInline <= HARD_MAX_LINES) {
-      lines = [...clampedSourceLines, ...rawSpLines, ...rawWrLines, ...rawVocabLines];
-    } else {
-      const branchChar = hasVocab ? "\u251C" : "\u2514";
-      const contChar = hasVocab ? "\u2502" : " ";
-      const pureSpLines = formatTreeBranch(branch1Char, cont1Char, slot1, displaySpoken, pMuted, pAccent, pMuted, (s) => s, maxCols);
-      const pureWrLines = hasWritten ? formatTreeBranch(branchChar, contChar, slot2, displayWritten, pMuted, pAccent, pMuted, (s) => s, maxCols) : [];
-      const pureVocabLines = hasVocab ? formatTreeBranch("\u2514", " ", vocabTag, vocab, pMuted, pMuted, pMuted, pDim, maxCols) : [];
-      const totalPure = clampedSourceLines.length + pureSpLines.length + pureWrLines.length + pureVocabLines.length;
-      if (totalPure <= HARD_MAX_LINES) {
-        if (clampedSourceLines.length + rawSpLines.length + pureWrLines.length + pureVocabLines.length <= HARD_MAX_LINES) {
-          lines = [...clampedSourceLines, ...rawSpLines, ...pureWrLines, ...pureVocabLines];
-        } else if (clampedSourceLines.length + pureSpLines.length + rawWrLines.length + pureVocabLines.length <= HARD_MAX_LINES) {
-          lines = [...clampedSourceLines, ...pureSpLines, ...rawWrLines, ...pureVocabLines];
-        } else {
-          lines = [...clampedSourceLines, ...pureSpLines, ...pureWrLines, ...pureVocabLines];
-        }
-      } else {
-        const remForText = Math.max(4, HARD_MAX_LINES - clampedSourceLines.length - Math.min(2, pureVocabLines.length));
-        const spBudget = Math.max(1, Math.min(pureSpLines.length, Math.floor(remForText / 2)));
-        const wrBudget = Math.max(1, Math.min(pureWrLines.length, remForText - spBudget));
-        const clampLines = (arr, budget) => {
-          if (arr.length <= budget) return arr;
-          const res = arr.slice(0, budget);
-          const last = res.length - 1;
-          res[last] = truncateVisual(res[last] + "...", maxCols);
-          return res;
-        };
-        const spSafe = clampLines(pureSpLines, spBudget);
-        const wrSafe = clampLines(pureWrLines, wrBudget);
-        const remForVocab = Math.max(1, HARD_MAX_LINES - clampedSourceLines.length - spSafe.length - wrSafe.length);
-        let vLines = pureVocabLines;
-        if (vLines.length > remForVocab) {
-          if (remForVocab === 1) {
-            const vPrefix = `  \u2514 [${vocabTag}] `;
-            vLines = [formatVocabItemsAtomic(vocab || "", vPrefix, maxCols)];
-          } else {
-            vLines = vLines.slice(0, remForVocab);
-          }
-        }
-        lines = [...clampedSourceLines, ...spSafe, ...wrSafe, ...vLines];
-        if (lines.length > HARD_MAX_LINES) {
-          lines = lines.slice(0, HARD_MAX_LINES);
-        }
+      written: written || "",
+      vocab,
+      spokenMeaning,
+      writtenMeaning,
+      sourceText,
+      annotated: ""
+    },
+    state.labels,
+    {
+      maxCols,
+      maxLines: 9,
+      isCompact,
+      slots: state.slots,
+      pageTag,
+      themeDecorators: {
+        muted: (s) => ctx.ui.theme.fg("muted", s),
+        accent: (s) => ctx.ui.theme.fg("accent", s),
+        dim: (s) => ctx.ui.theme.fg("dim", s)
       }
     }
-  }
-  if (lines.length > 9) {
-    lines = lines.slice(0, 9);
-  }
+  );
   ctx.ui.setWidget("lingual_hud", lines, { placement: "aboveEditor" });
 }
 function renderActiveCard(ctx) {
@@ -2285,6 +2415,50 @@ ${usage}`,
       );
     }
   };
+  const switchSlotsHandler = async (args, ctx) => {
+    const trimmed = args.trim().toLowerCase();
+    if (!trimmed) {
+      const activePreset = state.slotPreset || "developer";
+      const enabled = (state.slots || []).filter((s) => s.enabled);
+      const slotList = enabled.map((s, idx) => `  \u2022 #${idx} [${s.label}] (${s.role})`).join("\n");
+      const presetKeys = Object.keys(SLOT_PRESETS).join(", ");
+      const msg = `\u21C4 [${state.labels.hudTitle}] Active Slot Preset: [${activePreset}]
+${slotList}
+
+Available presets: ${presetKeys}
+Usage: /slots <preset> (e.g. /slots compact2, /slots social, /slots developer)`;
+      ctx.ui.notify(msg, "info");
+      return;
+    }
+    if (!SLOT_PRESETS[trimmed]) {
+      const presetKeys = Object.keys(SLOT_PRESETS).join(", ");
+      ctx.ui.notify(`[${state.labels.hudTitle}] Unknown preset "${trimmed}". Available: ${presetKeys}`, "warning");
+      return;
+    }
+    state.slotPreset = trimmed;
+    state.slots = resolveSlotsForPreset(trimmed, state.sourceLang);
+    saveUserLingualConfig({ slotPreset: trimmed === "developer" ? void 0 : trimmed, slots: void 0 });
+    globalLingualCache.clear();
+    const desc = SLOT_PRESETS[trimmed].description;
+    const template = state.labels.notifySlotSwitched || "[{pair}] Switched slot architecture to [{preset}]: {desc}";
+    const notifyMsg = template.replace("{pair}", state.labels.hudTitle).replace("{preset}", trimmed).replace("{desc}", desc);
+    ctx.ui.notify(notifyMsg, "info");
+    updateFooter(ctx);
+    if (session.getReadyPages().length > 0) {
+      renderActiveCard(ctx);
+    } else if (session.getLastResult()) {
+      const last = session.getLastResult();
+      renderHudWidget(
+        ctx,
+        last.sourceText,
+        last.spoken,
+        last.written,
+        last.vocab,
+        last.spokenMeaning,
+        last.writtenMeaning
+      );
+    }
+  };
   const showStatusHandler = async (_args, ctx) => {
     const followDesc = state.labels.modelFollowSession || "follow session";
     const activeModel = state.selectedModel === "auto" ? ctx.model ? `auto (${followDesc}: ${ctx.model.provider}/${ctx.model.id})` : "auto" : state.selectedModel || "auto";
@@ -2295,7 +2469,8 @@ ${usage}`,
       activeModel,
       layout: state.compact ? "capsule" : "tree",
       cacheStats: globalLingualCache.getStats()
-    });
+    }) + `
+\u2022 Slots Preset: [${state.slotPreset || "developer"}] (${(state.slots || []).filter((s) => s.enabled).map((s) => s.label).join(", ")})`;
     ctx.ui.notify(statusMsg, "info");
   };
   const showLastHandler = async (_args, ctx) => {
@@ -2332,6 +2507,10 @@ ${usage}`,
     const subArgs = spaceIndex === -1 ? "" : trimmed.slice(spaceIndex + 1).trim();
     if (sub === "lang" || sub === "language") {
       await switchLangHandler(subArgs, ctx);
+      return;
+    }
+    if (sub === "slots" || sub === "slot" || sub === "preset") {
+      await switchSlotsHandler(subArgs, ctx);
       return;
     }
     if (sub === "model") {
@@ -2379,6 +2558,18 @@ ${usage}`,
   pi.registerCommand("lingual-mode", {
     description: state.labels.cmdDescMode || "Set companion mode: /lingual-mode <original|english|off>",
     handler: setModeHandler
+  });
+  pi.registerCommand("slots", {
+    description: state.labels.cmdDescSlots || "Inspect or switch slot architecture: /slots [developer|social|japanese|academic|compact2]",
+    handler: switchSlotsHandler
+  });
+  pi.registerCommand("lingual-slots", {
+    description: state.labels.cmdDescSlots || "Inspect or switch slot architecture (alias): /lingual-slots [preset]",
+    handler: switchSlotsHandler
+  });
+  pi.registerCommand("2-slots", {
+    description: state.labels.cmdDescSlots || "Quick switch slot architecture (alias): /2-slots [preset]",
+    handler: switchSlotsHandler
   });
   pi.registerCommand("lang", {
     description: state.labels.cmdDescLang || "Switch companion language: /lang <zh|ja|en|es|fr|de> [target]",
@@ -2535,6 +2726,8 @@ ${usage}`,
           sourceLang: state.sourceLang,
           targetLang: state.targetLang,
           labels: state.labels,
+          slots: state.slots,
+          slotPreset: state.slotPreset,
           complete: completer,
           signal
         }).then((result) => {
@@ -2576,6 +2769,8 @@ ${usage}`,
         sourceLang: state.sourceLang,
         targetLang: state.targetLang,
         labels: state.labels,
+        slots: state.slots,
+        slotPreset: state.slotPreset,
         complete: completer,
         signal
       });

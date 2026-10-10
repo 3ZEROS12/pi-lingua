@@ -9,7 +9,7 @@
  * 5. 9 行硬预算盒模型求解器 (renderCardLayout)，保证行数物理断言 <= 9。
  */
 
-import type { LingualResult, LingualI18nLabels } from "./types.js";
+import type { LingualResult, LingualI18nLabels, SlotConfig } from "./types.js";
 
 /**
  * 禁则处理标点集合：绝对禁止出现在行首的标点符号
@@ -434,6 +434,7 @@ export function renderCardLayout(
     maxCols?: number;
     maxLines?: number;
     isCompact?: boolean;
+    slots?: SlotConfig[];
     pageTag?: string;
     themeDecorators?: {
       muted: (s: string) => string;
@@ -447,14 +448,38 @@ export function renderCardLayout(
   const isCompact = Boolean(options.isCompact);
   const pageTag = options.pageTag || "";
 
-  // 1. 若显式请求胶囊模式，或列宽极窄 (< 40 列)，直接生成单行胶囊流
+  // 0. 解析动态多槽位 (Dynamic Multi-Slot Architecture)
+  const allSlots = options.slots;
+  const sourceSlot = allSlots?.find((s) => s.role === "source");
+  const sourceLabel = sourceSlot?.label || labels.sourceLabel || "原文";
+
+  const slot1Conf = allSlots?.find((s) => s.id === "spoken" || s.role === "translation");
+  const slot2Conf = allSlots?.find((s) => s.id === "written" || (s.role === "translation" && s !== slot1Conf));
+  const vocabConf = allSlots?.find((s) => s.id === "vocab" || s.role === "vocab");
+
+  const slot1Label = slot1Conf?.label || labels.slot1Label || "Spoken";
+  const slot2Label = slot2Conf?.label || labels.slot2Label || "Written";
+  const vocabLabel = vocabConf?.label || labels.vocabLabel || "Vocab";
+
+  const hasWritten = slot2Conf
+    ? (slot2Conf.enabled && Boolean(card.written && card.written.trim()))
+    : (allSlots ? false : Boolean(card.written && card.written.trim()));
+  const hasVocab = vocabConf
+    ? (vocabConf.enabled && Boolean(card.vocab && card.vocab.trim()))
+    : (allSlots ? false : Boolean(card.vocab && card.vocab.trim()));
+
   // 1. 若显式请求胶囊模式，或列宽极端窄小 (< 35 列无法排版树状分支)，降级为单行胶囊流
   if (isCompact || maxCols < 35) {
-    const capsuleText = formatCapsuleLine(labels.hudTitle, card.spoken, card.written, {
-      slot1Short: labels.capsuleSlot1Prefix || labels.slot1Label || "Spk",
-      slot2Short: labels.capsuleSlot2Prefix || labels.slot2Label || "Wrt",
-      maxCols,
-    });
+    const capsuleText = formatCapsuleLine(
+      labels.hudTitle,
+      card.spoken,
+      hasWritten ? card.written : undefined,
+      {
+        slot1Short: slot1Conf?.label ? slot1Conf.label.slice(0, 4) : (labels.capsuleSlot1Prefix || labels.slot1Label || "Spk"),
+        slot2Short: slot2Conf?.label ? slot2Conf.label.slice(0, 4) : (labels.capsuleSlot2Prefix || labels.slot2Label || "Wrt"),
+        maxCols,
+      }
+    );
     return [capsuleText + pageTag];
   }
 
@@ -462,10 +487,7 @@ export function renderCardLayout(
   const decAccent = options.themeDecorators?.accent || ((s) => s);
   const decDim = options.themeDecorators?.dim || ((s) => s);
 
-  const hasWritten = Boolean(card.written && card.written.trim());
-  const hasVocab = Boolean(card.vocab && card.vocab.trim());
-
-  const prefixRaw = `  · [${labels.sourceLabel}] `;
+  const prefixRaw = `  · [${sourceLabel}] `;
   const prefixW = getVisualWidth(prefixRaw);
   const pageTagW = pageTag ? getVisualWidth(pageTag) : 0;
   const availLine1W = Math.max(20, maxCols - prefixW - pageTagW);
@@ -475,7 +497,7 @@ export function renderCardLayout(
 
   if (getVisualWidth(cleanSource) <= availLine1W) {
     sourceLines = [
-      decMuted("  · ") + decMuted("[") + decDim(labels.sourceLabel) + decMuted("] ") + cleanSource + pageTag,
+      decMuted("  · ") + decMuted("[") + decDim(sourceLabel) + decMuted("] ") + cleanSource + pageTag,
     ];
   } else {
     const wrapped = wrapVisualText(cleanSource, Math.max(20, maxCols - prefixW));
@@ -486,7 +508,7 @@ export function renderCardLayout(
         return (
           decMuted("  · ") +
           decMuted("[") +
-          decDim(labels.sourceLabel) +
+          decDim(sourceLabel) +
           decMuted("] ") +
           wLine +
           tagSuffix
@@ -498,19 +520,19 @@ export function renderCardLayout(
 
   let lines: string[] = [...sourceLines];
 
-  // 口语分支
+  // 口语/Slot1 分支
   const branch1Char = (hasWritten || hasVocab) ? "┌" : "└";
   const cont1Char = (hasWritten || hasVocab) ? "│" : " ";
-  lines.push(...formatTreeBranch(branch1Char, cont1Char, labels.slot1Label, card.spoken, decMuted, decAccent, decMuted, s => s, maxCols));
+  lines.push(...formatTreeBranch(branch1Char, cont1Char, slot1Label, card.spoken, decMuted, decAccent, decMuted, s => s, maxCols));
   if (card.spokenMeaning) {
     lines.push(...formatSubRail(cont1Char, card.spokenMeaning, "↳", decMuted, decDim, maxCols));
   }
 
-  // 写作分支
+  // 写作/Slot2 分支
   if (hasWritten) {
     const branchChar = hasVocab ? "├" : "└";
     const contChar = hasVocab ? "│" : " ";
-    lines.push(...formatTreeBranch(branchChar, contChar, labels.slot2Label, card.written!, decMuted, decAccent, decMuted, s => s, maxCols));
+    lines.push(...formatTreeBranch(branchChar, contChar, slot2Label, card.written!, decMuted, decAccent, decMuted, s => s, maxCols));
     if (card.writtenMeaning) {
       lines.push(...formatSubRail(contChar, card.writtenMeaning, "↳", decMuted, decDim, maxCols));
     }
@@ -518,7 +540,7 @@ export function renderCardLayout(
 
   // 重点词汇分支
   if (hasVocab) {
-    lines.push(...formatTreeBranch("└", " ", labels.vocabLabel, card.vocab!, decMuted, decMuted, decMuted, decDim, maxCols));
+    lines.push(...formatTreeBranch("└", " ", vocabLabel, card.vocab!, decMuted, decMuted, decMuted, decDim, maxCols));
   }
 
   // 行数守卫与盒模型约束求解 (坚持左导轨树状架构，绝不粗暴降级为单行胶囊)
@@ -534,19 +556,19 @@ export function renderCardLayout(
 
     // 约束 Tier 2: 将母语语感内联入括号，收缩纵向子导轨高度
     const spInline = card.spokenMeaning ? `${card.spoken} (${card.spokenMeaning})` : card.spoken;
-    const rawSpLines = formatTreeBranch(branch1Char, cont1Char, labels.slot1Label, spInline, decMuted, decAccent, decMuted, s => s, maxCols);
+    const rawSpLines = formatTreeBranch(branch1Char, cont1Char, slot1Label, spInline, decMuted, decAccent, decMuted, s => s, maxCols);
 
     let rawWrLines: string[] = [];
     if (hasWritten) {
       const branchChar = hasVocab ? "├" : "└";
       const contChar = hasVocab ? "│" : " ";
       const wrInline = card.writtenMeaning ? `${card.written} (${card.writtenMeaning})` : (card.written || "");
-      rawWrLines = formatTreeBranch(branchChar, contChar, labels.slot2Label, wrInline, decMuted, decAccent, decMuted, s => s, maxCols);
+      rawWrLines = formatTreeBranch(branchChar, contChar, slot2Label, wrInline, decMuted, decAccent, decMuted, s => s, maxCols);
     }
 
     let rawVocabLines: string[] = [];
     if (hasVocab) {
-      rawVocabLines = formatTreeBranch("└", " ", labels.vocabLabel, card.vocab!, decMuted, decMuted, decMuted, decDim, maxCols);
+      rawVocabLines = formatTreeBranch("└", " ", vocabLabel, card.vocab!, decMuted, decMuted, decMuted, decDim, maxCols);
     }
 
     const totalInline = clampedSourceLines.length + rawSpLines.length + rawWrLines.length + rawVocabLines.length;
@@ -559,12 +581,12 @@ export function renderCardLayout(
       // 优先保障纯正目标语英文与重点词汇的完整性：
       const branchChar = hasVocab ? "├" : "└";
       const contChar = hasVocab ? "│" : " ";
-      const pureSpLines = formatTreeBranch(branch1Char, cont1Char, labels.slot1Label, card.spoken, decMuted, decAccent, decMuted, s => s, maxCols);
+      const pureSpLines = formatTreeBranch(branch1Char, cont1Char, slot1Label, card.spoken, decMuted, decAccent, decMuted, s => s, maxCols);
       const pureWrLines = hasWritten
-        ? formatTreeBranch(branchChar, contChar, labels.slot2Label, card.written!, decMuted, decAccent, decMuted, s => s, maxCols)
+        ? formatTreeBranch(branchChar, contChar, slot2Label, card.written!, decMuted, decAccent, decMuted, s => s, maxCols)
         : [];
       const pureVocabLines = hasVocab
-        ? formatTreeBranch("└", " ", labels.vocabLabel, card.vocab!, decMuted, decMuted, decMuted, decDim, maxCols)
+        ? formatTreeBranch("└", " ", vocabLabel, card.vocab!, decMuted, decMuted, decMuted, decDim, maxCols)
         : [];
 
       const totalPure = clampedSourceLines.length + pureSpLines.length + pureWrLines.length + pureVocabLines.length;
